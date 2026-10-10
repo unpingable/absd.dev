@@ -57,7 +57,7 @@
 <thead><tr><th scope="col">Configuration</th><th scope="col">What passed</th></tr></thead>
 <tbody>
 <tr><td>Default PC machine (i440fx), SeaBIOS; PIIX IDE disk as primary master (<code>if=ide</code>, raw image); e1000 on user networking</td><td>The operator system: served boot, SSH, file server, commands, durable-state and filesystem crash matrices, operator image. The whole platform check.</td></tr>
-<tr><td>q35, OVMF (UEFI), boot image as a USB stick on xHCI, NVMe as the only disk, VGA framebuffer, no serial port</td><td>The kernel's boot suite read back from the screen alone; timer interrupts and preemption; NVMe write, flush, and read-back with a test kernel, verified after a fresh boot and a warm reset.</td></tr>
+<tr><td>q35, OVMF (UEFI), boot image as a USB stick on xHCI (read by the firmware and boot loader, not by ABSD), NVMe as the only disk, VGA framebuffer, no serial port</td><td>The kernel's boot suite read back from the screen alone; timer interrupts and preemption; NVMe write, flush, and read-back with a test kernel, verified after a fresh boot and a warm reset.</td></tr>
 <tr><td>The read-only physical boot image under SeaBIOS and OVMF</td><td>Boots to the expected screen; with write-requesting options, NVMe and ATA scratch images stay byte-identical and device traces show only identify and read commands.</td></tr>
 </tbody>
 </table>
