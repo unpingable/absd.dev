@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>man(1) — ABSD</title>
+<meta name="description" content="man(1): print manual pages. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/man.1/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="man(1) — ABSD">
+<meta property="og:description" content="man(1): print manual pages. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/man.1/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>man(1)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 1 man</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="man(1) manual page">MAN(1)                      General Commands Manual                     MAN(1)
+
+<span class="sh" id="name">NAME</span>
+       man -- print manual pages
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       man [section] name
+       man -k word
+
+<span class="sh" id="description">DESCRIPTION</span>
+       man prints the manual page name to standard output.  With section (a
+       digit, 1 to 9) it looks only in that section; otherwise it searches the
+       sections in the order 1, 8, 6, 2, 3, 5, 7, 4, 9 and prints the first
+       page it finds.
+
+       With -k it prints the index line of every page whose name or one-line
+       description contains word, ignoring ASCII case.
+
+       The pages are plain text.  They are written in mdoc, the BSD manual
+       page macro language, and rendered on the build host, with a pinned GNU
+       groff, when the system image is built; ABSD itself has no roff
+       formatter and no pager.  The page is copied to standard output
+       unchanged; to read part of a long page, pipe it through head or tail,
+       for example `man afterboot | head -n 40'.
+
+       A page name contains only letters, digits, `.', `_', and `-', and does
+       not start with `.'; anything else, such as a path, is refused.  There
+       are no other options and no MANPATH.
+
+<span class="sh" id="files">FILES</span>
+       /share/man/catS/name.0  the rendered page name of section S
+
+       /share/man/whatis       the index -k searches: one line per page,
+                               `name(S) - description'
+
+       /share is mounted read-only in every SSH session.
+
+<span class="sh" id="exit-status">EXIT STATUS</span>
+       0 when a page, or at least one index line, was printed; 1 when there is
+       no such page, nothing matched, or a file could not be read; 2 for a
+       usage error or an invalid page name.  When the reader of its output
+       goes away (`man intro | head -n 5') man stops at once, silently, with
+       status 1; there is no signal to stop it.
+
+<span class="sh" id="examples">EXAMPLES</span>
+             absd$ man 7 handles
+             absd$ man -k file
+             <a href="/man/filesystem.7/">filesystem(7)</a> - the ABSD filesystem and its file server
+             absd$ man nosuchpage
+             man: no entry for nosuchpage in the manual
+             absd-sh: man: exit status 1
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       man: no entry for NAME in the manual
+               No section has a page of that name; with a section given, "in
+               section S of the manual".
+
+       man: /share/man: ...: no manual is visible to this process
+               The process has no view of /share, for example under `nofs man
+               intro'.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/intro.1/">intro(1)</a>
+
+ABSD                          September 27, 2026                        MAN(1)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

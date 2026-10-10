@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research — ABSD</title>
+<meta name="description" content="The questions ABSD is used to study: authority at the time of an effect, crash and durability semantics, process authority, compatibility layers, qualification method, and a real native workload.">
+<link rel="canonical" href="https://absd.dev/research/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="Research — ABSD">
+<meta property="og:description" content="The questions ABSD is used to study: authority at the time of an effect, crash and durability semantics, process authority, compatibility layers, qualification method, and a real native workload.">
+<meta property="og:url" content="https://absd.dev/research/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/" aria-current="page">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<h1>Research</h1>
+
+<p>ABSD is an operating system first. It is also used to study a few questions that are easier to answer with a kernel, a filesystem, and real programs than in the abstract. None of this is a claim about other systems. The <a href="/research/program/">research program</a> page gives the longer account: the question, the prior work it builds on, the method, and what is being investigated now.</p>
+
+<h2 id="effect-time">Authority at the time of an effect</h2>
+<p>A check made before an action can go stale by the time the action happens. ABSD's primitive for this is the versioned cell: <code>cell_transition</code> succeeds only from the version the caller names, so an update based on stale state is refused rather than lost <span class="label l-mq">MILESTONE-QUALIFIED</span>. Rights are checked at each operation, not when a handle was opened: making a file read-only withdraws writing from handles opened before <span class="label l-mq">MILESTONE-QUALIFIED</span>. How far that can be carried, into effects that depend on evidence which expires, is an open question <span class="label l-planned">PLANNED</span>.</p>
+
+<h2 id="durability">Crash and durability semantics</h2>
+<p>Each storage claim names its failure model. The filesystem and an SQLite store were qualified under an abrupt-stop model and under a modeled power-loss law, with every cut point of each operation enumerated on the host (the device's possible outcomes sampled where there were more than 4096) and sampled cuts in the guest <span class="label l-mq">MILESTONE-QUALIFIED</span>. The documents record where the model ends: torn sectors are characterized, not claimed; real power and real drives are untested.</p>
+
+<h2 id="process-authority">Process authority</h2>
+<p>Authority as the set of handles and rights a process holds, narrowing at every start, with no ambient privilege and no user IDs <span class="label l-mq">MILESTONE-QUALIFIED</span>. The open problem is several principals: independently authenticated operators holding different authority, without importing accounts and permission bits <span class="label l-planned">PLANNED</span>.</p>
+
+<h2 id="membranes">Compatibility layers</h2>
+<p>How much ordinary software can run above native semantics that differ from Unix, and where it stops. The <a href="/compatibility/">source-compatibility probe</a> measures this for unmodified Rust programs <span class="label l-mq">MILESTONE-QUALIFIED</span>; a Linux binary personality is a deferred experiment with a stop rule if it starts pulling the native design toward Linux <span class="label l-planned">PLANNED</span>.</p>
+
+<h2 id="qualification">Qualification method</h2>
+<p>Claims are stated at the strength of the evidence: a named environment, a recorded run, counts from the check script itself, and deliberate absences checked to be absent. Hardware support is tiered and never inferred from emulation (<a href="/hardware/#tiers">tiers</a>). The <a href="/evidence/">evidence page</a> is an example of the record kept for each milestone.</p>
+
+<h2 id="constellation">A real native workload</h2>
+<p>ABSD runs programs from Constellation, a separate project by the same author, as ordinary native workloads: an SQLite-backed authority store, a Pulse journal and support resolver, the NQ diagnostics tool, and the Nightshift writer and resolver, each compared with its Linux build <span class="label l-mq">MILESTONE-QUALIFIED</span>. These programs live above the operating system; nothing in the kernel depends on them, and ABSD's semantics are not defined in their terms. They are useful because they were not written for ABSD. Public material on Constellation: <a href="https://unpingable.com/constellation/">unpingable.com/constellation</a>.</p>
+
+<h2 id="related">Related public work</h2>
+<p>By the same author. These are not evidence about ABSD.</p>
+<ul>
+<li>James Beck, <cite>Cybernetic Fault Domains: When Commitment Outruns Verification</cite> (2026). <a href="https://doi.org/10.5281/zenodo.18686130">doi:10.5281/zenodo.18686130</a></li>
+<li>Lean proofs of selected refusal boundaries, including freshness: <a href="https://unpingable.github.io/lean/">proof reader's portal</a>.</li>
+</ul>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

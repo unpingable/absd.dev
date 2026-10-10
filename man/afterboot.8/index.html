@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>afterboot(8) — ABSD</title>
+<meta name="description" content="afterboot(8): building, booting, and checking the operator image. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/afterboot.8/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="afterboot(8) — ABSD">
+<meta property="og:description" content="afterboot(8): building, booting, and checking the operator image. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/afterboot.8/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>afterboot(8)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 8 afterboot</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="afterboot(8) manual page">AFTERBOOT(8)                System Manager's Manual               AFTERBOOT(8)
+
+<span class="sh" id="name">NAME</span>
+       afterboot -- building, booting, and checking the operator image
+
+<span class="sh" id="description">DESCRIPTION</span>
+       This page is for the operator of an ABSD system: how to get the
+       operator image, boot it, check it, and look after it, and what it
+       cannot do yet.  It describes the qualified system (see <a href="/man/intro.1/">intro(1)</a>,
+       "QUALIFICATION"): a served `net fsd' boot under QEMU, whose file server
+       holds the disk and whose SSH server is the only way in.
+
+   Build the image
+       The operator image is built on a Linux host from the ABSD platform
+       repository and a checkout of the ABSD kernel at the commit the
+       platform's scripts/check-all.sh names:
+
+             $ ssh-keygen -t ed25519 -f operator-key
+             $ ABSD_KERNEL_RUN=/path/to/kernel-checkout \
+                 scripts/build-operator-image.sh \
+                 --authorized-keys operator-key.pub [--etc DIR] OUT
+
+       It builds the platform, then writes OUT/absd-operator.iso (GRUB, the
+       kernel, init, the file server, and the SSH server),
+       OUT/absd-operator.img (a 64 MiB disk), and OUT/MANIFEST (the two
+       commits and the SHA-256 of every file installed).  The disk holds every
+       command under /bin, this manual under /share/man, /etc/network.conf and
+       /etc/sshd.conf (the files in DIR in place of the defaults), and the
+       keys under /ssh/authorized_keys, which must be `ssh-ed25519' lines
+       without options.  Files are written by ABSD itself, in importer boots
+       under QEMU, and the host reads every one back before the build
+       succeeds.  The first boot adds /home/operator, /tmp, /var/log, and the
+       host key.
+
+   Boot
+             $ scripts/boot-operator.sh OUT 2222
+
+       This runs QEMU in the foreground with RDRAND (`-cpu
+       max,vendor=GenuineIntel,+rdrand'), the ISO, the disk as the primary IDE
+       master (<a href="/man/ata.4/">ata(4)</a>), one e1000 card on QEMU's user network with
+       127.0.0.1:2222 forwarded to the address and port the disk's /etc files
+       name, and the serial console in OUT/console.log.  It returns when the
+       machine halts (status 0) or the boot fails (QEMU's status, 7 for a
+       failed boot).  A <a href="/man/reboot.8/">reboot(8)</a> boots the same image again within the same
+       run.  Without RDRAND the SSH server refuses to start (`sshd: entropy:
+       ...') and the boot fails.
+
+   Check the host key
+       The SSH server prints its host key's fingerprint on the console at
+       every start, in plain text, in the form `ssh-keygen -l' uses, and the
+       public key itself:
+
+             $ grep '^sshd: host key' OUT/console.log
+             sshd: host key 256 SHA256:3n0X...Q (ED25519)
+             sshd: host key ssh-ed25519 AAAAC3Nz...
+
+       Compare the `SHA256:' value with the one ssh shows on the first
+       connection ("ED25519 key fingerprint is SHA256:...") before accepting
+       it, or put the public key in a known_hosts file yourself and keep
+       strict checking on:
+
+             $ echo "[127.0.0.1]:2222 ssh-ed25519 AAAAC3Nz..." &gt; known_hosts
+             $ ssh -p 2222 -i operator-key -o UserKnownHostsFile=known_hosts \
+                 -o StrictHostKeyChecking=yes operator@127.0.0.1
+             absd$
+
+       The same lines are in /var/log/sshd.  The file server creates the key
+       at the first boot (`FSD HOST KEY GENERATED') and loads it after (`FSD
+       HOST KEY PRESENT').  It lives at /ssh/host_ed25519_seed on the disk; no
+       session can read, list, or reach /ssh, but anyone holding the disk
+       image can read the key.
+
+       Only public keys are accepted.  A line of /ssh/authorized_keys with
+       options or another key type makes the server refuse the whole file.
+       There are no passwords and no accounts; the user name is logged and
+       otherwise ignored.  Every key in the file is the same single operator.
+
+   Look around
+             absd$ uname -a
+             absd$ date
+             absd$ uptime
+             absd$ ls /
+             absd$ df
+             absd$ man intro
+
+       `ls /' shows the session's view: bin/, etc/, home/, share/, tmp/, var/.
+       df prints the filesystem's size, the blocks in use and free, the commit
+       sequence on the disk, and this session's mounts with their access;
+       every session shares one filesystem and there are no quotas.
+
+   Where things live
+       /home/operator  Read-write.  Kept across sessions and boots; shared by
+                       every session.  Put your files here.
+
+       /tmp/session-N  Read-write, this session only: no other session can see
+                       it.  It is emptied when a session is given it; do not
+                       rely on it after the session ends.
+
+       /bin            The commands.  Read-only.
+
+       /etc            The configuration, <a href="/man/network.conf.5/">network.conf(5)</a> and <a href="/man/sshd.conf.5/">sshd.conf(5)</a>.
+                       Read-only.
+
+       /share          This manual (/share/man).  Read-only.
+
+       /var/log        The logs.  Read-only.
+
+       /ssh            The host key and authorized keys.  Not visible to any
+                       session.
+
+       Read-only means read-only for sessions: those files are placed when the
+       image is built or reconfigured, and no session changes them.
+
+   Configuration
+       /etc/network.conf sets the address, netmask, and gateway;
+       /etc/sshd.conf sets the port, the number of connections, the login
+       grace time, the idle timeout, and the authentication tries.  The SSH
+       server reads both at start and prints what it uses:
+
+             sshd: network 10.0.2.15/24 gateway 10.0.2.2 (/etc/network.conf)
+             sshd: port 22, at most 4 connections, login grace 30 s, idle
+             timeout 1800 s, 6 authentication tries (/etc/sshd.conf)
+
+       A missing file means the defaults, and the line says so.  A malformed
+       file is refused: the console says which file, which line, and why, the
+       SSH server does not start, and the boot fails.  Sessions cannot write
+       /etc, so a session can never lock the operator out.  To change or fix a
+       file, halt the machine and replace the file on the image, then boot
+       again:
+
+             $ ABSD_KERNEL_RUN=/path/to/kernel-checkout \
+                 scripts/build-operator-image.sh --reconfigure --etc DIR OUT
+
+       Each file of DIR replaces its namesake whole, in one commit; everything
+       else on the disk is kept.  --authorized-keys KEYS replaces the keys the
+       same way.
+
+   Logs
+       The file server writes /var/log/fsd and the SSH server /var/log/sshd,
+       each itself; there is no log daemon.  Every line begins with the time,
+       UTC, from the real-time clock:
+
+             absd$ tail -n 3 /var/log/sshd
+             2026-09-27T05:34:12Z sshd: conn 7: authenticated
+
+       /var/log/fsd begins each boot with `fsd: started: boot ID', the
+       identity <a href="/man/uptime.1/">uptime(1)</a> prints.  When a log would grow past 64 KiB it is
+       renamed to NAME.0, replacing the older one, and started again: each log
+       keeps at most 128 KiB, the newest lines.  If the filesystem refuses a
+       write (it is full), the line is lost and the next line written says how
+       many were.  The lines still go to the console as well.  Init's lines,
+       and every line before the file server starts, are on the console only:
+       init has no file server channel.  Per-command lines of the file server
+       (`FSD DERIVE') are on the console only.  There is no `tail -f'.
+
+   Copying files
+       There is no scp or sftp: the SSH server runs no subsystems.  Use a
+       command with a redirection:
+
+             $ ssh -p 2222 operator@127.0.0.1 'cat &gt; /home/operator/f' &lt; f
+             $ ssh -p 2222 operator@127.0.0.1 'cat &gt;&gt; /home/operator/f' &lt; more
+             $ ssh -p 2222 operator@127.0.0.1 cat /home/operator/f &gt; f
+
+       Under QEMU (TCG) a 1 MiB file took 45 to 60 s up and about 17 s down.
+       Both directions are byte-exact for any file, binary included, as long
+       as no terminal is requested (no -t; a terminal changes line endings and
+       takes control characters as keys).  A command with a `|', `&lt;', `&gt;', or
+       `"' is run by <a href="/man/absd-sh.1/">absd-sh(1)</a> (`absd-sh -c'); any other command runs
+       directly.  Paths are absolute, or relative to /, which only reads.  The
+       upload is committed when cat ends; check it with `ssh host sha256sum
+       FILE'.  An upload the client breaks off leaves the file cut short (the
+       old contents are gone once `&gt;' opens it).  Commands a `absd-sh -c'
+       command started are not ended with it when the client disconnects: they
+       lose their files at once but run until their pipes end, holding a file
+       server slot, and a `shutdown' while one runs stops the machine without
+       reaping it (the file server has committed; the script reports a QEMU
+       status other than 0).  Nothing is copied that the session could not
+       write itself.
+
+   What is persistent
+       A file written under /home/operator is committed to the disk when it is
+       closed, when sync is run, when the session ends, and at most about 200
+       ms after a write that was not otherwise committed.  sync returns once
+       everything the file server has accepted, from every session, is on the
+       disk.  After a commit the file survives the machine stopping abruptly;
+       see <a href="/man/filesystem.7/">filesystem(7)</a>.
+
+   Time
+       <a href="/man/date.1/">date(1)</a> reads the real-time clock: UTC, whole seconds, never set or
+       corrected by ABSD.  <a href="/man/uptime.1/">uptime(1)</a> counts kernel ticks since boot and names
+       the boot.  Files have no times.
+
+   Limits
+       o   Four SSH connections at once by default (<a href="/man/sshd.conf.5/">sshd.conf(5)</a>), counting
+           unauthenticated ones.  A further client completes its TCP
+           connection but gets no SSH banner until one ends; stock ssh reports
+           "Connection timed out during banner exchange" after its
+           ConnectTimeout.
+       o   Sixteen processes in the whole system, including init, the file
+           server, and the SSH server.
+       o   Ten file server channels, shared by every session and the commands
+           they run; see <a href="/man/absd-sh.1/">absd-sh(1)</a>.
+       o   One CPU, one network card, one disk.
+
+   How the boot ends
+       The boot runs until the operator asks for <a href="/man/shutdown.8/">shutdown(8)</a> or <a href="/man/reboot.8/">reboot(8)</a>,
+       from `ssh host shutdown' or from an interactive shell; every session is
+       told and ends, and the file server commits everything before the
+       machine halts or restarts.  Stopping QEMU otherwise is an abrupt stop:
+       anything not yet committed may be lost, and the next boot finds the
+       last commit.
+
+   What you cannot do yet
+       o   Change the configuration from a session, or without a reboot.
+       o   Follow a log as it grows, or send logs elsewhere.
+       o   See or stop processes of other sessions (<a href="/man/ps.1/">ps(1)</a> lists only your own
+           session).
+       o   Add users; there is one operator.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       On the console (OUT/console.log):
+
+       `sshd: /etc/FILE: line N: REASON; fix the file ...; sshd is not
+               running'
+               a malformed configuration file; the boot fails.  Fix it with
+               --reconfigure.
+
+       `FSD FAILED mount: ...'
+               the file server refused the disk (a damaged or foreign
+               filesystem).  Nothing was changed; the boot fails.  There is no
+               repair tool; see <a href="/man/filesystem.7/">filesystem(7)</a>.
+
+       The SSH server's other lines reach the console inside init's hex-framed
+       output records (`EXTERNAL OUTPUT CHUNK ... data=HEX'), the
+       qualification format; read them in /var/log/sshd instead.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/absd-sh.1/">absd-sh(1)</a>, <a href="/man/date.1/">date(1)</a>, <a href="/man/intro.1/">intro(1)</a>, <a href="/man/man.1/">man(1)</a>, <a href="/man/uptime.1/">uptime(1)</a>, <a href="/man/ata.4/">ata(4)</a>, <a href="/man/e1000.4/">e1000(4)</a>,
+       <a href="/man/network.conf.5/">network.conf(5)</a>, <a href="/man/sshd.conf.5/">sshd.conf(5)</a>, <a href="/man/filesystem.7/">filesystem(7)</a>, <a href="/man/handles.7/">handles(7)</a>, <a href="/man/process.7/">process(7)</a>,
+       <a href="/man/reboot.8/">reboot(8)</a>, <a href="/man/shutdown.8/">shutdown(8)</a>
+
+<span class="sh" id="caveats">CAVEATS</span>
+       The operator image has run only under QEMU.  The seed in /ssh is an
+       ordinary file to anyone with the image.  Building needs the platform
+       and kernel sources and their pinned toolchains; there is no prebuilt
+       release.
+
+ABSD                          September 27, 2026                  AFTERBOOT(8)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

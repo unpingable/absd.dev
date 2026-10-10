@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>absd-sh(1) — ABSD</title>
+<meta name="description" content="absd-sh(1): the ABSD command shell. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/absd-sh.1/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="absd-sh(1) — ABSD">
+<meta property="og:description" content="absd-sh(1): the ABSD command shell. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/absd-sh.1/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>absd-sh(1)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 1 absd-sh</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="absd-sh(1) manual page">ABSD-SH(1)                  General Commands Manual                 ABSD-SH(1)
+
+<span class="sh" id="name">NAME</span>
+       absd-sh -- the ABSD command shell
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       absd-sh [-c line]
+
+<span class="sh" id="description">DESCRIPTION</span>
+       absd-sh reads one line at a time and runs it as one pipeline.  Without
+       arguments it writes the prompt `absd$ ' before every line, and at the
+       end of its input exits with the status of the last line.  With -c it
+       runs line and exits with its status.  It is the shell an interactive
+       SSH session starts.  It is deliberately small: it is not a POSIX shell
+       and does not run scripts.
+
+       A command given to ssh (`ssh host ls /bin') does not run under absd-sh:
+       the SSH server splits it at whitespace, with no quoting, pipes, or
+       redirection, and runs its first word directly (a bare name as
+       /bin/name).  To run a pipeline without a terminal, write the lines to
+       the shell's standard input: `echo 'ls /bin | wc -l' | ssh host'.
+
+   Words
+       A line splits into words at whitespace.  Double quotes group: `"a b"'
+       is one word, and `a"b c"' is the word `ab c'.  Inside quotes, `\"' and
+       `\\' stand for `"' and `\', and `|', `&lt;', `&gt;' are ordinary characters.
+       Outside quotes a backslash is an ordinary character.  Nothing else is
+       special: `$', `*', `~', `;', `&amp;', and `#' are ordinary characters, so
+       there are no variables, no globbing, no command lists, and no comments.
+       An unterminated quote is a syntax error.
+
+   Commands
+       The first word names the command.  The builtins are listed below.  Any
+       other name runs a program from the filesystem: the word itself when it
+       contains a `/', resolved against the working directory, otherwise
+       /bin/name.  There is no PATH search.  A program is a static ABSD
+       executable; there is no `#!' and no execute permission.  The remaining
+       words are its arguments.  It starts with the shell's working directory
+       and environment, and with any of its three standard streams that is not
+       piped or redirected shared with the shell.
+
+   Pipelines and redirection
+       Commands joined by `|' run at the same time, each one's standard output
+       feeding the next one's standard input through a kernel pipe.  When a
+       reader ends first, the writer's next write fails with a broken pipe
+       error; there is no signal.  A pipeline's status is its last command's.
+
+       Each command may redirect its streams:
+       &lt; file    standard input from file
+       &gt; file    standard output to file, created or truncated
+       &gt;&gt; file   standard output appended to file
+       2&gt; file   standard error to file
+       2&gt;&gt; file  standard error appended to file
+
+       The shell opens every redirection itself, with its own authority,
+       before anything starts; if one cannot be opened nothing starts and the
+       status is 1.  The command never holds the file: its stream is a pipe,
+       and the shell copies between the pipe and the file.
+
+       These are syntax errors (status 2, nothing starts): an empty command in
+       a pipeline, a redirection without a file name, the same stream
+       redirected twice, output both to a file and into a pipe, input both
+       from a file and from a pipe, and descriptor duplication such as `2&gt;&amp;1'.
+
+   Narrowing a command's authority
+       By default a started command gets the shell's filesystem authority: a
+       file server channel bound to the shell's own mounts, never more.  Two
+       prefixes narrow it for one command:
+       ro command ...
+                 the same mounts, all read-only
+       nofs command ...
+                 no filesystem at all
+
+       A command started this way still writes its standard output and error;
+       `ro cmd &gt; file' writes file through the shell, while cmd itself cannot
+       write anywhere.  The prefixes apply to programs, not to builtins.
+
+       Each command needs a file server channel of its own: one of the shell's
+       spare channels (at most two, fewer while other sessions are open), or,
+       for one command at a time, the shell's own channel lent to it.  ro and
+       nofs need a spare, and so does every command while the shell is copying
+       a redirection.  A command that gets no channel is not started (status
+       126).  See "CAVEATS".
+
+   Builtins
+       cd [dir]  Change the working directory to dir, which must be an
+                 existing directory the session can see; without dir, to /.
+
+       pwd       Print the working directory.
+
+       echo [word ...]
+                 Print the words separated by single spaces.
+
+       status    Print the status of the last line.
+
+       exit [n]  Exit with status n, or with the last status.
+
+       ps        List this session's processes; see <a href="/man/ps.1/">ps(1)</a>.
+
+       shutdown [-h | -p | -r now]
+                 Ask sshd to halt the machine, or with -r to restart it; see
+                 <a href="/man/shutdown.8/">shutdown(8)</a>.
+
+       reboot    Ask sshd to restart the machine; see <a href="/man/reboot.8/">reboot(8)</a>.
+
+       ps, shutdown, and reboot are requests to the SSH server on the
+       session's control channel, which only a shell sshd started for an
+       interactive session holds; any other absd-sh answers `no session
+       control channel' with status 1.
+
+       pwd, echo, status, and ps may start a pipeline (the shell writes their
+       output into the next command) and may take &gt;, &gt;&gt;, and 2&gt;.  cd, exit,
+       shutdown, and reboot cannot be part of a pipeline.
+
+   Diagnostics and status
+       When the last command of a line exits with a nonzero status the shell
+       reports `absd-sh: name: exit status n'.  The statuses the shell itself
+       assigns:
+       1    a redirection could not be opened or completed
+       2    a syntax error, or a builtin used wrongly
+       126  the program was found but could not be started
+       127  the program was not found
+       128  the program ended without an exit status (it faulted or was
+            killed)
+       130  the line was interrupted with ^C (nothing more is printed)
+
+   On a terminal
+       With a terminal (`ssh -t'), or plain `ssh host', the SSH server, not
+       the shell, echoes and edits the line: DEL or BS erases a character, ^U
+       the line, and ^C discards the line being typed.
+
+       ^C while a line runs interrupts it.  The key never reaches the
+       command's input: the SSH server tells the shell on the session's
+       control channel, and the shell kills every command of the running
+       pipeline with the process handle it holds, waits for them, and prompts
+       again; the line's status is 130.  What a command wrote to a redirection
+       file before it was killed stays there.  The shell looks for ^C between
+       bounded waits on its commands, so it acts within a few milliseconds of
+       the SSH server passing it on.  A ^C typed at the prompt only discards
+       the line; it does not interrupt the next command.  A line holds at most
+       4095 bytes.  ^D on an empty line ends input for the whole session: a
+       command reading standard input sees end of file, and so does the shell,
+       which then exits.  Standard output and standard error arrive on the one
+       screen, in the order written.  The terminal type and window size are
+       not used.
+
+<span class="sh" id="examples">EXAMPLES</span>
+             absd$ cat /etc/motd | wc -l
+             1
+             absd$ ls /home/operator &gt; /home/operator/listing
+             absd$ ro cp /etc/motd /home/operator/copy
+             cp: /etc/motd -&gt; /home/operator/copy: ABSD filesystem is mounted read-only
+             absd-sh: cp: exit status 1
+             absd$ nofs df
+             df: this process has no file server channel (-2)
+             absd-sh: df: exit status 1
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/intro.1/">intro(1)</a>, <a href="/man/ps.1/">ps(1)</a>, <a href="/man/filesystem.7/">filesystem(7)</a>, <a href="/man/handles.7/">handles(7)</a>, <a href="/man/process.7/">process(7)</a>, <a href="/man/reboot.8/">reboot(8)</a>,
+       <a href="/man/shutdown.8/">shutdown(8)</a>
+
+<span class="sh" id="caveats">CAVEATS</span>
+       ^C ends the commands the shell started, not what they started in turn:
+       there is no process-tree kill.  A command that itself started programs
+       (another absd-sh, for instance) leaves them running when it is
+       interrupted; they are adopted by init, keep the session's input,
+       output, and filesystem channel until they end, and may take lines typed
+       at the prompt.  <a href="/man/ps.1/">ps(1)</a> counts them.  Without a terminal (`ssh -T') there
+       is no ^C.
+
+       Ending the SSH connection ends the shell; its running commands lose
+       their standard streams and their filesystem authority, and run to their
+       own end.
+
+       How many commands of one pipeline can hold a file server channel at
+       once depends on how many sessions are open; there is no fixed number to
+       rely on beyond two.
+
+       Standard input is shared with the shell, but lines the shell has
+       already read are not visible to a command.
+
+<span class="sh" id="bugs">BUGS</span>
+       There are no globbing, variables, command lists (`;' and `&amp;&amp;'),
+       descriptor duplication, job control, here-documents, or scripts.
+
+ABSD                          September 27, 2026                    ABSD-SH(1)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

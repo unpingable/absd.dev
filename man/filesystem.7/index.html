@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>filesystem(7) — ABSD</title>
+<meta name="description" content="filesystem(7): the ABSD filesystem and its file server. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/filesystem.7/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="filesystem(7) — ABSD">
+<meta property="og:description" content="filesystem(7): the ABSD filesystem and its file server. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/filesystem.7/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>filesystem(7)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 7 filesystem</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="filesystem(7) manual page">FILESYSTEM(7)           Miscellaneous Information Manual         FILESYSTEM(7)
+
+<span class="sh" id="name">NAME</span>
+       filesystem -- the ABSD filesystem and its file server
+
+<span class="sh" id="description">DESCRIPTION</span>
+       ABSD has one filesystem, on the second half of its one disk.  The
+       kernel knows nothing of files: it gives out a block device handle.  In
+       the qualified boot exactly one process, the file server absd-fsd, holds
+       the only read-write handle to the disk, and every other process reaches
+       files through it, over a channel: a pair of kernel pipes to the server.
+       Nothing else links the filesystem code over a writable disk; two
+       writers would corrupt it.
+
+   Channels are the authority
+       The server keeps, for each channel, a mount list (subtrees, each read-
+       only or read-write) and a table of the files opened through it.  A
+       channel is therefore a capability: holding it is what lets a process
+       see files, and it sees exactly what the mount list allows.
+
+       Paths are resolved by the server, lexically, under the channel's mount
+       list: `..' cannot leave it, anything outside it does not exist for the
+       client ("ABSD path not found"), a read-only mount refuses every change
+       ("ABSD filesystem is mounted read-only"), and the directories leading
+       to a mount point list only the way down.  There are no symbolic links,
+       so resolution is exact.
+
+       The SSH server binds each session's channel to:
+
+             /home/operator    read-write
+             /tmp/session-N    read-write, this session only
+             /bin              read-only
+             /etc              read-only
+             /share            read-only
+             /var/log          read-only
+
+       No session's channel may include /ssh; only the SSH server's own
+       control channel reads it.  That channel sees /ssh, /bin, and /etc read-
+       only and /var/log read-write, where the SSH server writes its log; the
+       file server writes its own log into the filesystem directly.  A process
+       can ask the server to bind a spare channel for a child with its own
+       mounts or fewer, never more; see <a href="/man/handles.7/">handles(7)</a>.  When a session ends its
+       channel is released: whatever the session left running is refused from
+       then on.
+
+   Objects
+       Files and directories, nothing else.  There are no owners, groups,
+       permission bits, timestamps, symbolic or hard links, device nodes, or
+       sparse files.  In particular no modification time is recorded, so `ls
+       -l' shows none; the format has no field for one, and adding it is a
+       format change.  An object has one flag, read-only (no command sets it
+       yet), and an identity: the filesystem's random id and an object serial
+       that is never reused.  The stat command prints them.
+
+   One namespace for every session
+       The server runs each request to completion before the next, from
+       whatever channel, so every session sees the same files at every moment.
+       Writes land in arrival order, each one whole; where two cover the same
+       bytes the later wins.  Creating a file that must not exist has exactly
+       one winner.  A rename replaces its target atomically.  Locks are
+       advisory, per open file, shared by every channel, and never wait: a
+       contended lock is refused at once.  A sequence of requests (look, then
+       create) is not atomic against another session's.
+
+   Commits
+       A commit writes the whole metadata image to the half of the metadata
+       area not in use, flushes the disk, writes the superblock that selects
+       it, and flushes again.  That superblock write is the moment the change
+       becomes durable.
+
+       Creating, removing, and renaming (files and directories) are committed
+       before the request returns.  File data is committed when the file is
+       closed, when sync is run, when the session ends, and at most about 200
+       ms after a write that was not otherwise committed.  sync returns once
+       everything the server has accepted, from every session, is committed
+       and flushed; `sync -v' prints the commit sequence then on the disk, and
+       df shows it too.
+
+   What survives a crash
+       Two failure models are qualified.  First, the machine stops abruptly
+       (QEMU killed, or the kernel's stop) and every sector the disk
+       acknowledged is kept.  Second, a device law for power loss: any write
+       not covered by a completed flush may be lost or reordered, per aligned
+       512-byte or 4 KiB unit.  The second was enforced by a model of the
+       device on the host and in the guest; no real power was cut and no real
+       drive's flush was tested.
+
+       Under either model, after a crash the namespace is the one of the last
+       commit: a rename is never half done, and a committed file is whole.
+       Data written but not yet committed may be partly present or absent.
+       File contents carry no checksum: corruption of file data on the disk is
+       not detected.
+
+   Refusal and recovery
+       Mounting checks both superblocks, the digest of the selected metadata
+       image, and every structural rule of the namespace.  Anything wrong
+       refuses the mount.  The mount never repairs and never falls back to the
+       older superblock.  A disk that is entirely zero is formatted at first
+       boot; so is a filesystem whose format was interrupted before its first
+       commit.  Any other disk without an ABSD layout is refused.
+
+       In the qualified boot a refused mount, or a disk error while
+       committing, ends the file server (`FSD FAILED ...' on the serial
+       console), and with it the boot.  There is no on-target repair tool, no
+       fsck, and no rescue boot.  The platform's host-side reader
+       (scripts/absd_fs.py) reads an image the mount would accept; it is a
+       test tool, not a recovery procedure.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/absd-sh.1/">absd-sh(1)</a>, <a href="/man/handles.7/">handles(7)</a>, <a href="/man/process.7/">process(7)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>
+
+       In the platform repository: docs/FILESYSTEM.md (format 1 and its
+       operation contract) and docs/POWER-LOSS.md (the device law).
+
+       A refused filesystem cannot be repaired on ABSD or on the host; the
+       only procedure is to build a new image (<a href="/man/afterboot.8/">afterboot(8)</a>), copying files
+       out first, while the old one still boots, with `ssh host cat FILE'.
+
+<span class="sh" id="caveats">CAVEATS</span>
+       The format is experimental, with no compatibility promise: a format
+       change means a new filesystem.  Every commit writes the whole metadata
+       image, so its cost grows with the number of objects, and the number of
+       objects is bounded by a 64 KiB record budget ("storage full").  df
+       counts data blocks only.  There are no quotas: every session shares the
+       space.
+
+ABSD                          September 27, 2026                 FILESYSTEM(7)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

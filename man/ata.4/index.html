@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ata(4) — ABSD</title>
+<meta name="description" content="ata(4): polled ATA disk driver for the primary IDE channel. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/ata.4/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="ata(4) — ABSD">
+<meta property="og:description" content="ata(4): polled ATA disk driver for the primary IDE channel. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/ata.4/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>ata(4)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 4 ata</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="ata(4) manual page">ATA(4)                      Kernel Interfaces Manual                    ATA(4)
+
+<span class="sh" id="name">NAME</span>
+       ata -- polled ATA disk driver for the primary IDE channel
+
+<span class="sh" id="description">DESCRIPTION</span>
+       The ata driver in the kernel drives one ATA disk: the master of the
+       primary IDE channel (I/O ports 0x1f0 to 0x1f7 and 0x3f6), with 28-bit
+       LBA addressing and PIO transfers of one 512-byte sector per command.
+       At boot it identifies the disk (IDENTIFY DEVICE) and takes its size
+       from the identify data; a missing drive, an ATAPI or SATA signature, or
+       a disk larger than 2^28 sectors (128 GiB) is not used.
+
+       Each read or write waits for the drive's status, polling after every
+       timer tick or IRQ 14, at most 20000 times; a drive that never becomes
+       ready is an I/O error, never a hang.  A flush is FLUSH CACHE waited to
+       completion.
+
+       The kernel uses an NVMe namespace when a usable controller is present
+       (<a href="/man/nvme.4/">nvme(4)</a>), and otherwise this disk.  Above the driver nothing knows
+       which is in use: the block device is a kernel object whose one read-
+       write handle belongs to the file server (<a href="/man/filesystem.7/">filesystem(7)</a>).
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       On the console:
+
+       `BLOCK DEVICE OK sectors=N'
+               a disk was found, N sectors of 512 bytes.
+
+       `BLOCK BACKEND ata access=read-write'
+               the block device is this disk.
+
+       `block: no device'
+               no usable disk: the boot has no block device.
+
+       `BLOCK DEVICE FAILED: error'
+               the disk failed at boot; the machine stops.
+
+<span class="sh" id="qualification">QUALIFICATION</span>
+       QEMU-qualified on QEMU's PIIX IDE controller with a raw image attached
+       as `-drive file=IMAGE,format=raw,if=ide,index=0': this is the disk of
+       the operator image (<a href="/man/afterboot.8/">afterboot(8)</a>) and of every SSH, file server, and
+       crash-consistency matrix of the platform, and of the kernel's durable-
+       boot tests.  Under QEMU a write completes only after QEMU's own write()
+       of that sector returned, so an acknowledged sector survives QEMU ending
+       abruptly, and a flush becomes the host's fdatasync().  No claim is made
+       about power loss on real hardware.
+
+       Physical hardware qualification: none.  The physical boot image refuses
+       every disk write and has not yet been booted on hardware.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/nvme.4/">nvme(4)</a>, <a href="/man/filesystem.7/">filesystem(7)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>
+
+<span class="sh" id="caveats">CAVEATS</span>
+       PIO, one sector per command, polled: throughput is low by design.  No
+       secondary channel, no slave drive, no DMA, no 48-bit addressing, no
+       SATA (AHCI) controller.
+
+ABSD                          September 27, 2026                        ATA(4)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>date(1) — ABSD</title>
+<meta name="description" content="date(1): print the date and time. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/date.1/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="date(1) — ABSD">
+<meta property="og:description" content="date(1): print the date and time. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/date.1/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>date(1)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 1 date</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="date(1) manual page">DATE(1)                     General Commands Manual                    DATE(1)
+
+<span class="sh" id="name">NAME</span>
+       date -- print the date and time
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       date [-u] [+%s]
+
+<span class="sh" id="description">DESCRIPTION</span>
+       date prints the time now, as the kernel reads it from the machine's
+       real-time clock, in the form
+
+             Sun Sep 27 05:34:12 UTC 2026
+
+       The time is always UTC and always whole seconds: ABSD declares the
+       real-time clock to hold UTC, has no time zones, and the clock has no
+       finer resolution.  -u is accepted and changes nothing.  +%s prints the
+       seconds since 1970-01-01 00:00:00 UTC instead.
+
+       Nothing on ABSD sets or corrects the clock.  Under QEMU it starts from
+       the host's UTC time (`-rtc base=utc'), the default.  A physical
+       machine's clock may hold local time, or drift; date cannot tell.
+
+       The same clock stamps the lines of the logs under /var/log
+       (<a href="/man/afterboot.8/">afterboot(8)</a>).  Files carry no times at all; see <a href="/man/filesystem.7/">filesystem(7)</a>.
+
+<span class="sh" id="exit-status">EXIT STATUS</span>
+       0 on success, 1 when the kernel refuses a reading (the clock gave no
+       stable, valid value: no time is made up), 2 for any other argument.
+       Setting the clock and other formats are not supported.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/uptime.1/">uptime(1)</a>, <a href="/man/filesystem.7/">filesystem(7)</a>
+
+ABSD                          September 27, 2026                       DATE(1)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

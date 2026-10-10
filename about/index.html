@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — ABSD</title>
+<meta name="description" content="ABSD is an experimental operating system by James Beck, written in Rust and developed privately, largely by AI coding agents under his direction. Why it exists, what it is and is not for, and how to follow it.">
+<link rel="canonical" href="https://absd.dev/about/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="About — ABSD">
+<meta property="og:description" content="ABSD is an experimental operating system by James Beck, written in Rust and developed privately, largely by AI coding agents under his direction. Why it exists, what it is and is not for, and how to follow it.">
+<meta property="og:url" content="https://absd.dev/about/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/" aria-current="page">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<h1>About</h1>
+
+<p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Source is currently developed privately; there are no public releases, downloads, or packages.</p>
+
+<h2 id="why">Why it exists</h2>
+<p>Most systems grant a program broad authority by default and report success loosely: a program can usually do whatever its user can, and "written" may mean "in a cache". The rules that matter (who may do what, what happens when something fails, what survives a crash) are then enforced defensively on top. ABSD began as a way to test whether those rules could instead be native, and still survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
+<p>The ideas are not new. Capability systems such as KeyKOS, EROS, seL4, and Zircon made authority explicit long before ABSD, and crash-consistency research made storage guarantees testable. ABSD's interest is in putting them together in one small system and recording honestly where that holds and where it does not. The <a href="/research/program/">research program</a> page says more.</p>
+
+<h2 id="for">What it is for</h2>
+<ul>
+<li>Studying how a small system behaves when authority, failure, and durability are stated explicitly and checked.</li>
+<li>Running as a single-operator specialist VM under QEMU, administered over SSH.</li>
+<li>A testbed for real programs whose storage and failure behaviour can be compared with their Linux builds.</li>
+</ul>
+
+<h2 id="not-for">What it is not for</h2>
+<ul>
+<li>Running on physical hardware: physical hardware qualification is not yet established.</li>
+<li>Production use, multi-user systems, or anything that must stay up.</li>
+<li>Running existing Unix or Linux software without porting; see <a href="/compatibility/">compatibility</a>.</li>
+<li>Replacing a BSD or Linux system.</li>
+</ul>
+
+<h2 id="how">How it is developed</h2>
+<p>One developer, James Beck, directs the work: deciding what is built, setting the acceptance rules, and accepting or rejecting results. AI coding agents wrote most of the code, tests, and documentation, including most of the text of this site.</p>
+<p>Review is also done by AI: releases and merges are accepted after a review by AI model sessions separate from the ones that did the work. That catches some errors and is not independent human review. No outside person has audited ABSD's design, code, or tests, and no human security review has been done. Read "qualified", "validated", and "accepted" on this site as "the recorded checks passed and were re-examined by a separate AI session", and nothing stronger.</p>
+<p>This is why the site leans on what can be checked without trusting the author: named environments, recorded runs, counts taken from the check scripts' own output, checks that are shown able to fail, and failures kept on record. The method is described under <a href="/research/program/#method">bounded acceptance</a>. Until the source is public, a reader cannot verify any of it independently; that is a real limit.</p>
+
+<h2 id="bsd">Relation to BSD</h2>
+<p>The operating system's commands, manual, and conventions follow BSD practice where the semantics match. ABSD is not derived from BSD source and is not a BSD distribution.</p>
+
+<h2 id="follow">Following and contributing</h2>
+<p>The operating system's source is not public, so there is nothing to clone, build, or download, and code contributions are not being accepted. No license has been chosen for it. A public source distribution and a developer preview are intended, without a date; whether, when, and under what terms are still open decisions. When that changes, this page will say where the source is and how outside changes are reviewed. Publishing this site does not publish the source.</p>
+<ul>
+<li>Progress is recorded on this site when a milestone or release is accepted: <a href="/evidence/">evidence</a> lists the records newest first, and <a href="/status/#since">status</a> lists what has been accepted since the last milestone.</li>
+<li>This site's own source is public at <a href="https://github.com/unpingable/absd.dev">github.com/unpingable/absd.dev</a>. It contains the pages and the manual sources, not the operating system. Every change to a claim on this site is a commit there, so watching that repository is the way to be told when something changes.</li>
+<li>Questions and corrections: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug.</li>
+<li>Related public work by the same author is listed on the <a href="/research/#related">research page</a>.</li>
+</ul>
+
+<figure class="emblem">
+<img src="/trilobite.jpg" width="960" height="437" alt="A stylized trilobite drawn in coral, teal, cream, and plum over a grid of overlapping rectangles, with the letters ABSD in the lower right corner.">
+<figcaption>The ABSD trilobite.</figcaption>
+</figure>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

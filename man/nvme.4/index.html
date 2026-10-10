@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nvme(4) — ABSD</title>
+<meta name="description" content="nvme(4): polled NVM Express storage driver. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/nvme.4/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="nvme(4) — ABSD">
+<meta property="og:description" content="nvme(4): polled NVM Express storage driver. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/nvme.4/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>nvme(4)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 4 nvme</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="nvme(4) manual page">NVME(4)                     Kernel Interfaces Manual                   NVME(4)
+
+<span class="sh" id="name">NAME</span>
+       nvme -- polled NVM Express storage driver
+
+<span class="sh" id="description">DESCRIPTION</span>
+       The nvme driver in the kernel drives one NVM Express controller, found
+       by PCI class (mass storage, non-volatile memory, NVMe).  With more than
+       one, the first in PCI bus, device, and function order is used.  It
+       resets and enables the controller with one admin and one I/O queue pair
+       of 16 entries in kernel memory, identifies the controller and its first
+       active namespace, and accepts only a namespace formatted with 512-byte
+       blocks and no metadata; any other format is refused by name.  It moves
+       one 512-byte block per command through a bounce page and polls for
+       completion with interrupts masked, at most 5000 ticks per command.  A
+       flush is an NVMe FLUSH waited to completion.
+
+       A namespace is writable only when the boot option `nvme-write=serial'
+       names its controller's serial number exactly.  Otherwise the driver
+       refuses every write and flush, and init receives a read-only block
+       handle.
+
+       At boot the kernel uses an NVMe namespace if a usable controller is
+       present, and otherwise the ATA disk on the primary IDE channel.  Above
+       the driver nothing knows which is in use.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       On the console:
+
+       `NVME CONTROLLER pci=BB:DD.F vendor=... device=... serial=...
+               model=...'
+               the controller was found.
+
+       `NVME NAMESPACE nsid=1 lba_bytes=512 sectors=N
+               access=read-only|read-write'
+               the namespace, and whether this boot may write it.
+
+       `NVME UNAVAILABLE reason'
+               the controller was refused (for example a 4 KiB block format)
+               or failed; the ATA probe runs instead.
+
+       `BLOCK BACKEND nvme access=...'
+               the block device is this namespace.
+
+<span class="sh" id="qualification">QUALIFICATION</span>
+       QEMU-qualified on QEMU's NVMe controller model (`-device nvme') with
+       512-byte blocks, by the kernel's `make nvme-test' (write, read back,
+       flush, bounds, a fresh boot reading the same data, read-only without
+       `nvme-write=', refusal of a 4 KiB format) and by the laptop-shaped QEMU
+       machine.  Physical hardware qualification: none.  The physical boot
+       image, whose kernel refuses every disk write, has not yet been booted
+       on hardware.
+
+       The qualified SSH boot described in <a href="/man/afterboot.8/">afterboot(8)</a> does not use this
+       driver: its disk is QEMU's IDE disk, driven by <a href="/man/ata.4/">ata(4)</a>.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/ata.4/">ata(4)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>
+
+       In the kernel repository: HANDOFF.md (Block storage and durable boots)
+       and docs/PHYSICAL-BOOT.md.
+
+<span class="sh" id="caveats">CAVEATS</span>
+       One queue pair, one block per command, polled: throughput is low by
+       design.  No interrupts, MSI, or namespace other than the first active
+       one.
+
+ABSD                          September 27, 2026                       NVME(4)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

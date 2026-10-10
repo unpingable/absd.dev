@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sshd.conf(5) — ABSD</title>
+<meta name="description" content="sshd.conf(5): limits of the SSH server. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/sshd.conf.5/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="sshd.conf(5) — ABSD">
+<meta property="og:description" content="sshd.conf(5): limits of the SSH server. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/sshd.conf.5/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>sshd.conf(5)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 5 sshd.conf</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="sshd.conf(5) manual page">SSHD.CONF(5)                  File Formats Manual                 SSHD.CONF(5)
+
+<span class="sh" id="name">NAME</span>
+       sshd.conf -- limits of the SSH server
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       /etc/sshd.conf
+
+<span class="sh" id="description">DESCRIPTION</span>
+       sshd reads sshd.conf once, when it starts, through the file server;
+       changing the file takes effect at the next boot.  It is not OpenSSH's
+       sshd_config: the keywords differ and there are only these.
+
+       Each line is a keyword and one value, separated by spaces or tabs.
+       Blank lines and lines whose first word begins with `#' are ignored.
+       Each keyword may appear once; values are decimal whole numbers.  An
+       absent keyword keeps its default.
+
+       port number               The TCP port to listen on, 1 to 65535.
+                                 Default 22.
+
+       max-connections number    Connections served at once, authenticated or
+                                 not, 1 to 8.  Default 4.  Each connection has
+                                 one session.
+
+       login-grace-time seconds  How long a connection may take to
+                                 authenticate before it is dropped, 1 to 3600.
+                                 Default 30.
+
+       idle-timeout seconds      How long a connection may pass with no
+                                 traffic in either direction and no output
+                                 from its command before it is closed, 1 to
+                                 604800.  Default 1800.
+
+       max-auth-tries number     Refused authentication attempts before the
+                                 connection is dropped, 1 to 100.  Default 6.
+
+       Without the file every value is its default, and sshd says so on the
+       console.  The operator image installs the file with the default values.
+
+   When every connection is taken
+       While max-connections connections are open, sshd takes no new one.  The
+       next client's TCP connection is still completed by the network stack,
+       up to max-connections more, but the client receives no SSH banner: it
+       waits, and is served as soon as an open connection ends.  Stock ssh
+       gives up after its ConnectTimeout with "Connection timed out during
+       banner exchange".  Unauthenticated connections count: anyone who can
+       reach the port can hold every connection for the login grace time,
+       again and again.  There is no limit per source address.
+
+       Separately, every session needs a file server channel; there are ten.
+       With at most 8 connections all ten are taken only when commands that
+       earlier sessions left running still hold channels (see <a href="/man/absd-sh.1/">absd-sh(1)</a>).  A
+       session that then finds none free is refused: a shell request fails,
+       and stock ssh prints "shell request failed on channel 0" and exits with
+       status 255; a command is not started, and the client gets "sshd: NAME:
+       no free file server slot" and status 126.  The channels come back as
+       those commands end.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       At every start sshd prints on the console, and writes to /var/log/sshd:
+
+             sshd: port 22, at most 4 connections, login grace 30 s, idle
+             timeout 1800 s, 6 authentication tries (/etc/sshd.conf)
+
+       A malformed file (an unknown keyword, including OpenSSH's such as Port,
+       a keyword twice, a missing or extra value, a value out of range, a byte
+       that is not printable ASCII, more than 4096 bytes) is refused: the
+       console names the file, the line, and the reason, sshd does not start,
+       and the boot fails.  No default replaces a value the operator wrote.
+       See <a href="/man/afterboot.8/">afterboot(8)</a> for fixing it.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/network.conf.5/">network.conf(5)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>
+
+ABSD                          September 27, 2026                  SSHD.CONF(5)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

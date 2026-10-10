@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reboot(8) — ABSD</title>
+<meta name="description" content="reboot(8): restart a served ABSD machine. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/reboot.8/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="reboot(8) — ABSD">
+<meta property="og:description" content="reboot(8): restart a served ABSD machine. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/reboot.8/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>reboot(8)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 8 reboot</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="reboot(8) manual page">REBOOT(8)                   System Manager's Manual                  REBOOT(8)
+
+<span class="sh" id="name">NAME</span>
+       reboot -- restart a served ABSD machine
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       reboot
+
+<span class="sh" id="description">DESCRIPTION</span>
+       reboot is `shutdown -r now': the SSH server ends every session in
+       order, the file server commits and stops, and init restarts the
+       machine, which boots the same image again.  It takes no arguments.  Ask
+       with `ssh host reboot' or type it to an interactive <a href="/man/absd-sh.1/">absd-sh(1)</a>; see
+       <a href="/man/shutdown.8/">shutdown(8)</a> for what happens, who may ask, and the exit status.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       On the serial console the sequence of <a href="/man/shutdown.8/">shutdown(8)</a> with
+       `action=restart', then `MACHINE RESTART ARMED pid=1' and `MACHINE
+       RESTART'.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/absd-sh.1/">absd-sh(1)</a>, <a href="/man/shutdown.8/">shutdown(8)</a>
+
+<span class="sh" id="qualification">QUALIFICATION</span>
+       Qualified under QEMU's i440fx machine, which resets on the first of the
+       three methods the kernel tries (the 0xcf9 reset register, the keyboard
+       controller, a triple fault).  QEMU must be allowed to reboot: under
+       -no-reboot without -no-shutdown it exits with status 0 instead, and
+       with both it pauses.  None of the three methods is tested on a physical
+       machine.
+
+ABSD                          September 27, 2026                     REBOOT(8)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

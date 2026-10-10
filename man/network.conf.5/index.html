@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>network.conf(5) — ABSD</title>
+<meta name="description" content="network.conf(5): the machine&#x27;s IPv4 address. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/network.conf.5/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="network.conf(5) — ABSD">
+<meta property="og:description" content="network.conf(5): the machine&#x27;s IPv4 address. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/network.conf.5/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>network.conf(5)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 5 network.conf</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="network.conf(5) manual page">NETWORK.CONF(5)               File Formats Manual              NETWORK.CONF(5)
+
+<span class="sh" id="name">NAME</span>
+       network.conf -- the machine's IPv4 address
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       /etc/network.conf
+
+<span class="sh" id="description">DESCRIPTION</span>
+       The SSH server, sshd, owns the machine's one network card (<a href="/man/e1000.4/">e1000(4)</a>)
+       and its IPv4 stack.  It reads network.conf once, when it starts,
+       through the file server; changing the file takes effect at the next
+       boot.
+
+       Each line is a keyword and one value, separated by spaces or tabs.
+       Blank lines and lines whose first word begins with `#' are ignored.
+       Each keyword may appear once:
+
+       address a.b.c.d
+                     The machine's address.  Required.  It must be a host
+                     address of its network (not the network or broadcast
+                     address, not 0, 127, or multicast).
+
+       netmask a.b.c.d
+                     The network's mask, contiguous, 1 to 30 bits (for example
+                     255.255.255.0).  Required.
+
+       gateway a.b.c.d
+                     The router for every other destination: another host of
+                     the same network.  Optional; without it only the local
+                     network is reachable.
+
+       Addresses are dotted decimal, four parts, no leading zeros.  There is
+       one interface, one address, and no DHCP, DNS, IPv6, or routes beyond
+       the one gateway.
+
+       Without the file sshd uses QEMU's user network: address 10.0.2.15,
+       netmask 255.255.255.0, gateway 10.0.2.2, and says so on the console.
+       The operator image installs the file with these same values.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       At every start sshd prints on the console, and writes to /var/log/sshd,
+       what it uses and where from:
+
+             sshd: network 10.0.2.15/24 gateway 10.0.2.2 (/etc/network.conf)
+
+       A file that breaks any rule above is refused: an unknown keyword, a
+       keyword twice, a missing or extra value, a value that is not an address
+       of the right kind, a gateway outside the network, a byte that is not
+       printable ASCII (a carriage return included), or more than 4096 bytes.
+       sshd then does not start, the boot fails, and the console says why:
+
+             sshd: /etc/network.conf: line 3: gateway 10.0.3.1 is not another
+             host of 10.0.2.20/24; fix the file (<a href="/man/network.conf.5/">network.conf(5)</a>, <a href="/man/sshd.conf.5/">sshd.conf(5)</a>,
+             <a href="/man/afterboot.8/">afterboot(8)</a>); sshd is not running
+
+       No default replaces a value the operator wrote.  Sessions cannot write
+       /etc; fix the file on the halted machine's image with
+       `build-operator-image.sh --reconfigure' (<a href="/man/afterboot.8/">afterboot(8)</a>).
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/e1000.4/">e1000(4)</a>, <a href="/man/sshd.conf.5/">sshd.conf(5)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>
+
+ABSD                          September 27, 2026               NETWORK.CONF(5)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

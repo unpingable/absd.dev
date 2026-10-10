@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research program — ABSD</title>
+<meta name="description" content="ABSD as an operating-system research program: the question it tests, what exists, how claims are accepted, what is being investigated now, and what dedicated resources would change.">
+<link rel="canonical" href="https://absd.dev/research/program/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="Research program — ABSD">
+<meta property="og:description" content="ABSD as an operating-system research program: the question it tests, what exists, how claims are accepted, what is being investigated now, and what dedicated resources would change.">
+<meta property="og:url" content="https://absd.dev/research/program/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/" aria-current="page">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<h1>Research program</h1>
+
+<p>ABSD is an experimental operating system used to investigate one systems question with a working kernel, a userspace, and real programs rather than in the abstract. This page describes the program for researchers and prospective collaborators. Its statements carry the <a href="/status/#labels">same labels</a> as the rest of the site; where it describes intent rather than results, it says so.</p>
+
+<h2 id="question">The question</h2>
+<p>Mainstream Unix-like systems enforce authority, failure, and durability rules defensively in userspace, on top of a substrate that grants ambient authority and reports success loosely. Capability systems such as KeyKOS, EROS, seL4, and Zircon made authority native, and crash-consistency work such as ALICE, CrashMonkey, and FSCQ made storage guarantees testable. ABSD asks what an operating system looks like when all of these rules are native together: when a process holds exactly the authority it was handed, when an update succeeds only from the state it was based on, and when "done" is stated at the strength the evidence supports. The organizing invariant is that no transition may claim more certainty, authority, effect, or durability than its inputs establish.</p>
+<p>The hypothesis is not that this is free. It is that the costs are specific and measurable (few are measured yet; multicore throughput was found bounded by kernel serialization), and that a small system built this way can still run ordinary software. ABSD exists to find out where that holds and where it does not.</p>
+
+<h2 id="today">What exists today</h2>
+<ul class="claims">
+<li><span class="label l-rq">RELEASE-QUALIFIED</span> An x86-64 kernel and a Rust userspace that boot under QEMU (TCG or KVM), serve stock OpenSSH logins, keep files across reboots, run a shell with pipes and redirection, and shut down in order. An installed image can be updated from the previous release, staged from a host while halted, and rolled back. See <a href="/evidence/#rel-20261003-1">release absd-20261003.1</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Processes start only by spawn, with an explicit list of handles; there is no <code>fork</code>. Authority is the set of handles a process holds, as in capability systems; a handle's rights can be dropped, never added. There are no user IDs and no ambient privilege. See <a href="/design/">design</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> A kernel-native compare-and-swap on versioned cells: a cell changes only from the version the caller names, so an update based on stale state is refused rather than lost.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Ordinary Rust programs built for ABSD without source changes, and unmodified crates.io programs (of 19 tried, 10 build and 9 run; 19 of 25 cases match their Linux builds byte for byte). See <a href="/compatibility/">compatibility</a>.</li>
+<li><span class="label l-val">VALIDATED</span> Research builds with several CPUs under KVM, a 64-bit ARM port of the kernel in virtual machines, and a boot-time probe that enumerates one USB device on an emulated controller. None is part of a release, and none has run on physical hardware. See <a href="/status/#since">status</a>.</li>
+</ul>
+<p>On the main branches (2026-10-07) the kernel is about 46,000 lines of Rust and the platform (runtime, file server, SSH server, commands) about 32,000, counting tests and comments but not vendored code. One developer directs the work; AI coding agents did most of the implementation and the review described below.</p>
+
+<h2 id="method">Method: bounded acceptance</h2>
+<p>The method is part of the research. A result is accepted only in a named form:</p>
+<ul>
+<li><strong>A named environment.</strong> Every claim states where it was observed: emulator, machine type, firmware, device models, CPU count. Hardware support is tiered and never inferred from emulation (<a href="/hardware/#tiers">tiers</a>).</li>
+<li><strong>A recorded run.</strong> Counts come from the check scripts' own output, against exact kernel and platform commits. A release is an exact pair with a manifest and digests.</li>
+<li><strong>Negative controls.</strong> A check is trusted only if it can fail. Deliberately broken kernels (mutants) must be caught by the probe that claims to cover them; the SSH server's entropy check has its own negative control; the read-only physical image is run with write-requesting options and the test disks are compared byte for byte afterwards; documented absences are checked to be absent.</li>
+<li><strong>Stated failure models.</strong> "Durable" always names its model. Two are qualified under QEMU: an abrupt stop, and a modeled power-loss law in which anything not covered by a completed flush may be lost or reordered. Neither is a claim about real power loss.</li>
+<li><strong>Separate acceptance.</strong> Releases and integrations are accepted on a review separate from the run that produced them. That review is done by separate AI model sessions, not by an outside human. Acceptance shows that the recorded checks passed and were re-examined, not that the design or code has been audited by a person.</li>
+<li><strong>Failures are kept.</strong> A failed run is not rewritten into a pass. The release record keeps its earlier failures; multicore throughput scaling was measured and recorded as not earned; strict real-time timing with a shared physical core failed and is recorded as failed.</li>
+</ul>
+<p>This makes progress slower to state and easier to check. The <a href="/evidence/">evidence page</a> shows the record kept for each milestone and release.</p>
+
+<h2 id="milestones">Selected milestones</h2>
+<table>
+<thead><tr><th scope="col">Date</th><th scope="col">Result</th><th scope="col">Label</th></tr></thead>
+<tbody>
+<tr><td>2026-09-27</td><td>General usability under QEMU: a single-operator system administered over stock OpenSSH, with 55 programs built reproducibly and durable state checked over hundreds of crash boots</td><td><span class="label l-mq">MILESTONE-QUALIFIED</span></td></tr>
+<tr><td>2026-09-30 to 10-03</td><td>Misbehaving programs contained to themselves in every case tried; 87 adversarial program images (60 refused, 27 boundary cases accepted) left resources unchanged; a 28-check audit of kernel-to-process output paths, one CPU, found no kernel addresses or stale memory (side channels not assessed). The last two were later release-qualified</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-04</td><td>Release <code>absd-20261003.1</code>: the system under TCG or KVM, with update from the previous release and rollback to it</td><td><span class="label l-rq">RELEASE-QUALIFIED</span></td></tr>
+<tr><td>2026-10-04</td><td>Several-CPU scheduling and migration with 2, 4, and 6 virtual CPUs under KVM, as research</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-05</td><td>A 64-bit ARM port of the kernel under QEMU, merged after a separate AI-run review</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-05</td><td>First read-only native boots on one physical machine, read from photographs of the screen</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
+<tr><td>2026-10-10</td><td>The main development line passes the whole platform check. It includes multi-sector block requests, a boot that survives a network link that is down, and a bounded recovery budget (the budget qualified by its own separate run). Not a release</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-09 to 10-10</td><td>On unmerged development branches, in virtual machines only: the filesystem on the ARM port, GICv3 support, and USB controller (xHCI) enumeration of one device</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-10</td><td>A seven-day unattended observation of the main development line under QEMU started; it ends 2026-10-17 and has no result yet</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
+</tbody>
+</table>
+
+<h2 id="questions">Questions under investigation</h2>
+<dl class="terms">
+<dt>Authority at the time of an effect</dt>
+<dd>A check made before an action can be stale by the time the action happens. Versioned cells and per-operation rights checks address this for state the kernel owns <span class="label l-mq">MILESTONE-QUALIFIED</span>. Whether the same discipline can carry authority whose grounds expire, and how spent authority is kept from becoming unspent after a crash or a lost reply, is open <span class="label l-planned">PLANNED</span>.</dd>
+<dt>Durability as a stated contract</dt>
+<dd>The filesystem's guarantees are qualified under two modeled failure laws <span class="label l-mq">MILESTONE-QUALIFIED</span>. A native storage engine, admitted by the semantics its consumers need rather than by feature list, is current work and not claimed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span>. Real power loss on real drives is not yet tested <span class="label l-unsupported">UNSUPPORTED</span>.</dd>
+<dt>Several CPUs without weakening the invariants</dt>
+<dd>Multicore scheduling is validated as research, with each process on one CPU at a time and a measured serialization boundary <span class="label l-val">VALIDATED</span>. The open question is how far parallelism can go before lifetime and authority rules need new mechanisms, and which of those mechanisms earn their cost. A successor study of object lifetime across CPUs is current work <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span>.</dd>
+<dt>Semantics across architectures</dt>
+<dd>The ARM port runs a fixed workload whose results are compared with the x86-64 build <span class="label l-val">VALIDATED</span>. The question is whether the kernel's guarantees are properties of the design or of one architecture's memory model.</dd>
+<dt>Several principals without accounts</dt>
+<dd>Today one operator identity holds a fixed authority ceiling. How independently authenticated principals can hold different authority without importing user IDs and permission bits is an open design problem <span class="label l-planned">PLANNED</span>.</dd>
+<dt>Compatibility above native semantics</dt>
+<dd>How much ordinary software runs above a native interface that differs from Unix, and where it stops, is measured for Rust programs <span class="label l-mq">MILESTONE-QUALIFIED</span>. A foreign-binary personality is a deferred experiment, with a stop rule if it begins to pull the native design toward the foreign one <span class="label l-planned">PLANNED</span>.</dd>
+<dt>Operating the system, not just running it</dt>
+<dd>Configuration, time, networking status, and failure records as explicit contracts with desired and observed state, rather than as files read once at boot <span class="label l-planned">PLANNED</span>. The north star is a system that runs unattended for months within declared limits; that is a direction, not a claim.</dd>
+</dl>
+
+<h2 id="next">Near-term program</h2>
+<ul class="claims">
+<li><span class="label l-planned">PLANNED</span> A developer preview: a public source tree, assembled from pinned component revisions, that someone else can clone, build, boot under a documented QEMU/KVM configuration, and log into. It is accepted only after an independent clean-environment build and boot from the published instructions. It does not exist yet, has no date, and its license is undecided.</li>
+<li><span class="label l-planned">PLANNED</span> Exact-hardware qualification of one physical machine, starting read-only: several CPUs, reset, and automatic result collection before any disk write.</li>
+<li><span class="label l-planned">PLANNED</span> Operating contracts for essential services, configuration generations, time, and administered networking.</li>
+</ul>
+
+<h2 id="resources">What dedicated resources would change</h2>
+<p>The constraint is evidence, not ideas. Specific resources would turn current limits into testable claims:</p>
+<ul>
+<li><strong>Physical test machines with serial console capture and remote power and reset control.</strong> Today's physical results are read from photographs. Collected, attributable receipts are the precondition for exact-hardware qualification.</li>
+<li><strong>Sacrificial drives and a controlled power-cut rig.</strong> Real power loss is the largest gap between the modeled durability results and a claim about hardware.</li>
+<li><strong>Dedicated qualification hosts with isolated cores.</strong> Multicore and real-time timing results need cores that nothing else shares; strict timing failed with a shared physical core, and isolated-core timing is not yet established.</li>
+<li><strong>Human reviewers.</strong> In particular for storage semantics, memory ordering, and small invariants that are worth modelling formally. Review so far is by AI models; human reviewers would test what that review misses.</li>
+<li><strong>Time for release engineering.</strong> Making the developer preview reproducible by strangers is work the research does not need, but other researchers do.</li>
+</ul>
+
+<h2 id="not">What this is not</h2>
+<ul>
+<li>Not a replacement for Linux or a BSD, and not production-ready. See <a href="/about/#not-for">what it is not for</a>.</li>
+<li>Not a verified system: no formal proof of the kernel or platform is claimed. Claims rest on recorded runs and review, under named environments and failure models.</li>
+<li>Not hardware-supported. Physical hardware qualification: not yet established.</li>
+<li>Not an AI operating system, and not a product or a company.</li>
+<li>Not publicly available. The source is developed privately and nothing can be downloaded; a public source distribution is intended, without a date.</li>
+<li>Not independently reviewed. The implementation and its review are largely the work of AI coding agents directed by one developer; no outside human has audited either. See <a href="/about/#how">how it is developed</a>.</li>
+</ul>
+
+<h2 id="adjacent">Adjacent work</h2>
+<p>Constellation, a separate project by the same author, is an experimental set of programs that keeps a worker's report that something is done apart from independent evidence that it is true now. It shares some of ABSD's ideas: refusal over guessing, and claims no stronger than their evidence. ABSD runs some of its programs as native workloads because they were not written for ABSD; nothing in ABSD depends on them, and ABSD's semantics are not defined in their terms. See <a href="/research/#constellation">research</a>.</p>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

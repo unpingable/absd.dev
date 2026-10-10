@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual — ABSD</title>
+<meta name="description" content="The ABSD operator&#x27;s manual: the manual pages installed on the operator image, rendered from their mdoc source.">
+<link rel="canonical" href="https://absd.dev/manual/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="Manual — ABSD">
+<meta property="og:description" content="The ABSD operator&#x27;s manual: the manual pages installed on the operator image, rendered from their mdoc source.">
+<meta property="og:url" content="https://absd.dev/manual/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/" aria-current="page">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<h1>Manual</h1>
+
+<p>These are the 17 manual pages installed on the operator image under <code>/share/man</code>. Start with <a href="/man/intro.1/">intro(1)</a> and <a href="/man/afterboot.8/">afterboot(8)</a>.</p>
+
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span> Rendered when this site is built from the unmodified <code>mdoc(7)</code> sources at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1), with GNU groff version 1.23.0 and the arguments the image build uses (<code>-mdoc -Tascii -P-cbou -rHY=0 -dAD=l</code>). The text is what <code>man</code> prints in an ABSD session; only cross-references are turned into links. The pages describe the qualified QEMU system and label what is not provided. There are no per-command pages beyond <code>date</code> and <code>uptime</code> yet.</p>
+
+<h2 id="section-1">Section 1: General commands</h2>
+<dl class="manindex">
+<dt><a href="/man/absd-sh.1/">absd-sh(1)</a></dt><dd>the ABSD command shell</dd>
+<dt><a href="/man/date.1/">date(1)</a></dt><dd>print the date and time</dd>
+<dt><a href="/man/intro.1/">intro(1)</a></dt><dd>introduction to ABSD and its commands</dd>
+<dt><a href="/man/man.1/">man(1)</a></dt><dd>print manual pages</dd>
+<dt><a href="/man/ps.1/">ps(1)</a></dt><dd>list this session&#x27;s processes</dd>
+<dt><a href="/man/uptime.1/">uptime(1)</a></dt><dd>how long this boot has run, and which boot it is</dd>
+</dl>
+<h2 id="section-4">Section 4: Kernel interfaces (drivers)</h2>
+<dl class="manindex">
+<dt><a href="/man/ata.4/">ata(4)</a></dt><dd>polled ATA disk driver for the primary IDE channel</dd>
+<dt><a href="/man/e1000.4/">e1000(4)</a></dt><dd>Intel 82540EM Ethernet driver</dd>
+<dt><a href="/man/nvme.4/">nvme(4)</a></dt><dd>polled NVM Express storage driver</dd>
+</dl>
+<h2 id="section-5">Section 5: File formats</h2>
+<dl class="manindex">
+<dt><a href="/man/network.conf.5/">network.conf(5)</a></dt><dd>the machine&#x27;s IPv4 address</dd>
+<dt><a href="/man/sshd.conf.5/">sshd.conf(5)</a></dt><dd>limits of the SSH server</dd>
+</dl>
+<h2 id="section-7">Section 7: Miscellaneous information</h2>
+<dl class="manindex">
+<dt><a href="/man/filesystem.7/">filesystem(7)</a></dt><dd>the ABSD filesystem and its file server</dd>
+<dt><a href="/man/handles.7/">handles(7)</a></dt><dd>handles, rights, and the authority of a session</dd>
+<dt><a href="/man/process.7/">process(7)</a></dt><dd>processes, starting programs, waiting, and parentage on ABSD</dd>
+</dl>
+<h2 id="section-8">Section 8: System administration</h2>
+<dl class="manindex">
+<dt><a href="/man/afterboot.8/">afterboot(8)</a></dt><dd>building, booting, and checking the operator image</dd>
+<dt><a href="/man/reboot.8/">reboot(8)</a></dt><dd>restart a served ABSD machine</dd>
+<dt><a href="/man/shutdown.8/">shutdown(8)</a></dt><dd>halt or restart a served ABSD machine</dd>
+</dl>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

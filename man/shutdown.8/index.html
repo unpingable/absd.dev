@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shutdown(8) — ABSD</title>
+<meta name="description" content="shutdown(8): halt or restart a served ABSD machine. ABSD manual page.">
+<link rel="canonical" href="https://absd.dev/man/shutdown.8/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="shutdown(8) — ABSD">
+<meta property="og:description" content="shutdown(8): halt or restart a served ABSD machine. ABSD manual page.">
+<meta property="og:url" content="https://absd.dev/man/shutdown.8/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<article class="manpage">
+<h1>shutdown(8)</h1>
+<p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
+Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
+with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
+<code>man 8 shutdown</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<pre class="man" tabindex="0" aria-label="shutdown(8) manual page">SHUTDOWN(8)                 System Manager's Manual                SHUTDOWN(8)
+
+<span class="sh" id="name">NAME</span>
+       shutdown -- halt or restart a served ABSD machine
+
+<span class="sh" id="synopsis">SYNOPSIS</span>
+       shutdown
+       shutdown now
+       shutdown -h | -p | -r now
+
+<span class="sh" id="description">DESCRIPTION</span>
+       shutdown asks the SSH server to end the boot in order: every session is
+       told and ends, the file server commits and stops, and the machine
+       halts, or, with -r, restarts.  -h and -p are the same as no option.
+       Any other argument is refused with status 2 and changes nothing.
+
+       It is not a program, and the operator can ask in two ways:
+
+       `ssh host shutdown'
+               The SSH server takes the command itself; nothing is started.
+
+       shutdown typed to an interactive shell
+               <a href="/man/absd-sh.1/">absd-sh(1)</a> passes the words to the SSH server on the session's
+               control channel and prints the answer.  A shell that has no
+               such channel (one started by another shell) answers `no session
+               control channel'.
+
+       Either way the SSH server decides: every authenticated session of the
+       operator may ask, and the first request wins; a later one is refused
+       with status 1 (`a halt is already under way').  The server holds no
+       right over the machine: it acts by ending its sessions and exiting with
+       a status that tells init which end was asked for.  Init holds the
+       machine and ends the boot.  No session process holds any right to stop
+       the machine.
+
+       In order:
+
+       1.   The requesting session prints `ABSD is going down for halt: ...'
+            and ends with status 0 (a shell prints it and then sees the end of
+            its input).  New connections are refused.
+
+       2.   Every session with something running is told `sshd: the system is
+            going down for halt; this session ends' (on its terminal, or on
+            standard error), and its input is closed after what the client
+            already sent.  A shell, or a command reading its input, finishes;
+            the session ends with its status as usual.
+
+       3.   After 10 seconds the server ends whatever still runs; that session
+            closes without an exit status (OpenSSH reports 255).
+
+       4.   The file server commits every session's files and stops.  Every
+            write it acknowledged is on the disk.
+
+       5.   Init waits up to 20 seconds for processes the sessions left
+            behind, then halts or restarts the machine.
+
+<span class="sh" id="exit-status">EXIT STATUS</span>
+       0 when the request was accepted, 1 when another is already under way, 2
+       for a form this page does not list.
+
+<span class="sh" id="diagnostics">DIAGNOSTICS</span>
+       On the serial console, in order: `SSH SHUTDOWN REQUESTED', `SSH
+       SHUTDOWN GRACE OVER' (only if something had to be ended), `SSH SHUTDOWN
+       COMPLETE', `FSD STOPPED', `SERVED SHUTDOWN action=halt ...
+       drained=true', and `ABSD BOOT OK'.
+
+<span class="sh" id="see-also">SEE ALSO</span>
+       <a href="/man/absd-sh.1/">absd-sh(1)</a>, <a href="/man/ps.1/">ps(1)</a>, <a href="/man/filesystem.7/">filesystem(7)</a>, <a href="/man/handles.7/">handles(7)</a>, <a href="/man/afterboot.8/">afterboot(8)</a>, <a href="/man/reboot.8/">reboot(8)</a>
+
+       In the kernel repository: docs/PROCESS-STARTUP.md ("Served boot and
+       orderly shutdown").
+
+<span class="sh" id="qualification">QUALIFICATION</span>
+       Qualified in a served boot (`net fsd served') under QEMU, where a halt
+       ends QEMU with status 3.  A qualification boot (`net fsd') is ended by
+       init's deadline for the SSH server instead, and shutdown there is not
+       qualified; see <a href="/man/afterboot.8/">afterboot(8)</a>.  On a physical machine a halt stops the
+       CPU and leaves the machine powered (there is no ACPI power-off); this
+       is not tested.
+
+<span class="sh" id="caveats">CAVEATS</span>
+       A process a session left running that has not ended 20 seconds after
+       the file server stopped cannot be ended by init; init then stops the
+       machine at once, after storage is committed (QEMU status 71, `SERVED
+       SHUTDOWN UNREAPED').  There is no delay form (`shutdown +5') and no
+       message to the sessions beyond the notice.
+
+ABSD                          September 27, 2026                   SHUTDOWN(8)
+</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
+</article>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compatibility — ABSD</title>
+<meta name="description" content="How ABSD&#x27;s native interfaces, Rust std userspace, and Unix-style personality relate, and how far unmodified Rust programs get today: 10 of 19 build, 9 run, 19 of 25 cases agree with Linux.">
+<link rel="canonical" href="https://absd.dev/compatibility/">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ABSD">
+<meta property="og:title" content="Compatibility — ABSD">
+<meta property="og:description" content="How ABSD&#x27;s native interfaces, Rust std userspace, and Unix-style personality relate, and how far unmodified Rust programs get today: 10 of 19 build, 9 run, 19 of 25 cases agree with Linux.">
+<meta property="og:url" content="https://absd.dev/compatibility/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site" role="banner">
+<a class="wordmark" href="/">ABSD</a>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/" aria-current="page">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+</header>
+<main id="main" role="main">
+<h1>Compatibility</h1>
+
+<p>ABSD is not a Unix and does not run Linux binaries. Ordinary programs reach it through layers, each built on the one below and none redefining it.</p>
+
+<h2 id="layers">Layers</h2>
+<dl class="terms">
+<dt>Native interface <span class="label l-mq">MILESTONE-QUALIFIED</span></dt>
+<dd>Processes started from an image with an ordered vector of handles; handles with rights; pipes, versioned cells, a block device, a network card, a machine object. The kernel knows no paths, file descriptors, users, or signals.</dd>
+<dt>Rust <code>std</code> userspace <span class="label l-mq">MILESTONE-QUALIFIED</span></dt>
+<dd>An experimental <code>x86_64-unknown-absd</code> target for the Rust standard library. <code>std::fs</code>, <code>std::process::Command</code>, piped standard streams, and <code>std::io::IsTerminal</code> work; <code>File</code> and <code>ChildStdin</code> carry handles directly. Threads return <code>Unsupported</code>.</dd>
+<dt>Unix-style personality <span class="label l-mq">MILESTONE-QUALIFIED</span></dt>
+<dd>Arguments, environment, working directory, relative paths, and program start from the filesystem, implemented in the userspace runtime. The shell, the commands, and the SSH server are written against it.</dd>
+<dt>Integer file descriptors <span class="label l-planned">PLANNED</span></dt>
+<dd>Deferred until a program needs them. It would be a userspace table over handles; descriptor numbers would not weaken handle staleness.</dd>
+<dt>Linux binary personality <span class="label l-planned">PLANNED</span></dt>
+<dd>Deferred, with no commitment. If built, it would sit above the native interfaces and translate Linux behaviour into native mechanisms, adding Linux behaviour only when a real binary needs it. It would not become the native specification.</dd>
+<dt>C programs <span class="label l-unsupported">UNSUPPORTED</span></dt>
+<dd>There is no C runtime, <code>crt0</code>, or libc for the target. The only C on ABSD is the SQLite amalgamation, compiled freestanding.</dd>
+</dl>
+
+<h2 id="probe">Source-compatibility probe</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> Nineteen published crates.io programs, chosen because they are small, widely used, and conventional, were built for ABSD without changing a source file. The only manifest change adds the ABSD runtime as a target-specific dependency. Programs that build were run on ABSD against the same cases as their Linux build, comparing standard output, standard error, and exit status byte for byte.</p>
+
+<table>
+<thead><tr><th scope="col">Measure</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><td>Programs tried</td><td class="num">19</td></tr>
+<tr><td>Build for ABSD</td><td class="num">10</td></tr>
+<tr><td>Run and agree with Linux on at least one case</td><td class="num">9</td></tr>
+<tr><td>Cases</td><td class="num">25</td></tr>
+<tr><td>Cases identical to Linux</td><td class="num">19</td></tr>
+<tr><td>Cases that differ (each recorded and required to differ)</td><td class="num">6</td></tr>
+</tbody>
+</table>
+
+<p>Programs that build and run: uutils <code>basename</code>, <code>seq</code>, <code>cut</code>, <code>fold</code>, <code>nl</code>, <code>uniq</code>, <code>base64</code> (0.12.0), jsonxf 1.1.1, and ripgrep 15.2.0 (single-threaded). b3sum 1.8.7 builds and starts but fails every case. The seven uutils programs are installed on the operator image unmodified.</p>
+
+<h3 id="build-failures">Build failures, by first obstacle</h3>
+<table>
+<thead><tr><th scope="col">Category</th><th scope="col">Programs</th><th scope="col">Obstacle</th></tr></thead>
+<tbody>
+<tr><td>POSIX layer dependency</td><td class="num">6</td><td>uutils <code>wc</code>, <code>head</code>, <code>cat</code>, <code>sort</code>; hexyl; sd. All stop at <code>rustix</code> (through <code>errno</code>). For the uutils, integer file descriptors are behind it.</td></tr>
+<tr><td>C runtime dependency</td><td class="num">1</td><td>jaq: the <code>mimalloc</code> C allocator.</td></tr>
+<tr><td>Missing native mechanism</td><td class="num">1</td><td>fd-find: signals (<code>ctrlc</code>).</td></tr>
+<tr><td>Missing conventional wrapper</td><td class="num">1</td><td>xsv: <code>rand</code> 0.4 has no path to the hardware random source that newer <code>getrandom</code> uses.</td></tr>
+</tbody>
+</table>
+
+<h3 id="divergences">Runtime differences</h3>
+<table>
+<thead><tr><th scope="col">Cases</th><th scope="col">Program</th><th scope="col">Cause</th></tr></thead>
+<tbody>
+<tr><td class="num">3</td><td>b3sum</td><td>Always builds a thread pool; thread spawn is unsupported.</td></tr>
+<tr><td class="num">1</td><td><code>rg -j2</code></td><td>Parallel walker needs threads. Without <code>-j</code>, ripgrep uses one thread and matches Linux.</td></tr>
+<tr><td class="num">1</td><td><code>rg</code> with piped input</td><td>ripgrep assumes non-Unix standard input is unreadable and searches the directory instead.</td></tr>
+<tr><td class="num">1</td><td><code>cut</code> on a missing file</td><td>Same error kind and exit status; different message text.</td></tr>
+</tbody>
+</table>
+
+<p>Nothing was added to make these pass or fail. The probe is a measurement, not a roadmap: the obstacles above (a POSIX layer, descriptors, threads, signals) enter ABSD only if a native workload needs them.</p>
+</main>
+<footer class="site" role="contentinfo">
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+</footer>
+</body>
+</html>

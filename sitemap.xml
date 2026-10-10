@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://absd.dev/</loc></url>
+<url><loc>https://absd.dev/about/</loc></url>
+<url><loc>https://absd.dev/compatibility/</loc></url>
+<url><loc>https://absd.dev/design/</loc></url>
+<url><loc>https://absd.dev/evidence/</loc></url>
+<url><loc>https://absd.dev/hardware/</loc></url>
+<url><loc>https://absd.dev/man/absd-sh.1/</loc></url>
+<url><loc>https://absd.dev/man/afterboot.8/</loc></url>
+<url><loc>https://absd.dev/man/ata.4/</loc></url>
+<url><loc>https://absd.dev/man/date.1/</loc></url>
+<url><loc>https://absd.dev/man/e1000.4/</loc></url>
+<url><loc>https://absd.dev/man/filesystem.7/</loc></url>
+<url><loc>https://absd.dev/man/handles.7/</loc></url>
+<url><loc>https://absd.dev/man/intro.1/</loc></url>
+<url><loc>https://absd.dev/man/man.1/</loc></url>
+<url><loc>https://absd.dev/man/network.conf.5/</loc></url>
+<url><loc>https://absd.dev/man/nvme.4/</loc></url>
+<url><loc>https://absd.dev/man/process.7/</loc></url>
+<url><loc>https://absd.dev/man/ps.1/</loc></url>
+<url><loc>https://absd.dev/man/reboot.8/</loc></url>
+<url><loc>https://absd.dev/man/shutdown.8/</loc></url>
+<url><loc>https://absd.dev/man/sshd.conf.5/</loc></url>
+<url><loc>https://absd.dev/man/uptime.1/</loc></url>
+<url><loc>https://absd.dev/manual/</loc></url>
+<url><loc>https://absd.dev/research/</loc></url>
+<url><loc>https://absd.dev/research/program/</loc></url>
+<url><loc>https://absd.dev/status/</loc></url>
+</urlset>
