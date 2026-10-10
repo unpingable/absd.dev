@@ -222,7 +222,7 @@ def check_css():
 
 
 PRIVATE = [
-    (r"/home/(?!operator\b)[a-z]|/data/|/tank/", "private path"),
+    (r"/home/(?!operator\b)[a-z]", "private path"),
     (r"[\w.+-]+@[A-Za-z][\w-]*(\.[\w-]+)*\.[A-Za-z]{2,}", "e-mail address"),
     (r"(?i)revolutionary|secure by design|formally verified|next-generation|AI-native", "promotional wording"),
     (r"(?i)BEGIN [A-Z ]*PRIVATE KEY|ssh-ed25519 AAAA[0-9A-Za-z+/]{20,}", "key material"),

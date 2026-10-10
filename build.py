@@ -192,7 +192,9 @@ def build_manual(version):
 <p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
 Rendered from the page's mdoc source at <code>{MILESTONE}</code> (platform {PLATFORM})
 with {html.escape(version)}, using the same command the image build uses; an ABSD session running
-<code>man {sec} {name}</code> prints this text. <a href="/manual/">All pages</a>.</p>
+<code>man {sec} {name}</code> prints this text. It is dated {MILESTONE_DATE}; the build commands and
+repository files it mentions are in private sources, and <a href="/status/#since">later work</a> is not in it.
+<a href="/manual/">All pages</a>.</p>
 <pre class="man" tabindex="0" aria-label="{name}({sec}) manual page">{man_html(rendered, known)}</pre>
 <p class="note"><a href="/manual/">All manual pages</a></p>
 </article>"""
@@ -266,6 +268,11 @@ def main():
 <li><a href="/manual/">Manual</a>: the operator's manual pages</li>
 <li><a href="/about/">About</a>: what ABSD is and how to follow it</li>
 </ul>"""
+    # /man/ is the natural parent of every manual page URL; the index is /manual/.
+    write("/man/", layout("/man/", "Manual pages", "ABSD manual pages: the index is at /manual/.",
+                          '<h1>Manual pages</h1>\n<p>The index of manual pages is the <a href="/manual/">manual</a>.</p>',
+                          unlisted=True))
+    hidden.add("/man/")
     (OUT / "404.html").write_text(
         layout("/404.html", "Page not found", "No page at this address on absd.dev.", not_found, unlisted=True),
         encoding="utf-8")

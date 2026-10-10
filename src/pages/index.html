@@ -2,20 +2,22 @@
 <!-- description: ABSD is an experimental operating system: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Qualified today as a single-operator system under QEMU. -->
 <h1 class="lead"><strong>ABSD</strong> — An experimental operating system.</h1>
 
-<p>ABSD is a small operating system, written in Rust, built to find out what a system looks like when isolation, authority, and failure are stated explicitly and checked. It boots, runs isolated processes, keeps files across reboots, runs ordinary Rust programs, and is administered over stock OpenSSH.</p>
+<p>ABSD is a small operating system, written in Rust, built to find out what a system looks like when isolation, authority, and failure are stated explicitly and checked. It boots, runs isolated processes, keeps files across reboots, runs some unmodified Rust programs, and is administered over stock OpenSSH.</p>
 
-<p><strong>Current qualification: single-operator system under QEMU.</strong> It is not production-ready, and no physical hardware is supported.</p>
+<p><strong>Current qualification: single-operator system under QEMU</strong> (a machine emulator). It is not production-ready, and no physical hardware is supported.</p>
+
+<p>ABSD was built largely by AI coding agents directed by one developer, and has had no independent human review. <a href="/about/#how">How it is developed</a>.</p>
 
 <h2 id="distinct">What distinguishes it</h2>
 <dl class="terms">
 <dt>Isolation</dt>
-<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process sees only itself and its own children. SSH sessions are isolated from one another. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
+<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process sees only itself and its own children. SSH sessions are separate process trees with private scratch space; they belong to one operator and share that operator's files, so they are not a boundary between users. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
 <dt>Explicit authority</dt>
 <dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
 <dt>Bounded scheduling and recovery</dt>
-<dd>Limits are fixed and stated rather than discovered under load: 16 processes in the whole system, four SSH connections. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the main development line (not in a release), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
+<dd>Bounded here means fixed, stated limits, not timing guarantees: 16 processes in the whole system, four SSH connections by default. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the main development line (not in a release), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
 <dt>Evidence-oriented engineering</dt>
-<dd>Every statement on this site carries a label saying how strongly it is supported, in which environment, and where the claim stops. Failed runs stay on record. <a href="/status/#labels">How statements are labelled</a>.</dd>
+<dd>Claims on the status, design, hardware, and evidence pages carry a label saying how strongly each is supported, in which environment, and where the claim stops. Failed runs stay on record. <a href="/status/#labels">How statements are labelled</a>.</dd>
 </dl>
 
 <section class="facts" aria-labelledby="now">
@@ -28,7 +30,7 @@
 <dt>Physical hardware</dt>
 <dd>Physical hardware qualification: not yet established <span class="label l-planned">PLANNED</span>. First read-only boots on one machine have been observed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dd>
 <dt>Since the milestone</dt>
-<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and USB controller enumeration, each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation is running and has no result yet. See <a href="/status/#since">status</a>.</dd>
+<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation started 2026-10-10, runs until 2026-10-17, and has no result yet. See <a href="/status/#since">status</a>.</dd>
 <dt>Access</dt>
 <dd>Stock OpenSSH, public-key login, one operator, several isolated sessions <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Userspace</dt>
@@ -53,7 +55,7 @@
 <li><a href="/about/">About</a>: why ABSD exists, what it is and is not for, how it is developed, and how to follow it.</li>
 <li><a href="/status/">Status</a>: what works, what has been qualified and where, and what has not.</li>
 <li><a href="/design/">Design</a>: spawn instead of fork, handles and rights, and how durability is stated.</li>
-<li><a href="/manual/">Manual</a>: the {{MANCOUNT}} pages shipped on the image, rendered from their mdoc source.</li>
+<li><a href="/manual/">Manual</a>: the {{MANCOUNT}} pages installed on the operator image, rendered from their mdoc source.</li>
 <li><a href="/hardware/">Hardware</a>: what has been qualified, on what, and how that will be recorded.</li>
 <li><a href="/compatibility/">Compatibility</a>: how far unmodified Rust programs get today.</li>
 <li><a href="/research/program/">Research program</a>: the question ABSD tests, the method, and prior work it builds on.</li>

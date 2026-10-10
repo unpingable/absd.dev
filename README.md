@@ -30,7 +30,8 @@ is; `man/` holds the mdoc sources vendored from the platform at the
 milestone tag (see `man/SOURCE`), rendered at build time; `captures/`
 holds recorded transcripts inserted verbatim.
 
-Every factual statement carries one of the labels defined on /status/.
+Claims on the status, design, hardware, and evidence pages carry one of the
+labels defined on /status/.
 When the milestone changes, update `MILESTONE*`, `KERNEL`, `PLATFORM` in
 build.py, resync `man/` with `scripts/sync-man.sh`, recapture the
 session, and revise /status/ and /evidence/ by hand.
