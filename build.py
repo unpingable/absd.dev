@@ -22,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+import urllib.parse
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / "src"
@@ -33,6 +34,64 @@ MILESTONE = "milestone/general-usability-qemu-20260927"
 MILESTONE_DATE = "2026-09-27"
 KERNEL = "1983172"
 PLATFORM = "ff025b1"
+
+# ---------------------------------------------------------------------------
+# RELEASE SWITCH: the public source release this site describes.
+#
+# This is the only place these values are set. Every one that still says
+# FILL-AT-DEPLOY must be replaced, at deploy time, from the published
+# repository's SOURCE-MANIFEST.toml and its release commit. While any is
+# unfilled the build still renders (so the pages can be previewed) but
+# scripts/check.py fails, and scripts/stage-pages.sh therefore refuses to
+# stage the site.
+#
+# SOURCE_REPO is the canonical public repository. Do not deploy before it
+# exists and carries the release named here.
+SOURCE_REPO = "https://github.com/unpingable/absd"
+SOURCE_LICENCE = "Apache-2.0"
+UNFILLED = "FILL-AT-DEPLOY"
+SOURCE_RELEASE_ID = UNFILLED        # [release] id in the manifest; also the tag name
+SOURCE_RELEASE_COMMIT = UNFILLED    # 40 hex: the release commit on the public main
+SOURCE_KERNEL_COMMIT = UNFILLED     # 40 hex: [[component]] kernel, commit
+SOURCE_PLATFORM_COMMIT = UNFILLED   # 40 hex: [[component]] platform, commit
+SOURCE_RELEASE_DATE = UNFILLED      # YYYY-MM-DD: [release] date
+# Which of the two prepared statements below is true of that release:
+#   "preview"    the release commit itself was built, booted and smoke-tested
+#                from a clean clone, and neither suite has run on it;
+#   "qualified"  the kernel suite and the platform gate's core profile have
+#                both passed on it. Needs the three fill-ins that follow.
+SOURCE_QUALIFICATION = UNFILLED
+# Used only by "qualified". Take them from the runs' own output; never
+# estimate them.
+SOURCE_KERNEL_SUITE_RESULT = UNFILLED   # e.g. the suite's own last line
+SOURCE_CORE_PROFILE_RESULT = UNFILLED   # the gate's last line, with extended=NOT_RUN
+SOURCE_QUALIFICATION_RECORD = UNFILLED  # date of the runs and where the receipt is
+
+# The two wordings. "preview" names a date: once the seven-day observation
+# has ended (2026-10-17) and the suites have run, switch to "qualified"
+# rather than leaving "scheduled after" on the site.
+SOURCE_STATEMENTS = {
+    "preview": (
+        "l-exp", "EXPERIMENTAL-INTEGRATION",
+        "Preview: built, booted and smoke-tested from a clean clone; the qualification suites "
+        "have not yet been run on these revisions and are scheduled after 2026-10-17.",
+        "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, "
+        "built the kernel, the platform and the operator image offline, booted under QEMU's software "
+        "emulation and served an SSH session. Neither the kernel suite nor the platform gate has been "
+        "run on these exact revisions; both are scheduled for after the seven-day observation ends on "
+        "2026-10-17. Until then nothing on this site labelled qualified or validated is a statement "
+        "about the source release."),
+    "qualified": (
+        "l-val", "VALIDATED",
+        "The kernel suite and the core profile of the platform gate have passed on these revisions; "
+        "the extended integration profile cannot be run from the public tree.",
+        "On these exact revisions, built from a clean clone: the kernel suite passed "
+        "({SOURCE_KERNEL_SUITE_RESULT}) and the platform gate passed in its core profile "
+        "({SOURCE_CORE_PROFILE_RESULT}). Recorded {SOURCE_QUALIFICATION_RECORD}. The extended "
+        "integration profile is not part of this statement: it does not run from the public tree, "
+        "and its steps print NOT_RUN there. No independent person has examined these "
+        "runs."),
+}
 
 NAV = [
     ("/status/", "Status"),
@@ -77,13 +136,46 @@ def parse_page(path):
     return meta, text
 
 
+def source_values():
+    """The {{SOURCE_*}} replacements. An unfilled value renders as a visible
+    marker that scripts/check.py refuses."""
+    def shown(name):
+        value = globals()[name]
+        return f"{UNFILLED}:{name}" if value == UNFILLED else value
+
+    names = ["SOURCE_RELEASE_ID", "SOURCE_RELEASE_COMMIT", "SOURCE_KERNEL_COMMIT",
+             "SOURCE_PLATFORM_COMMIT", "SOURCE_RELEASE_DATE"]
+    values = {name: shown(name) for name in names}
+    if SOURCE_QUALIFICATION in SOURCE_STATEMENTS:
+        css, label, short, full = SOURCE_STATEMENTS[SOURCE_QUALIFICATION]
+        full = full.format(**{n: shown(n) for n in (
+            "SOURCE_KERNEL_SUITE_RESULT", "SOURCE_CORE_PROFILE_RESULT", "SOURCE_QUALIFICATION_RECORD")})
+    else:
+        css, label = "l-exp", "EXPERIMENTAL-INTEGRATION"
+        short = full = f"{UNFILLED}:SOURCE_QUALIFICATION"
+    values = {k: html.escape(v) for k, v in values.items()}
+    values.update({
+        "SOURCE_REPO": SOURCE_REPO,
+        "SOURCE_LICENCE": SOURCE_LICENCE,
+        # Files are linked at the release tag, so a link shows the text this
+        # site was checked against.
+        "SOURCE_FILE": f"{SOURCE_REPO}/blob/{urllib.parse.quote(shown('SOURCE_RELEASE_ID'), safe='')}",
+        "SOURCE_LABEL": f'<span class="label {css}">{label}</span>',
+        "SOURCE_QUALIFICATION_SHORT": html.escape(short),
+        "SOURCE_QUALIFICATION": html.escape(full),
+    })
+    return values
+
+
 def layout(url, title, description, body, h1_in_body=True, unlisted=False):
+    source = source_values()
     full_title = f"{SITE}" if url == "/" else f"{title} — {SITE}"
     robots = '\n<meta name="robots" content="noindex">' if unlisted else ""
     nav = []
     for href, label in NAV:
         current = ' aria-current="page"' if url.startswith(href) else ""
         nav.append(f'<li><a href="{href}"{current}>{label}</a></li>')
+    nav.append(f'<li><a href="{SOURCE_REPO}">Source</a></li>')
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,8 +203,8 @@ def layout(url, title, description, body, h1_in_body=True, unlisted=False):
 {body.strip()}
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">{MILESTONE}</a> (kernel {KERNEL}, platform {PLATFORM}) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="{SOURCE_REPO}">source</a> is public under {SOURCE_LICENCE} (source release <code>{source["SOURCE_RELEASE_ID"]}</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">{MILESTONE}</a> (kernel {KERNEL}, platform {PLATFORM}) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>
@@ -192,8 +284,10 @@ def build_manual(version):
 <p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
 Rendered from the page's mdoc source at <code>{MILESTONE}</code> (platform {PLATFORM})
 with {html.escape(version)}, using the same command the image build uses; an ABSD session running
-<code>man {sec} {name}</code> prints this text. It is dated {MILESTONE_DATE}; the build commands and
-repository files it mentions are in private sources, and <a href="/status/#since">later work</a> is not in it.
+<code>man {sec} {name}</code> prints this text. It is dated {MILESTONE_DATE} and is the milestone's page, not the
+<a href="/status/#source">source release</a>'s: the release carries a later manual under <code>platform/man/</code>, and
+the build commands and repository files this page mentions are the milestone's. To build, follow the
+<a href="{SOURCE_REPO}#readme">repository's README</a>. <a href="/status/#since">Later work</a> is not in this page.
 <a href="/manual/">All pages</a>.</p>
 <pre class="man" tabindex="0" aria-label="{name}({sec}) manual page">{man_html(rendered, known)}</pre>
 <p class="note"><a href="/manual/">All manual pages</a></p>
@@ -243,6 +337,7 @@ def main():
         "{{PLATFORM}}": PLATFORM,
         "{{GROFF}}": html.escape(version),
     }
+    replacements.update({"{{" + k + "}}": v for k, v in source_values().items()})
     pages = 0
     hidden = set()
     for page in sorted((SRC / "pages").rglob("index.html")):
@@ -267,6 +362,7 @@ def main():
 <li><a href="/status/">Status</a>: what works and what has been qualified</li>
 <li><a href="/manual/">Manual</a>: the operator's manual pages</li>
 <li><a href="/about/">About</a>: what ABSD is and how to follow it</li>
+<li><a href="/status/#source">Source</a>: where the source is and what can be run</li>
 </ul>"""
     # /man/ is the natural parent of every manual page URL; the index is /manual/.
     write("/man/", layout("/man/", "Manual pages", "ABSD manual pages: the index is at /manual/.",

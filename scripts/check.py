@@ -8,7 +8,8 @@ titles, one h1, heading order, alt text, landmarks, colour contrast of the
 theme tokens in light and dark); responsive basics (viewport meta, no fixed
 widths); both colour schemes define every token; canonical and og:url
 metadata; no private paths, hosts, repository names, e-mail addresses, or
-internal vocabulary. With --screenshots, renders every page at 360, 768,
+internal vocabulary; the source-release values in build.py are all filled
+and well formed, and statements the source release made false are gone. With --screenshots, renders every page at 360, 768,
 and 1280 px wide in both colour schemes with a local headless Chromium and
 fails if a page scrolls horizontally.
 
@@ -16,6 +17,7 @@ Exit status 0 only when every check passes.
 """
 
 import argparse
+import html
 import html.parser
 import json
 import os
@@ -266,10 +268,55 @@ def check_withheld():
                    "/download", "/source/"):
         if phrase in all_text:
             fail("site", f"withheld claim or page present: {phrase!r}")
+    # True until the source release; false after it.
+    for phrase in ("developed privately", "no public source", "is not public", "No license has been chosen",
+                   "contributions are not being accepted", "in private sources"):
+        if phrase.lower() in all_text.lower():
+            fail("site", f"statement the source release made false: {phrase!r}")
     if "Physical hardware qualification: not yet established" not in (SITE / "status" / "index.html").read_text():
         fail("/status/", "missing the physical hardware statement")
     if "Physical hardware qualification: not yet established" not in (SITE / "hardware" / "index.html").read_text():
         fail("/hardware/", "missing the physical hardware statement")
+
+
+def check_source_release():
+    """The release switch in build.py must be filled before the site can be
+    staged, and nothing unfilled may have reached a page."""
+    sys.path.insert(0, str(ROOT))
+    import build
+    hex40 = r"[0-9a-f]{40}"
+    fields = [("SOURCE_RELEASE_ID", r"[A-Za-z0-9][A-Za-z0-9._-]*"),
+              ("SOURCE_RELEASE_COMMIT", hex40),
+              ("SOURCE_KERNEL_COMMIT", hex40),
+              ("SOURCE_PLATFORM_COMMIT", hex40),
+              ("SOURCE_RELEASE_DATE", r"20\d\d-[01]\d-[0-3]\d")]
+    if build.SOURCE_QUALIFICATION == "qualified":
+        fields += [(name, r".*\S.*") for name in (
+            "SOURCE_KERNEL_SUITE_RESULT", "SOURCE_CORE_PROFILE_RESULT", "SOURCE_QUALIFICATION_RECORD")]
+    for name, pattern in fields:
+        value = getattr(build, name)
+        if value == build.UNFILLED:
+            fail("build.py", f"{name} is unfilled")
+        elif not re.fullmatch(pattern, value):
+            fail("build.py", f"{name} is malformed: {value!r}")
+    if build.SOURCE_QUALIFICATION == build.UNFILLED:
+        fail("build.py", "SOURCE_QUALIFICATION is unfilled")
+    elif build.SOURCE_QUALIFICATION not in build.SOURCE_STATEMENTS:
+        fail("build.py", f"SOURCE_QUALIFICATION must be one of {sorted(build.SOURCE_STATEMENTS)}")
+    if re.search(r"(?i)staging", build.SOURCE_RELEASE_ID):
+        fail("build.py", "SOURCE_RELEASE_ID names a staging assembly, not a release")
+    for path in sorted(SITE.rglob("*")):
+        if path.is_file() and path.suffix in (".html", ".txt", ".xml"):
+            count = path.read_text(encoding="utf-8").count(build.UNFILLED)
+            if count:
+                fail(str(path.relative_to(ROOT)), f"{count} unfilled source-release value(s)")
+    status = (SITE / "status" / "index.html").read_text()
+    needed = ['id="source"', "Byte-identical builds on different machines: not claimed"]
+    if build.SOURCE_QUALIFICATION in build.SOURCE_STATEMENTS:
+        needed.append(html.escape(build.SOURCE_STATEMENTS[build.SOURCE_QUALIFICATION][2]))
+    for text in needed:
+        if text not in status:
+            fail("/status/", f"missing source-release statement: {text!r}")
 
 
 def browser():
@@ -393,6 +440,7 @@ def main():
     check_leaks()
     check_constellation_status()
     check_withheld()
+    check_source_release()
     if args.screenshots:
         screenshots(pages, args.screenshots)
     for f in failures:
