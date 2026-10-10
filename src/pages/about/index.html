@@ -1,0 +1,38 @@
+<!-- title: About -->
+<!-- description: ABSD is an experimental operating system by James Beck, written in Rust and developed privately. What it is for, and what it is not for. -->
+<h1>About</h1>
+
+<p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Source is currently developed privately; there are no public releases, downloads, or packages.</p>
+
+<p>ABSD began as a way to test whether explicit authority, failure and durability semantics could survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
+
+<h2 id="for">What it is for</h2>
+<ul>
+<li>Studying how a small system behaves when authority, failure, and durability are stated explicitly and checked.</li>
+<li>Running as a single-operator specialist VM under QEMU, administered over SSH.</li>
+<li>A testbed for real programs whose storage and failure behaviour can be compared with their Linux builds.</li>
+</ul>
+
+<h2 id="not-for">What it is not for</h2>
+<ul>
+<li>Running on physical hardware: physical hardware qualification is not yet established.</li>
+<li>Production use, multi-user systems, or anything that must stay up.</li>
+<li>Running existing Unix or Linux software without porting; see <a href="/compatibility/">compatibility</a>.</li>
+<li>Replacing a BSD or Linux system.</li>
+</ul>
+
+<h2 id="bsd">Relation to BSD</h2>
+<p>The operating system's commands, manual, and conventions follow BSD practice where the semantics match. ABSD is not derived from BSD source and is not a BSD distribution.</p>
+
+<h2 id="follow">Following and contributing</h2>
+<p>The source is not public yet, so there is nothing to clone and code contributions are not being accepted. A public source distribution is planned; when it exists, this page will say where it is and how outside changes are reviewed. Publishing this site does not publish the source.</p>
+<ul>
+<li>Progress is recorded on this site when a milestone or release is accepted: <a href="/evidence/">evidence</a> lists the records newest first, and <a href="/status/#since">status</a> lists what has been accepted since the last milestone.</li>
+<li>Questions and corrections to this site: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug.</li>
+<li>Related public work by the same author is listed on the <a href="/research/#related">research page</a>.</li>
+</ul>
+
+<figure class="emblem">
+<img src="/trilobite.jpg" width="960" height="437" alt="A stylized trilobite drawn in coral, teal, cream, and plum over a grid of overlapping rectangles, with the letters ABSD in the lower right corner.">
+<figcaption>The ABSD trilobite.</figcaption>
+</figure>

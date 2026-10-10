@@ -1,0 +1,125 @@
+<!-- title: Status -->
+<!-- description: What ABSD does today, what has been qualified and where, what has not, and what is deliberately absent. -->
+<h1>Status</h1>
+
+<p>ABSD's current qualification is a single-operator system under QEMU. This page lists what that covers, labelled by how strongly each statement is supported. Most of it is the recorded run of the milestone below; work accepted after that milestone is listed separately under <a href="#since">since the milestone</a>. Source is currently developed privately.</p>
+
+<section class="facts" aria-labelledby="identity">
+<h2 id="identity">Current milestone</h2>
+<dl>
+<dt>Tag</dt><dd><code>{{MILESTONE}}</code> on the kernel and platform repositories</dd>
+<dt>Kernel</dt><dd><code>19831726395c9f64fabcdd58c84bcbdd30f701b8</code></dd>
+<dt>Platform</dt><dd><code>ff025b1c333ee611ae47d196c23d2b2ccd9cd6fc</code> (Rust <code>std</code> target, userspace, file server, SSH server, commands, manual)</dd>
+<dt>Recorded</dt><dd>{{MILESTONE_DATE}}; receipt on the <a href="/evidence/">evidence page</a></dd>
+<dt>Current heads</dt><dd>Development has continued past the milestone commits. Nothing on this site is claimed for the current development heads as such.</dd>
+</dl>
+</section>
+
+<h2 id="since">Since the milestone</h2>
+<p>Recorded 2026-10-08. Each entry names its own scope; none of it extends the milestone's claims above.</p>
+<ul class="claims">
+<li><span class="label l-rq">RELEASE-QUALIFIED</span> Release <code>absd-20261003.1</code> (kernel fcfbab9, platform c54dc90), accepted 2026-10-04. Environment: x86-64 QEMU with TCG or KVM, one CPU, an IDE disk or one NVMe namespace, an e1000 network card. Covered: the whole platform check; files with modification times (filesystem format 2); 300 consecutive SSH sessions returning to the same memory baseline; 87 adversarial program images (60 refused, 27 boundary cases accepted), with resources unchanged after each; an audit of every kernel-to-process output path for leaked kernel addresses or stale memory (28 checks, none found); floating-point control state kept per process.</li>
+<li><span class="label l-rq">RELEASE-QUALIFIED</span> Updating an installed system from the previous release (<code>absd-20261002.3</code>) to <code>absd-20261003.1</code>, and rolling it back, with both installed generations kept and site state preserved; backup and restore of a halted installed image. Updates are staged from a host onto a halted image and take effect at reboot; there is no updater on the running system, and a filesystem format change is refused rather than migrated silently.</li>
+<li><span class="label l-val">VALIDATED</span> Several CPUs, as research. Under KVM on one development host, with 2, 4, and 6 virtual CPUs: scheduling and migration of processes between CPUs (floating-point state checked between the first two CPUs), device start-up and TCP with the network service on the first CPU, and native command pipelines across CPUs. Each process still runs on at most one CPU at a time; there are no threads; kernel handlers are not preemptible. Throughput scaling was measured and not earned. Running processes on the additional CPUs is switched off in ordinary boots and in every release.</li>
+<li><span class="label l-val">VALIDATED</span> Misbehaving programs: faults, invalid system-call arguments, exhausted resources, and termination part-way through an operation were contained to the program in every case tried; the kernel, other processes, and the scheduler were unaffected. The cases tried, and what was not tried, are part of the record.</li>
+<li><span class="label l-val">VALIDATED</span> A 64-bit ARM port of the kernel, under QEMU's <code>virt</code> machine with one, two, or four virtual CPUs: boot, memory management, user processes and their faults, block reads, writes and flushes, local Ethernet, and a workload compared against the x86-64 build. Reviewed and merged on the kernel's main branch 2026-10-05. This is the kernel and its test programs, not the operator system; it has run only as a virtual machine and has not been booted on any physical ARM machine.</li>
+<li><span class="label l-val">VALIDATED</span> A fixed-priority periodic scheduling class, as an experiment. Its scheduling decisions are checked under QEMU, including KVM; strict timing with another CPU sharing the physical core failed, isolated-core timing is not established, and timing on physical hardware has not been measured. No real-time guarantee is made.</li>
+<li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> First native boots on one physical machine, an HP Z2 Mini G3 (2026-10-05 UTC): a read-only image booted from USB under UEFI, ran a hardware survey and the kernel's process suite on the boot CPU, and read one sector from the internal NVMe drive. Disk writes were compiled out. Results were read from photographs of the screen. These are observations, not hardware qualification; see <a href="/hardware/#observations">hardware</a>.</li>
+<li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Native storage and persistence work, and multi-sector block requests, are in progress and not claimed.</li>
+</ul>
+
+<h2 id="labels">How statements are labelled</h2>
+<dl class="terms">
+<dt><span class="label l-mq">MILESTONE-QUALIFIED</span></dt>
+<dd>Passed in the recorded qualification run of the milestone above. The claim is limited to that run's environment.</dd>
+<dt><span class="label l-rq">RELEASE-QUALIFIED</span></dt>
+<dd>Passed the recorded qualification of a named release (an exact kernel and platform pair) and was accepted on review. Limited to that release and the environment named with it.</dd>
+<dt><span class="label l-val">VALIDATED</span></dt>
+<dd>Passed a recorded qualification run of a named kernel commit. Limited to that run's environment and the limits stated with it; not by itself a release claim.</dd>
+<dt><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dt>
+<dd>Exists on an integration branch or as a one-off experiment. Not qualified, and not a claim.</dd>
+<dt><span class="label l-planned">PLANNED</span></dt>
+<dd>A stated direction with no qualified implementation yet.</dd>
+<dt><span class="label l-unsupported">UNSUPPORTED</span></dt>
+<dd>Not provided. Do not rely on it.</dd>
+</dl>
+
+<h2 id="scope">Qualification scope</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> QEMU with TCG (no hardware virtualization) on one Linux development host; x86-64, one CPU, <code>-cpu max,vendor=GenuineIntel,+rdrand</code>; QEMU's default PC machine with SeaBIOS; one e1000 (82540EM) network card on QEMU user networking; one IDE disk image. Nothing on this page is a claim about physical hardware.</p>
+
+<ul class="claims">
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> QEMU: the operator image boots, serves SSH, and halts on request.</li>
+<li><span class="label l-planned">PLANNED</span> Physical hardware qualification: not yet established. A read-only physical boot image exists and has been exercised under QEMU (SeaBIOS and OVMF); the milestone's image has not been booted on hardware; later read-only images were booted on one machine (<a href="#since">since the milestone</a>). See <a href="/hardware/">hardware</a>.</li>
+</ul>
+
+<h2 id="works">Works</h2>
+<p>What an operator can do on the qualified system.</p>
+<ul class="claims">
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Build an operator image (ISO and 64 MiB disk) from source, boot it, and log in with stock OpenSSH using an ed25519 public key. See <a href="/man/afterboot.8/">afterboot(8)</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Verify the host key: its fingerprint is printed on the console in <code>ssh-keygen -l</code> form and matches <code>ssh-keyscan</code>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Run several concurrent SSH sessions, each isolated from the others, with a PTY shell (line editing, <kbd>^C</kbd>) or a single command per connection.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Use a small shell, <a href="/man/absd-sh.1/">absd-sh(1)</a>, with pipes and redirection; 27 commands under <code>/bin</code> (20 native, and seven unmodified uutils 0.12.0 programs); 17 manual pages read with <code>man</code>; <code>ps</code> for the session's own processes.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Keep files: <code>/home/operator</code> is writable and persists across sessions and reboots; <code>/bin</code>, <code>/etc</code>, <code>/share</code>, and <code>/var/log</code> are read-only to sessions; the SSH host key is unreachable from any session.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Configure the network address and SSH limits in <code>/etc</code> (read at start; a malformed file stops the boot with the file, line, and reason); read logs under <code>/var/log</code>; read the date and uptime.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Copy files byte-exactly over SSH exec (<code>ssh host 'cat &gt; f' &lt; f</code>, <code>ssh host cat f &gt; f</code>). There is no scp or sftp.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> End the boot with <code>shutdown</code> or <code>reboot</code>: sessions end, the file server commits, and the machine halts or restarts. Stopping the machine needs a kernel machine handle, which only init holds.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Run real programs from the Constellation project natively, as ordinary workloads: an SQLite-backed store, a journal, a resolver, and a diagnostics tool, each compared against its Linux build. See <a href="/research/#constellation">research</a>.</li>
+</ul>
+
+<h2 id="qualified">Qualified</h2>
+<p>The checks behind the list above, from the milestone's recorded run of the platform's full check script (exit status 0). Counts are the check script's own output.</p>
+<ul class="claims">
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Build: 55 programs byte-identical across two clean builds.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> SSH: 129 checks against ABSD with the host's <code>/usr/bin/ssh</code> (handshake, public-key authentication, exec, PTY shell, <kbd>^C</kbd> within 33 ms, reconnect, session reclaim, host-key persistence, entropy and its negative control), plus 67 against a Linux reference target.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> File server: 39 checks (session writes, refused system and raw-block writes, persistence, host-key isolation, several sessions, failure isolation).</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Served boot: 65 checks (orderly shutdown, reboot, the stop right, shell shutdown).</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Commands and manual: 160 checks, including exact output, refusals, and deliberate absences.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Operator image: 90 checks (host-key fingerprint, <code>/etc</code> configuration observed in effect, file transfer of 0 B to 1 MiB, date and uptime, log rotation, malformed configuration refused).</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Networking: ARP, IPv4, ICMP echo, TCP streams, and 200 reconnects with the stack's heap unchanged after the 20th.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Durable state: 26 crash scenarios over 377 boots; filesystem matrix over 349 boots.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Filesystem under abrupt stop: every sector the device acknowledged is kept; after a crash the namespace is that of the last commit.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Filesystem under a modeled power-loss law (QEMU): any write not covered by a completed flush may be lost or reordered per aligned 512-byte or 4 KiB unit. 66 cuts inside an SQLite store's admissions and checkpoints, in the guest, always recovered the prior or the new committed state. The law was enforced by a model of the device; no real power was cut and no real drive's flush was tested.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Compatibility probe: of 19 unmodified crates.io programs, 10 build and 9 run; 19 of 25 cases agree with Linux byte for byte. See <a href="/compatibility/">compatibility</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Kernel gates at the milestone commit: unit tests, lint, the deterministic QEMU boot suites, broker, image spawning, network, durable reader, block probe (ATA and NVMe), NVMe, external workload, physical-image safety gate, laptop-shaped QEMU machine, shell.</li>
+</ul>
+
+<h2 id="not-yet">Not yet qualified</h2>
+<ul class="claims">
+<li><span class="label l-planned">PLANNED</span> Physical hardware of any kind. Physical hardware qualification: not yet established.</li>
+<li><span class="label l-planned">PLANNED</span> Disk writes on physical hardware; the physical boot image is built so that it cannot write a disk.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Real power loss and any particular drive's handling of cache flushes.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Hardware virtualization (KVM) as a qualified environment for the milestone; its qualification ran under TCG. The later release also covers KVM (<a href="#since">since the milestone</a>).</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> At the milestone: updating or rolling back an installed image; a filesystem format change means reformatting. The later release qualifies a host-staged update and rollback (<a href="#since">since the milestone</a>).</li>
+<li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> In progress at the milestone and not claimed there: containment of commands left running after a session ends, and a read-only survey of a first physical machine.</li>
+</ul>
+
+<h2 id="limits">Known limits</h2>
+<ul class="claims">
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> One CPU, one network card, one disk; 16 processes in the whole system; four SSH connections by default (at most eight).</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Uploads are slow under TCG: about 45 to 60 s per MiB up, about 17 s down.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Programs start slowly: a native command takes 2 to 4 s from typing to the next prompt under TCG, a 1.5 MB uutils program about a minute, because the whole image is read through the file server.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> An interrupted command's own children keep running, adopted by init; a later <code>shutdown</code> then ends in an unreaped stop (QEMU status 71) after the file server has committed.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Files have no times (the later release adds modification times); the clock is the RTC, never set or corrected.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> A torn superblock (outside the power-loss law) makes the filesystem refuse to mount. There is no repair tool.</li>
+</ul>
+
+<h2 id="absent">Deliberately absent</h2>
+<p>Not missing by accident. Each would need a mechanism or an authority decision that no current workload has earned.</p>
+<ul class="claims">
+<li><span class="label l-unsupported">UNSUPPORTED</span> <code>fork</code>, <code>exec</code> replacing a running image, signals, job control, process groups, threads.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Users, groups, UIDs, permission bits, <code>su</code>. Several sessions are not several users.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Kernel sockets, IPv6, UDP, DNS, DHCP, outbound connections.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Dynamic linking, C programs and a libc, Linux binaries.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Packages, <code>/etc/rc.d</code>, <code>syslogd</code>, <code>cron</code>, <code>/proc</code>, <code>fsck</code>, a text editor, a pager, a GUI.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> <code>kill</code>, <code>top</code>, a system-wide process list: a process sees only itself and its own children.</li>
+</ul>
+
+<h2 id="deferred">Deliberate deferrals</h2>
+<ul class="claims">
+<li><span class="label l-planned">PLANNED</span> An exact-hardware-qualified SSH host.</li>
+<li><span class="label l-planned">PLANNED</span> A replacement policy for the SSH server and file server in a long-running boot. Today, if either ends, the boot ends and is reported failed.</li>
+<li><span class="label l-planned">PLANNED</span> Several independently authenticated principals with different authority. Not accounts or UIDs; the design is open.</li>
+<li><span class="label l-planned">PLANNED</span> An integer file-descriptor table in userspace, when a program needs one.</li>
+<li><span class="label l-planned">PLANNED</span> A Linux binary personality, as a bounded experiment above the native interfaces. Deferred; no commitment.</li>
+<li><span class="label l-planned">PLANNED</span> Multiprocessor support in a release, when a workload needs it. Several-CPU scheduling has been validated as research only (<a href="#since">since the milestone</a>).</li>
+</ul>

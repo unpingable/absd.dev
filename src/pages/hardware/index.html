@@ -1,0 +1,89 @@
+<!-- title: Hardware -->
+<!-- description: ABSD hardware qualification: evidence tiers, what is emulator-qualified today, and the fields every future hardware entry will carry. Physical hardware qualification: not yet established. -->
+<h1>Hardware</h1>
+
+<p><strong>Physical hardware qualification: not yet established.</strong> <span class="label l-planned">PLANNED</span></p>
+<p>No physical machine, device, or hardware family is supported. ABSD is qualified only under QEMU; first read-only boots on one physical machine have been observed and are recorded <a href="#observations">below</a> as observations, not support. This page defines how hardware support will be stated, and lists exactly which emulated configurations are qualified.</p>
+
+<h2 id="tiers">Evidence tiers</h2>
+<p>Each hardware statement names one tier. A higher tier is never inferred from a lower one.</p>
+<dl class="terms">
+<dt>Emulator-qualified</dt>
+<dd>A named emulator configuration (machine type, firmware, device models, CPU flags) passed the stated checks. Says nothing about real devices, even ones the model imitates.</dd>
+<dt>Exact-hardware-qualified</dt>
+<dd>One specific physical machine or device, identified by model, PCI IDs, and firmware version, passed the stated checks with a named ABSD build and workload. Covers that unit's configuration only.</dd>
+<dt>Machine-configuration-qualified</dt>
+<dd>A machine model in a stated configuration (firmware version and settings, fitted devices) passed the checks on more than one unit. Covers that configuration, not the model in general.</dd>
+<dt>Hardware-family-supported</dt>
+<dd>A family of devices (for example, a controller generation across PCI IDs) is supported on the strength of several exact or configuration qualifications and a driver written for the family's documented interface. Stated per family, with its known exceptions.</dd>
+</dl>
+
+<h2 id="current">Current state</h2>
+<table>
+<thead><tr><th scope="col">Tier</th><th scope="col">Entries</th></tr></thead>
+<tbody>
+<tr><td>Emulator-qualified</td><td>The QEMU configurations below <span class="label l-mq">MILESTONE-QUALIFIED</span></td></tr>
+<tr><td>Exact-hardware-qualified</td><td>None <span class="label l-planned">PLANNED</span></td></tr>
+<tr><td>Machine-configuration-qualified</td><td>None</td></tr>
+<tr><td>Hardware-family-supported</td><td>None</td></tr>
+</tbody>
+</table>
+
+<h2 id="emulator">Emulator-qualified configurations</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> QEMU 8.2 with TCG on one Linux development host, x86-64, one CPU, <code>-cpu max,vendor=GenuineIntel,+rdrand</code>. Release <code>absd-20261003.1</code> was later qualified on the same host under TCG and KVM, with an IDE disk or one NVMe namespace <span class="label l-rq">RELEASE-QUALIFIED</span>; see <a href="/evidence/#rel-20261003-1">its record</a>.</p>
+<table>
+<thead><tr><th scope="col">Configuration</th><th scope="col">What passed</th></tr></thead>
+<tbody>
+<tr><td>Default PC machine (i440fx), SeaBIOS; PIIX IDE disk as primary master (<code>if=ide</code>, raw image); e1000 on user networking</td><td>The operator system: served boot, SSH, file server, commands, durable-state and filesystem crash matrices, operator image. The whole platform check.</td></tr>
+<tr><td>q35, OVMF (UEFI), boot image as a USB stick on xHCI, NVMe as the only disk, VGA framebuffer, no serial port</td><td>The kernel's boot suite read back from the screen alone; timer interrupts and preemption; NVMe write, flush, and read-back with a test kernel, verified after a fresh boot and a warm reset.</td></tr>
+<tr><td>The read-only physical boot image under SeaBIOS and OVMF</td><td>Boots to the expected screen; with write-requesting options, NVMe and ATA scratch images stay byte-identical and device traces show only identify and read commands.</td></tr>
+</tbody>
+</table>
+
+<p>Device models covered:</p>
+<ul class="claims">
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Intel 82540EM network controller model, PCI 8086:100e (QEMU <code>-device e1000</code>). See <a href="/man/e1000.4/">e1000(4)</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> QEMU's NVMe controller model with a 512-byte-block namespace. See <a href="/man/nvme.4/">nvme(4)</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> QEMU's PIIX IDE controller, ATA disk on the primary channel, PIO. See <a href="/man/ata.4/">ata(4)</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Firmware: SeaBIOS (legacy boot) and OVMF (UEFI), both through GRUB's Multiboot2 path.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> Timer and interrupts: the legacy 8254 PIT through the 8259 PIC. The local APIC and I/O APIC are not used.</li>
+</ul>
+<p class="note">Physical Intel I219 and I225 Ethernet controllers, AHCI SATA, and NVMe namespaces with 4 KiB blocks are not supported <span class="label l-unsupported">UNSUPPORTED</span>. An emulated device model passing is not evidence that the physical device works.</p>
+
+<h2 id="observations">Physical observations</h2>
+<p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Recorded so that they are not mistaken for support. None of this is a hardware qualification at any tier.</p>
+<table>
+<thead><tr><th scope="col">Field</th><th scope="col">Content</th></tr></thead>
+<tbody>
+<tr><td>Machine</td><td>HP Z2 Mini G3 (Intel Xeon E3-1225 v5, four cores)</td></tr>
+<tr><td>Devices</td><td>Samsung PM951 NVMe, PCI 144d:a802, read-only</td></tr>
+<tr><td>Firmware</td><td>UEFI, booted from a USB stick through GRUB</td></tr>
+<tr><td>ABSD build</td><td>A read-only probe image from a development branch, not a release; disk writes and flushes compiled out</td></tr>
+<tr><td>Workload</td><td>Hardware survey, the kernel's process suite on the boot CPU only, NVMe identify and one sector read</td></tr>
+<tr><td>Not tried</td><td>Other CPUs, networking, SSH, the file server, any disk write, reset and reboot paths</td></tr>
+<tr><td>Evidence</td><td>Photographs of the final screen, read by hand; no automatic log collection</td></tr>
+<tr><td>Date</td><td>2026-10-05 (UTC), one evening</td></tr>
+</tbody>
+</table>
+
+<h2 id="entries">What each hardware entry will record</h2>
+<p><span class="label l-planned">PLANNED</span> When a physical machine is qualified, its entry here will carry at least:</p>
+<table>
+<thead><tr><th scope="col">Field</th><th scope="col">Content</th></tr></thead>
+<tbody>
+<tr><td>Machine or device</td><td>Vendor, model, and machine type; for a device, where it sits</td></tr>
+<tr><td>PCI IDs</td><td>Vendor, device, subsystem, and revision of each device ABSD drives</td></tr>
+<tr><td>Firmware</td><td>Firmware vendor and version; UEFI or legacy boot; settings changed from default (for example Secure Boot off)</td></tr>
+<tr><td>ABSD build</td><td>Kernel and platform commits, image digest</td></tr>
+<tr><td>Workload</td><td>What ran: boot suite only, read-only storage probe, SSH host, storage writes</td></tr>
+<tr><td>Tier</td><td>One of the four above</td></tr>
+<tr><td>Unsupported behaviour</td><td>What was seen not to work, or was not tried</td></tr>
+<tr><td>Date</td><td>When the evidence was recorded</td></tr>
+</tbody>
+</table>
+
+<h2 id="next">Next steps</h2>
+<ul class="claims">
+<li><span class="label l-planned">PLANNED</span> A first exact-hardware-qualified SSH host.</li>
+<li><span class="label l-planned">PLANNED</span> Several CPUs, reset, and result collection on the same physical machine, still read-only, before any disk write is considered.</li>
+</ul>

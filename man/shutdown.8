@@ -1,0 +1,116 @@
+.\" ABSD manual page source (mdoc(7)); rendered by scripts/render-man.sh.
+.Dd September 27, 2026
+.Dt SHUTDOWN 8
+.Os ABSD
+.Sh NAME
+.Nm shutdown
+.Nd halt or restart a served ABSD machine
+.Sh SYNOPSIS
+.Nm
+.Nm
+.Cm now
+.Nm
+.Fl h | Fl p | Fl r
+.Cm now
+.Sh DESCRIPTION
+.Nm
+asks the SSH server to end the boot in order: every session is told and
+ends, the file server commits and stops, and the machine halts, or, with
+.Fl r ,
+restarts.
+.Fl h
+and
+.Fl p
+are the same as no option.
+Any other argument is refused with status 2 and changes nothing.
+.Pp
+It is not a program, and the operator can ask in two ways:
+.Bl -tag -width Ds
+.It Ql ssh host shutdown
+The SSH server takes the command itself; nothing is started.
+.It Ic shutdown No typed to an interactive shell
+.Xr absd-sh 1
+passes the words to the SSH server on the session's control channel and
+prints the answer.
+A shell that has no such channel (one started by another shell) answers
+.Ql no session control channel .
+.El
+.Pp
+Either way the SSH server decides: every authenticated session of the
+operator may ask, and the first request wins; a later one is refused with
+status 1
+.Pq Ql a halt is already under way .
+The server holds no right over the machine: it acts by ending its sessions
+and exiting with a status that tells init which end was asked for.
+Init holds the machine and ends the boot.
+No session process holds any right to stop the machine.
+.Pp
+In order:
+.Bl -enum
+.It
+The requesting session prints
+.Ql ABSD is going down for halt: ...
+and ends with status 0 (a shell prints it and then sees the end of its
+input).
+New connections are refused.
+.It
+Every session with something running is told
+.Ql sshd: the system is going down for halt; this session ends
+(on its terminal, or on standard error), and its input is closed after
+what the client already sent.
+A shell, or a command reading its input, finishes; the session ends with
+its status as usual.
+.It
+After 10 seconds the server ends whatever still runs; that session closes
+without an exit status (OpenSSH reports 255).
+.It
+The file server commits every session's files and stops.
+Every write it acknowledged is on the disk.
+.It
+Init waits up to 20 seconds for processes the sessions left behind, then
+halts or restarts the machine.
+.El
+.Sh EXIT STATUS
+0 when the request was accepted, 1 when another is already under way, 2
+for a form this page does not list.
+.Sh DIAGNOSTICS
+On the serial console, in order:
+.Ql SSH SHUTDOWN REQUESTED ,
+.Ql SSH SHUTDOWN GRACE OVER
+(only if something had to be ended),
+.Ql SSH SHUTDOWN COMPLETE ,
+.Ql FSD STOPPED ,
+.Ql SERVED SHUTDOWN action=halt ... drained=true ,
+and
+.Ql ABSD BOOT OK .
+.Sh SEE ALSO
+.Xr absd-sh 1 ,
+.Xr ps 1 ,
+.Xr filesystem 7 ,
+.Xr handles 7 ,
+.Xr afterboot 8 ,
+.Xr reboot 8
+.Pp
+In the kernel repository:
+.Pa docs/PROCESS-STARTUP.md
+("Served boot and orderly shutdown").
+.Sh QUALIFICATION
+Qualified in a served boot
+.Pq Ql net fsd served
+under QEMU, where a halt ends QEMU with status 3.
+A qualification boot
+.Pq Ql net fsd
+is ended by init's deadline for the SSH server instead, and
+.Nm
+there is not qualified; see
+.Xr afterboot 8 .
+On a physical machine a halt stops the CPU and leaves the machine powered
+(there is no ACPI power-off); this is not tested.
+.Sh CAVEATS
+A process a session left running that has not ended 20 seconds after the
+file server stopped cannot be ended by init; init then stops the machine
+at once, after storage is committed (QEMU status 71,
+.Ql SERVED SHUTDOWN UNREAPED ) .
+There is no delay form
+.Pq Ql shutdown +5
+and no message to the sessions beyond the notice.

@@ -1,0 +1,37 @@
+<!-- title: Design -->
+<!-- description: The design choices behind ABSD, each tied to behaviour the current system exhibits: spawn instead of fork, handles and rights, narrowing authority, recovery, durability, and personality layers. -->
+<h1>Design</h1>
+
+<p>Short notes on the choices that shape ABSD, each tied to something the qualified system does today. The manual pages are the operator's reference; the terms follow ordinary operating-system usage.</p>
+
+<h2 id="spawn">Spawn, not fork</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> A new program is always a new process. The parent reads a static ELF image with its own filesystem access and hands the bytes to the kernel, together with an ordered list of handles to copy into the child and a startup record (arguments, environment, working directory). There is no <code>fork</code> and no <code>exec</code> that replaces a running image. This is close to <code>posix_spawn</code>, made the only path.</p>
+<p>What it buys: a child's authority is exactly the list written at the call site, so nothing reaches a child because the parent happened to hold it; there is no window in which a copy of the parent runs with all of the parent's authority before an <code>exec</code>; the kernel needs no copy-on-write address-space duplication.</p>
+<p>What it costs: Unix code built on <code>fork</code> (pre-forking servers, daemonizing, shell subshells) does not port as written; a program's whole image crosses the file server before it starts, which is slow under emulation; there are no process groups or job control. <code>fork</code> is not a mistake in the systems that have it; decades of engineering make it work well there. ABSD leaves it out because explicit start-time authority is the property being tested. See <a href="/man/process.7/">process(7)</a>.</p>
+
+<h2 id="handles">Handles and rights</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> A process reaches kernel objects (pipes, child processes, versioned cells, the console, the block device, the network card, the machine) only through handles: opaque values looked up in the caller's own table. A stale, guessed, or wrong-kind value is refused with error -9. Each handle carries rights (read, write, wait, kill); an operation needing a right the handle lacks is refused with -1. Starting programs is a separate per-process spawn right. There are no user IDs and no permission bits; files are reached through a file server channel, whose mount list is the channel's authority. See <a href="/man/handles.7/">handles(7)</a> and <a href="/man/filesystem.7/">filesystem(7)</a>.</p>
+
+<h2 id="narrowing">Authority only narrows</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> Rights can be dropped, never added: a duplicate of a handle may carry fewer rights, and a handle copied into a child never carries more than the parent's copy. An SSH session starts with a fixed ceiling chosen by the SSH server: three pipes, one file server channel with <code>/home/operator</code> and a private <code>/tmp/session-N</code> writable and <code>/bin</code>, <code>/etc</code>, <code>/share</code> read-only, and no console, disk, network, or machine handle. The shell may give a command the same mounts, a read-only view, or none. A command whose output is redirected to a file holds a pipe, not the file. Parentage, adoption by init, a PID, or a restart never grants a right. Stopping the machine takes the machine handle, which only init holds; <code>shutdown</code> in a session is a request that init decides on.</p>
+
+<h2 id="replacement">Replacement is not recovery</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> Starting a new instance after an old one ended is a restart; the new instance is a replacement. That a replacement is running says nothing about the state it inherited. Recovery is claimed only after the replacement has read the retained state and reconciled it: applied a request once, skipped one already applied, or refused one. The kernel's supervision tests check that distinction (no double apply after a lost reply). The durable workloads exit for replacement when a flush fails, because they cannot know whether their last commit reached the device. In the qualified SSH boot nothing is restarted: if the SSH server or file server ends, the boot ends and is reported failed.</p>
+
+<h2 id="durability">Commit is not durability</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> Completed, acknowledged, committed, and durable are separate claims, and ABSD's documents use the weakest one the evidence supports. A completed write means the device accepted a sector, which may still be in a volatile cache. A filesystem commit is a defined sequence: write the metadata image, flush, write the superblock that selects it, flush. "Durable" is always relative to a stated failure model. Two are qualified, both under QEMU: an abrupt stop that keeps every acknowledged sector, and a modeled power-loss law in which anything not covered by a completed flush may be lost or reordered. Neither is a statement about real power loss or a real drive. See <a href="/man/filesystem.7/">filesystem(7)</a>.</p>
+
+<h2 id="fail-closed">Fail closed where state is uncertain</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> When the system cannot tell which state it is in, it refuses rather than guesses:</p>
+<ul>
+<li>Mount refuses an invalid superblock or image and never falls back to an older one whose blocks may have been reused. There is no repair tool.</li>
+<li>A malformed <code>/etc</code> file stops the SSH server with the file, line, and reason; no default replaces a value the operator wrote.</li>
+<li>The network driver disables the card if the device moves a ring pointer out of range or a send does not complete in time.</li>
+<li>The SSH server does not start without a hardware random source.</li>
+<li>A device failure poisons the filesystem mount; the qualified storage workload then exits for replacement instead of continuing.</li>
+</ul>
+<p>The cost is availability: an operator must intervene where another system might continue.</p>
+
+<h2 id="personality">Personality layers</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> The kernel interface is native: images, handle vectors, rights, pipes, cells. Arguments, environment, working directory, <code>std::process</code>, and the file API are a Unix-style personality implemented in userspace, in the Rust runtime above that interface. The kernel knows none of them.</p>
+<p><span class="label l-planned">PLANNED</span> An integer file-descriptor table would be a userspace table over handles, added when a program needs one. Linux binary compatibility, if it is ever built, would be a separate personality above the native interfaces: it would translate Linux behaviour into native mechanisms and would not become the native specification. See <a href="/compatibility/">compatibility</a>.</p>

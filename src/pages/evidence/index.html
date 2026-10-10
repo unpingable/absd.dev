@@ -1,0 +1,130 @@
+<!-- title: Evidence -->
+<!-- description: Qualification records for ABSD: release absd-20261003.1 (2026-10-04) and the milestone "General usability under QEMU" (2026-09-27), with claim, build identity, environment, tests, and limitations. -->
+<h1>Evidence</h1>
+
+<p>Each milestone and release gets a record like the ones below, newest first: what is claimed, what was built, where it ran, what was checked, and where the claim stops. Older records stay as they were written.</p>
+
+<article class="receipt" aria-labelledby="rel-20261003-1">
+<h2 id="rel-20261003-1">Release absd-20261003.1</h2>
+<p><span class="label l-rq">RELEASE-QUALIFIED</span> Accepted 2026-10-04.</p>
+
+<dl>
+<dt>Claim</dt>
+<dd>The single-operator system of the milestone below, built as an exact kernel and platform pair, qualified under QEMU with TCG or KVM, and installable, updatable from the previous release, and able to roll back to it.</dd>
+
+<dt>Build identity</dt>
+<dd>
+<table>
+<tbody>
+<tr><th scope="row">Kernel</th><td><code>fcfbab9867da40eebb0c4dd266b82484ae7e76c5</code></td></tr>
+<tr><th scope="row">Platform</th><td><code>c54dc90007fe509c0e118b7ec9c6cbd6ea9aa356</code></td></tr>
+<tr><th scope="row">Release manifest</th><td>SHA-256 <code>d73f559e5e6f7dc6e0d601f7bfc518890e3bdf8b5099cc9cbb5d35eb0a092a21</code></td></tr>
+<tr><th scope="row">Release ISO</th><td>SHA-256 <code>3fa0402692ae4fb5c83447599f4e18584cc5caf48dd68930a4ad24e804dca18d</code></td></tr>
+<tr><th scope="row">Versions</th><td>Kernel ABI 1, application ABI 1, file server protocol 2, filesystem format 2</td></tr>
+<tr><th scope="row">Previous release</th><td><code>absd-20261002.3</code>, kept unchanged as the rollback target</td></tr>
+</tbody>
+</table>
+</dd>
+
+<dt>Environment</dt>
+<dd>QEMU on one Linux development host, x86-64, TCG or KVM, one CPU; an IDE disk or one NVMe namespace; e1000 network model.</dd>
+
+<dt>Tests</dt>
+<dd>
+<table>
+<thead><tr><th scope="col">Area</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><td>Whole platform check</td><td>193 host executions, 26 runtime targets</td></tr>
+<tr><td>Update and rollback</td><td>Installed system updated from <code>absd-20261002.3</code>, served and accepted, then rolled back, with both generations intact and site state preserved; halted-image backup and restore</td></tr>
+<tr><td>Program images</td><td>87 adversarial images: 60 refused, 27 boundary cases accepted; resources unchanged after each</td></tr>
+<tr><td>Kernel output paths</td><td>28 checks for leaked addresses or stale memory, none found</td></tr>
+<tr><td>Sessions</td><td>300 consecutive SSH sessions returning to the same memory baseline</td></tr>
+<tr><td>Reconstruction</td><td>Rebuilt from fresh clones at the pinned commits and compared</td></tr>
+</tbody>
+</table>
+<p>Acceptance was composed from separately run and separately reviewed stages, not from one uninterrupted run. Earlier runs failed and stay on record: one on SSH server memory growth across sessions, repaired in the platform; and the first end-to-end run, which stopped on a resource count after the first program-image refusals. That count difference is not yet explained; the image cases passed when rerun as their own stage, after a test-only start-up fence was added; that is not a general quiescence result.</p>
+</dd>
+
+<dt>Limitations</dt>
+<dd>
+<ul>
+<li>Emulation only. Physical hardware qualification: not yet established.</li>
+<li>One CPU. Several-CPU work is not part of this release.</li>
+<li>Updates are staged from a host onto a halted image and take effect at reboot; no updater runs on the system.</li>
+<li>Not yet: weeks of operation on a named machine without a build host.</li>
+</ul>
+</dd>
+
+<dt>Date</dt>
+<dd>2026-10-04</dd>
+</dl>
+</article>
+
+<article class="receipt" aria-labelledby="gu-qemu">
+<h2 id="gu-qemu">General usability under QEMU</h2>
+<p><span class="label l-mq">MILESTONE-QUALIFIED</span> Recorded {{MILESTONE_DATE}}.</p>
+
+<dl>
+<dt>Claim</dt>
+<dd>ABSD can be used as a single-operator system under QEMU: an operator builds an image from source, boots it, logs in over stock OpenSSH, keeps files across sessions and reboots, runs a shell with pipes and redirection, the installed commands and manual, and real Rust workloads, and shuts the machine down in order.</dd>
+
+<dt>Build identity</dt>
+<dd>
+<table>
+<tbody>
+<tr><th scope="row">Tag</th><td><code>{{MILESTONE}}</code></td></tr>
+<tr><th scope="row">Kernel</th><td><code>19831726395c9f64fabcdd58c84bcbdd30f701b8</code></td></tr>
+<tr><th scope="row">Platform</th><td><code>ff025b1c333ee611ae47d196c23d2b2ccd9cd6fc</code></td></tr>
+<tr><th scope="row">Reproducibility</th><td>55 programs byte-identical across two clean builds</td></tr>
+<tr><th scope="row">Rust</th><td>rustc 1.95.0 with a pinned, locally held standard-library source snapshot (experimental target <code>x86_64-unknown-absd</code>)</td></tr>
+<tr><th scope="row">Manual</th><td>Rendered by GNU groff 1.23.0; the two builds' rendered trees identical</td></tr>
+<tr><th scope="row">Physical probe ISO</th><td>SHA-256 <code>073467abffe2f01a06b817be460c1e729441c70fe52c110fa1f3326daac9b30f</code>: the read-only image recorded with the milestone. Not booted on hardware.</td></tr>
+<tr><th scope="row">Operator ISO used on the home page</th><td>SHA-256 <code>0839ee6e50075c96661732a97c4d2bbc3eef662caadb1380239ea16b577eeaf8</code>, built from the tag for the <a href="/#session">captured session</a>. ISO images are not byte-reproducible; this names one file, not a release.</td></tr>
+</tbody>
+</table>
+</dd>
+
+<dt>Environment</dt>
+<dd>QEMU 8.2.2 with TCG on one Linux development host; x86-64, one CPU, <code>-cpu max,vendor=GenuineIntel,+rdrand</code>; default PC machine with SeaBIOS; IDE disk image; e1000 network model on user networking; OpenSSH 9.6 client on the host. Kernel boot gates also ran on a q35/OVMF machine with NVMe and on the read-only physical image under SeaBIOS and OVMF (<a href="/hardware/#emulator">details</a>).</dd>
+
+<dt>Tests</dt>
+<dd>
+<p>The platform's full check script, end to end, exit status 0, no QEMU process left behind. Counts are the script's own.</p>
+<table>
+<thead><tr><th scope="col">Area</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><td>SSH, against ABSD</td><td>129 checks</td></tr>
+<tr><td>SSH, against a Linux reference target</td><td>67 checks</td></tr>
+<tr><td>File server</td><td>39 checks</td></tr>
+<tr><td>Served boot and shutdown</td><td>65 checks</td></tr>
+<tr><td>Commands and manual pages</td><td>160 checks</td></tr>
+<tr><td>Operator image</td><td>90 checks</td></tr>
+<tr><td>Performance bounds</td><td>23 checks</td></tr>
+<tr><td>Durable state, crash scenarios</td><td>26 scenarios, 377 boots</td></tr>
+<tr><td>Filesystem and SQLite store</td><td>349 boots, including 66 modeled power cuts and 10 corruption cases refused</td></tr>
+<tr><td>Networking</td><td>ARP, IPv4, ICMP echo, TCP streams, 200 reconnects</td></tr>
+<tr><td>Compatibility probe</td><td>19 programs: 10 build, 9 run; 19 of 25 cases equal to Linux</td></tr>
+<tr><td>Kernel gates</td><td>Unit tests and lint, deterministic boot suites, broker, image spawn, network, durable reader, block probe (ATA and NVMe), NVMe, external workload, physical-image safety gate, laptop-shaped machine, shell</td></tr>
+</tbody>
+</table>
+</dd>
+
+<dt>Workloads</dt>
+<dd>Stock OpenSSH sessions driving the shell and commands; file transfer of 0 B to 1 MiB; an SQLite store under crash and modeled power-loss injection; and real programs from another project (a journal, a support resolver, a diagnostics tool, a store writer and resolver), each compared with its Linux build.</dd>
+
+<dt>Limitations</dt>
+<dd>
+<ul>
+<li>Emulation only. Physical hardware qualification: not yet established.</li>
+<li>Power loss is modeled below the filesystem; no real power was cut and no drive's flush behaviour was tested.</li>
+<li>One CPU; one operator identity (several sessions are not several users); 16 processes system-wide.</li>
+<li>Uploads take about 45 to 60 s per MiB under TCG.</li>
+<li>An interrupted command's children keep running; a later shutdown then ends in an unreaped stop (QEMU status 71) after the file server has committed.</li>
+<li>No update or rollback of an installed image; no fork, signals, threads, kernel sockets, IPv6, DNS, DHCP, outbound networking, dynamic linking, C programs, or Linux binaries.</li>
+</ul>
+</dd>
+
+<dt>Date</dt>
+<dd>{{MILESTONE_DATE}}</dd>
+</dl>
+</article>

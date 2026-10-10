@@ -1,0 +1,9 @@
+Manual page sources (mdoc) vendored unmodified from the ABSD platform
+repository, directory man/, at:
+
+  tag      milestone/general-usability-qemu-20260927
+  commit   ff025b1c333ee611ae47d196c23d2b2ccd9cd6fc
+
+SHA256SUMS lists every file; build.py refuses to render if any differs.
+Refresh only from a tagged platform commit (scripts/sync-man.sh), then
+update MILESTONE in build.py to match.

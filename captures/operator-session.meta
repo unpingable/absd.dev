@@ -1,0 +1,32 @@
+Captured 2026-09-27 (UTC), second boot of a freshly built operator image.
+
+Build     scripts/build-operator-image.sh at the tag
+          milestone/general-usability-qemu-20260927
+            platform ff025b1c333ee611ae47d196c23d2b2ccd9cd6fc
+            kernel   19831726395c9f64fabcdd58c84bcbdd30f701b8
+          (disposable clones; a throwaway ed25519 key, since deleted)
+Image     absd-operator.iso sha256 0839ee6e50075c96661732a97c4d2bbc3eef662caadb1380239ea16b577eeaf8
+          (grub-mkrescue output is not byte-reproducible; this names the
+          one file used, not a release)
+          MANIFEST: 49 installed files
+Boot      scripts/boot-operator.sh OUT 2299
+          QEMU 8.2.2 (TCG), -cpu max,vendor=GenuineIntel,+rdrand,
+          default PC machine, IDE disk, e1000 on user networking
+Client    /usr/bin/ssh (OpenSSH_9.6p1 Ubuntu-3ubuntu13.19), -tt, PTY 80x24,
+          strict host key checking against the key printed on the console
+Input     uname -a; man afterboot | head; ps; cd /home/operator;
+          echo hello > notes.txt; cat notes.txt; shutdown
+Result    boot-operator.sh: "the machine halted" (status 0). Console ends
+          FSD STOPPED served=98 commits=6, DURABLE status=0 frames=0
+          processes=0 cells=0 pipes=0, ABSD BOOT OK.
+
+operator-session.raw is the byte stream ssh printed (CR LF line ends);
+operator-session.txt is the same with CR removed. raw sha256
+c4198547a5fa142db72d7d43e86c749233088ef733559285b2e4b506d6286f58
+
+An earlier session on the first boot of the same image ran the list
+without `cd /home/operator`: the shell starts in /, which sessions see
+read-only, so `echo hello > notes.txt` printed
+"absd-sh: /notes.txt: not found" and `cat notes.txt` printed
+"cat: notes.txt: ABSD path not found". That run is why `cd` is in the
+input above.
