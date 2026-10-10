@@ -1,6 +1,5 @@
 <!-- title: Research program -->
 <!-- description: ABSD as an operating-system research program: the question it tests, what exists, how claims are accepted, what is being investigated now, and what dedicated resources would change. -->
-<!-- unlisted: yes -->
 <h1>Research program</h1>
 
 <p>ABSD is an experimental operating system used to investigate one systems question with a working kernel, a userspace, and real programs rather than in the abstract. This page describes the program for researchers and prospective collaborators. Its statements carry the <a href="/status/#labels">same labels</a> as the rest of the site; where it describes intent rather than results, it says so.</p>
@@ -15,7 +14,7 @@
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Processes start only by spawn, with an explicit list of handles; there is no <code>fork</code>. Authority is the set of handles a process holds, as in capability systems; a handle's rights can be dropped, never added. There are no user IDs and no ambient privilege. See <a href="/design/">design</a>.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> A kernel-native compare-and-swap on versioned cells: a cell changes only from the version the caller names, so an update based on stale state is refused rather than lost.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Ordinary Rust programs built for ABSD without source changes, and unmodified crates.io programs (of 19 tried, 10 build and 9 run; 19 of 25 cases match their Linux builds byte for byte). See <a href="/compatibility/">compatibility</a>.</li>
-<li><span class="label l-val">VALIDATED</span> Research builds with several CPUs under KVM, and a 64-bit ARM port of the kernel under QEMU. Neither is part of a release. See <a href="/status/#since">status</a>.</li>
+<li><span class="label l-val">VALIDATED</span> Research builds with several CPUs under KVM, a 64-bit ARM port of the kernel in virtual machines, and a boot-time probe that enumerates one USB device on an emulated controller. None is part of a release, and none has run on physical hardware. See <a href="/status/#since">status</a>.</li>
 </ul>
 <p>On the main branches (2026-10-07) the kernel is about 46,000 lines of Rust and the platform (runtime, file server, SSH server, commands) about 32,000, counting tests and comments but not vendored code. One developer directs the work; AI coding agents did most of the implementation and the review described below.</p>
 
@@ -41,6 +40,9 @@
 <tr><td>2026-10-04</td><td>Several-CPU scheduling and migration with 2, 4, and 6 virtual CPUs under KVM, as research</td><td><span class="label l-val">VALIDATED</span></td></tr>
 <tr><td>2026-10-05</td><td>A 64-bit ARM port of the kernel under QEMU, merged after a separate AI-run review</td><td><span class="label l-val">VALIDATED</span></td></tr>
 <tr><td>2026-10-05</td><td>First read-only native boots on one physical machine, read from photographs of the screen</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
+<tr><td>2026-10-10</td><td>The main development line passes the whole platform check. It includes multi-sector block requests, a boot that survives a network link that is down, and a bounded recovery budget (the budget qualified by its own separate run). Not a release</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-09 to 10-10</td><td>On unmerged development branches, in virtual machines only: the filesystem on the ARM port, GICv3 support, and USB controller (xHCI) enumeration of one device</td><td><span class="label l-val">VALIDATED</span></td></tr>
+<tr><td>2026-10-10</td><td>A seven-day unattended observation of the main development line under QEMU started; it ends 2026-10-17 and has no result yet</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
 </tbody>
 </table>
 
@@ -64,7 +66,7 @@
 
 <h2 id="next">Near-term program</h2>
 <ul class="claims">
-<li><span class="label l-planned">PLANNED</span> A developer preview: a public source tree, assembled from pinned component revisions, that someone else can clone, build, boot under a documented QEMU/KVM configuration, and log into. It is accepted only after an independent clean-environment build and boot from the published instructions.</li>
+<li><span class="label l-planned">PLANNED</span> A developer preview: a public source tree, assembled from pinned component revisions, that someone else can clone, build, boot under a documented QEMU/KVM configuration, and log into. It is accepted only after an independent clean-environment build and boot from the published instructions. It does not exist yet, has no date, and its license is undecided.</li>
 <li><span class="label l-planned">PLANNED</span> Exact-hardware qualification of one physical machine, starting read-only: several CPUs, reset, and automatic result collection before any disk write.</li>
 <li><span class="label l-planned">PLANNED</span> Operating contracts for essential services, configuration generations, time, and administered networking.</li>
 </ul>
@@ -85,7 +87,8 @@
 <li>Not a verified system: no formal proof of the kernel or platform is claimed. Claims rest on recorded runs and review, under named environments and failure models.</li>
 <li>Not hardware-supported. Physical hardware qualification: not yet established.</li>
 <li>Not an AI operating system, and not a product or a company.</li>
-<li>Not publicly available yet. The source is developed privately; a public source distribution is planned.</li>
+<li>Not publicly available. The source is developed privately and nothing can be downloaded; a public source distribution is intended, without a date.</li>
+<li>Not independently reviewed. The implementation and its review are largely the work of AI coding agents directed by one developer; no outside human has audited either. See <a href="/about/#how">how it is developed</a>.</li>
 </ul>
 
 <h2 id="adjacent">Adjacent work</h2>

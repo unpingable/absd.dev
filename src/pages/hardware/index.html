@@ -48,7 +48,18 @@
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Firmware: SeaBIOS (legacy boot) and OVMF (UEFI), both through GRUB's Multiboot2 path.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Timer and interrupts: the legacy 8254 PIT through the 8259 PIC. The local APIC and I/O APIC are not used.</li>
 </ul>
-<p class="note">Physical Intel I219 and I225 Ethernet controllers, AHCI SATA, and NVMe namespaces with 4 KiB blocks are not supported <span class="label l-unsupported">UNSUPPORTED</span>. An emulated device model passing is not evidence that the physical device works.</p>
+<p class="note">Physical Intel I219 and I225 Ethernet controllers, AHCI SATA, NVMe namespaces with 4 KiB blocks, and USB devices of any kind are not supported <span class="label l-unsupported">UNSUPPORTED</span>. An emulated device model passing is not evidence that the physical device works.</p>
+
+<h2 id="research">Research configurations</h2>
+<p><span class="label l-val">VALIDATED</span> Virtual machines used for research work after the milestone. None is part of a release. GICv3, the ARM filesystem run, and the USB probe are on development branches that have not been merged. Details and limits: <a href="/status/#since">status</a>.</p>
+<table>
+<thead><tr><th scope="col">Configuration</th><th scope="col">What ran</th></tr></thead>
+<tbody>
+<tr><td>x86-64 QEMU with KVM on one development host, 2, 4, and 6 virtual CPUs</td><td>Several-CPU scheduling and migration. Switched off in ordinary boots and in every release.</td></tr>
+<tr><td>64-bit ARM: QEMU's <code>virt</code> machine, GICv2 or GICv3, virtio block device; TCG on the development host, and Apple's Hypervisor framework on one Mac</td><td>The kernel port and its test programs, and the filesystem as the first process. Not the operator system. A virtual machine on a Mac is not ARM hardware support: ABSD has not been booted on any physical ARM machine.</td></tr>
+<tr><td>x86-64 QEMU with TCG, <code>qemu-xhci</code> USB controller model</td><td>A boot-time probe that enumerates one directly attached device and reads its descriptor. No hubs, no device drivers, not run on a physical controller.</td></tr>
+</tbody>
+</table>
 
 <h2 id="observations">Physical observations</h2>
 <p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Recorded so that they are not mistaken for support. None of this is a hardware qualification at any tier.</p>

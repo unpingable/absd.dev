@@ -1,10 +1,12 @@
 <!-- title: About -->
-<!-- description: ABSD is an experimental operating system by James Beck, written in Rust and developed privately. What it is for, and what it is not for. -->
+<!-- description: ABSD is an experimental operating system by James Beck, written in Rust and developed privately, largely by AI coding agents under his direction. Why it exists, what it is and is not for, and how to follow it. -->
 <h1>About</h1>
 
 <p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Source is currently developed privately; there are no public releases, downloads, or packages.</p>
 
-<p>ABSD began as a way to test whether explicit authority, failure and durability semantics could survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
+<h2 id="why">Why it exists</h2>
+<p>Most systems grant a program broad authority by default and report success loosely: a program can usually do whatever its user can, and "written" may mean "in a cache". The rules that matter (who may do what, what happens when something fails, what survives a crash) are then enforced defensively on top. ABSD began as a way to test whether those rules could instead be native, and still survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
+<p>The ideas are not new. Capability systems such as KeyKOS, EROS, seL4, and Zircon made authority explicit long before ABSD, and crash-consistency research made storage guarantees testable. ABSD's interest is in putting them together in one small system and recording honestly where that holds and where it does not. The <a href="/research/program/">research program</a> page says more.</p>
 
 <h2 id="for">What it is for</h2>
 <ul>
@@ -21,14 +23,20 @@
 <li>Replacing a BSD or Linux system.</li>
 </ul>
 
+<h2 id="how">How it is developed</h2>
+<p>One developer, James Beck, directs the work: deciding what is built, setting the acceptance rules, and accepting or rejecting results. AI coding agents wrote most of the code, tests, and documentation, including most of the text of this site.</p>
+<p>Review is also done by AI: releases and merges are accepted after a review by AI model sessions separate from the ones that did the work. That catches some errors and is not independent human review. No outside person has audited ABSD's design, code, or tests, and no human security review has been done. Read "qualified", "validated", and "accepted" on this site as "the recorded checks passed and were re-examined by a separate AI session", and nothing stronger.</p>
+<p>This is why the site leans on what can be checked without trusting the author: named environments, recorded runs, counts taken from the check scripts' own output, checks that are shown able to fail, and failures kept on record. The method is described under <a href="/research/program/#method">bounded acceptance</a>. Until the source is public, a reader cannot verify any of it independently; that is a real limit.</p>
+
 <h2 id="bsd">Relation to BSD</h2>
 <p>The operating system's commands, manual, and conventions follow BSD practice where the semantics match. ABSD is not derived from BSD source and is not a BSD distribution.</p>
 
 <h2 id="follow">Following and contributing</h2>
-<p>The source is not public yet, so there is nothing to clone and code contributions are not being accepted. A public source distribution is planned; when it exists, this page will say where it is and how outside changes are reviewed. Publishing this site does not publish the source.</p>
+<p>The operating system's source is not public, so there is nothing to clone, build, or download, and code contributions are not being accepted. No license has been chosen for it. A public source distribution and a developer preview are intended, without a date; whether, when, and under what terms are still open decisions. When that changes, this page will say where the source is and how outside changes are reviewed. Publishing this site does not publish the source.</p>
 <ul>
 <li>Progress is recorded on this site when a milestone or release is accepted: <a href="/evidence/">evidence</a> lists the records newest first, and <a href="/status/#since">status</a> lists what has been accepted since the last milestone.</li>
-<li>Questions and corrections to this site: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug.</li>
+<li>This site's own source is public at <a href="https://github.com/unpingable/absd.dev">github.com/unpingable/absd.dev</a>. It contains the pages and the manual sources, not the operating system. Every change to a claim on this site is a commit there, so watching that repository is the way to be told when something changes.</li>
+<li>Questions and corrections: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug.</li>
 <li>Related public work by the same author is listed on the <a href="/research/#related">research page</a>.</li>
 </ul>
 

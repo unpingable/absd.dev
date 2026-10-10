@@ -2,7 +2,7 @@
 <!-- description: The questions ABSD is used to study: authority at the time of an effect, crash and durability semantics, process authority, compatibility layers, qualification method, and a real native workload. -->
 <h1>Research</h1>
 
-<p>ABSD is an operating system first. It is also used to study a few questions that are easier to answer with a kernel, a filesystem, and real programs than in the abstract. None of this is a claim about other systems.</p>
+<p>ABSD is an operating system first. It is also used to study a few questions that are easier to answer with a kernel, a filesystem, and real programs than in the abstract. None of this is a claim about other systems. The <a href="/research/program/">research program</a> page gives the longer account: the question, the prior work it builds on, the method, and what is being investigated now.</p>
 
 <h2 id="effect-time">Authority at the time of an effect</h2>
 <p>A check made before an action can go stale by the time the action happens. ABSD's primitive for this is the versioned cell: <code>cell_transition</code> succeeds only from the version the caller names, so an update based on stale state is refused rather than lost <span class="label l-mq">MILESTONE-QUALIFIED</span>. Rights are checked at each operation, not when a handle was opened: making a file read-only withdraws writing from handles opened before <span class="label l-mq">MILESTONE-QUALIFIED</span>. How far that can be carried, into effects that depend on evidence which expires, is an open question <span class="label l-planned">PLANNED</span>.</p>

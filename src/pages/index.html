@@ -1,10 +1,22 @@
 <!-- title: ABSD -->
-<!-- description: ABSD is an experimental operating system with a Unix-shaped Rust userspace. Current qualification: single-operator QEMU system. -->
-<h1 class="lead"><strong>ABSD</strong> — An experimental operating system with a Unix-shaped Rust userspace.</h1>
+<!-- description: ABSD is an experimental operating system: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Qualified today as a single-operator system under QEMU. -->
+<h1 class="lead"><strong>ABSD</strong> — An experimental operating system.</h1>
 
-<p>ABSD boots, schedules isolated processes, stores persistent state, runs ordinary Rust programs, and can be administered over stock OpenSSH.</p>
+<p>ABSD is a small operating system, written in Rust, built to find out what a system looks like when isolation, authority, and failure are stated explicitly and checked. It boots, runs isolated processes, keeps files across reboots, runs ordinary Rust programs, and is administered over stock OpenSSH.</p>
 
-<p><strong>Current qualification: single-operator QEMU system.</strong></p>
+<p><strong>Current qualification: single-operator system under QEMU.</strong> It is not production-ready, and no physical hardware is supported.</p>
+
+<h2 id="distinct">What distinguishes it</h2>
+<dl class="terms">
+<dt>Isolation</dt>
+<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process sees only itself and its own children. SSH sessions are isolated from one another. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
+<dt>Explicit authority</dt>
+<dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
+<dt>Bounded scheduling and recovery</dt>
+<dd>Limits are fixed and stated rather than discovered under load: 16 processes in the whole system, four SSH connections. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the main development line (not in a release), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
+<dt>Evidence-oriented engineering</dt>
+<dd>Every statement on this site carries a label saying how strongly it is supported, in which environment, and where the claim stops. Failed runs stay on record. <a href="/status/#labels">How statements are labelled</a>.</dd>
+</dl>
 
 <section class="facts" aria-labelledby="now">
 <h2 id="now">Status</h2>
@@ -16,29 +28,33 @@
 <dt>Physical hardware</dt>
 <dd>Physical hardware qualification: not yet established <span class="label l-planned">PLANNED</span>. First read-only boots on one machine have been observed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dd>
 <dt>Since the milestone</dt>
-<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling under KVM and a 64-bit ARM kernel port, as research <span class="label l-val">VALIDATED</span>. See <a href="/status/#since">status</a>.</dd>
+<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and USB controller enumeration, each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation is running and has no result yet. See <a href="/status/#since">status</a>.</dd>
 <dt>Access</dt>
 <dd>Stock OpenSSH, public-key login, one operator, several isolated sessions <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Userspace</dt>
 <dd>A small shell, 27 commands, 17 manual pages; 55 Rust programs built reproducibly <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Source</dt>
-<dd>Developed privately; no public downloads.</dd>
+<dd>The operating system is developed privately: no public source, downloads, or releases to install. Only this site's source is public.</dd>
+<dt>Development</dt>
+<dd>One developer directs the work; AI coding agents did most of the implementation and the review. No independent human audit has been done. See <a href="/about/#how">how it is developed</a>.</dd>
 </dl>
-<p class="note">Details, limits, and what is deliberately absent: <a href="/status/">status</a>. The recorded qualification run: <a href="/evidence/">evidence</a>.</p>
+<p class="note">Details, limits, and what is deliberately absent: <a href="/status/">status</a>. The recorded qualification runs: <a href="/evidence/">evidence</a>.</p>
 </section>
 
 <h2 id="session">A session</h2>
 <p>An SSH session to the operator image, booted under QEMU from the milestone commits. The output below was captured, not written.</p>
 <figure class="terminal">
-<pre aria-label="Captured SSH session transcript"><code>{{TRANSCRIPT}}</code></pre>
+<pre tabindex="0" aria-label="Captured SSH session transcript"><code>{{TRANSCRIPT}}</code></pre>
 <figcaption><span class="label l-mq">MILESTONE-QUALIFIED</span> Captured {{MILESTONE_DATE}} with OpenSSH on the build host against the operator image built from <code>{{MILESTONE}}</code> (kernel {{KERNEL}}, platform {{PLATFORM}}), QEMU TCG. Text after <code>absd$</code> was typed; everything else is the system's output. A session starts in <code>/</code>, which sessions see read-only, hence the <code>cd</code>.</figcaption>
 </figure>
 
 <h2 id="more">Further reading</h2>
 <ul>
-<li><a href="/about/">About</a>: why ABSD exists, what it is and is not for, and how to follow it.</li>
+<li><a href="/about/">About</a>: why ABSD exists, what it is and is not for, how it is developed, and how to follow it.</li>
+<li><a href="/status/">Status</a>: what works, what has been qualified and where, and what has not.</li>
 <li><a href="/design/">Design</a>: spawn instead of fork, handles and rights, and how durability is stated.</li>
 <li><a href="/manual/">Manual</a>: the {{MANCOUNT}} pages shipped on the image, rendered from their mdoc source.</li>
 <li><a href="/hardware/">Hardware</a>: what has been qualified, on what, and how that will be recorded.</li>
 <li><a href="/compatibility/">Compatibility</a>: how far unmodified Rust programs get today.</li>
+<li><a href="/research/program/">Research program</a>: the question ABSD tests, the method, and prior work it builds on.</li>
 </ul>

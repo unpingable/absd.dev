@@ -111,7 +111,7 @@ def layout(url, title, description, body, h1_in_body=True, unlisted=False):
 {body.strip()}
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck. Source is currently developed privately; there are no public downloads.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
 <p>Facts on this site are stated as of <a href="/evidence/">{MILESTONE}</a> (kernel {KERNEL}, platform {PLATFORM}) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
@@ -193,7 +193,8 @@ def build_manual(version):
 Rendered from the page's mdoc source at <code>{MILESTONE}</code> (platform {PLATFORM})
 with {html.escape(version)}, using the same command the image build uses; an ABSD session running
 <code>man {sec} {name}</code> prints this text. <a href="/manual/">All pages</a>.</p>
-<pre class="man" aria-label="{name}({sec}) manual page">{man_html(rendered, known)}</pre>
+<pre class="man" tabindex="0" aria-label="{name}({sec}) manual page">{man_html(rendered, known)}</pre>
+<p class="note"><a href="/manual/">All manual pages</a></p>
 </article>"""
         write(url, layout(url, f"{name}({sec})", f"{name}({sec}): {desc}. ABSD manual page.", body))
     rows = []
@@ -256,7 +257,19 @@ def main():
             hidden.add(url)
         write(url, layout(url, meta["title"], meta["description"], body, unlisted=unlisted))
         pages += 1
-    (OUT / "robots.txt").write_text("User-agent: *\nAllow: /\n")
+    # GitHub Pages serves /404.html for any path that does not exist.
+    not_found = """<h1>Page not found</h1>
+<p>There is no page at this address. The site is small; everything is one step from here:</p>
+<ul>
+<li><a href="/">Home</a></li>
+<li><a href="/status/">Status</a>: what works and what has been qualified</li>
+<li><a href="/manual/">Manual</a>: the operator's manual pages</li>
+<li><a href="/about/">About</a>: what ABSD is and how to follow it</li>
+</ul>"""
+    (OUT / "404.html").write_text(
+        layout("/404.html", "Page not found", "No page at this address on absd.dev.", not_found, unlisted=True),
+        encoding="utf-8")
+    (OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {BASE}/sitemap.xml\n")
     urls = sorted(str(p.parent.relative_to(OUT)) for p in OUT.rglob("index.html"))
     # Unlisted pages are built and reachable by URL, but carry noindex and
     # stay out of the sitemap until a listed page links to them.
