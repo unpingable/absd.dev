@@ -50,17 +50,17 @@ PLATFORM = "ff025b1"
 SOURCE_REPO = "https://github.com/unpingable/absd"
 SOURCE_LICENCE = "Apache-2.0"
 UNFILLED = "FILL-AT-DEPLOY"
-SOURCE_RELEASE_ID = UNFILLED        # [release] id in the manifest; also the tag name
-SOURCE_RELEASE_COMMIT = UNFILLED    # 40 hex: the release commit on the public main
-SOURCE_KERNEL_COMMIT = UNFILLED     # 40 hex: [[component]] kernel, commit
-SOURCE_PLATFORM_COMMIT = UNFILLED   # 40 hex: [[component]] platform, commit
-SOURCE_RELEASE_DATE = UNFILLED      # YYYY-MM-DD: [release] date
+SOURCE_RELEASE_ID = "absd-preview-20261010"        # [release] id in the manifest; also the tag name
+SOURCE_RELEASE_COMMIT = "6ed4934ae9baf210b5514c931f0dd9343f74277d"    # 40 hex: the release commit on the public main
+SOURCE_KERNEL_COMMIT = "260b4a20755a70db2ec8aa4556b9c576285fe284"     # 40 hex: [[component]] kernel, commit
+SOURCE_PLATFORM_COMMIT = "65cf80f9440f8bba018f5993aa70744e4e0d5b64"   # 40 hex: [[component]] platform, commit
+SOURCE_RELEASE_DATE = "2026-10-10"      # YYYY-MM-DD: [release] date
 # Which of the two prepared statements below is true of that release:
 #   "preview"    the release commit itself was built, booted and smoke-tested
 #                from a clean clone, and neither suite has run on it;
 #   "qualified"  the kernel suite and the platform gate's core profile have
 #                both passed on it. Needs the three fill-ins that follow.
-SOURCE_QUALIFICATION = UNFILLED
+SOURCE_QUALIFICATION = "preview"
 # Used only by "qualified". Take them from the runs' own output; never
 # estimate them.
 SOURCE_KERNEL_SUITE_RESULT = UNFILLED   # e.g. the suite's own last line
