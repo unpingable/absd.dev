@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Status — ABSD</title>
-<meta name="description" content="What ABSD does today, what has been qualified and where, what has not, and what is deliberately absent.">
+<meta name="description" content="What ABSD does today, what has been qualified and where, what the public source release does and does not establish, what has not been qualified, and what is deliberately absent.">
 <link rel="canonical" href="https://absd.dev/status/">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ABSD">
 <meta property="og:title" content="Status — ABSD">
-<meta property="og:description" content="What ABSD does today, what has been qualified and where, what has not, and what is deliberately absent.">
+<meta property="og:description" content="What ABSD does today, what has been qualified and where, what the public source release does and does not establish, what has not been qualified, and what is deliberately absent.">
 <meta property="og:url" content="https://absd.dev/status/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
@@ -19,13 +19,13 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/" aria-current="page">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/status/" aria-current="page">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1>Status</h1>
 
-<p>ABSD's current qualification is a single-operator system under QEMU. This page lists what that covers, labelled by how strongly each statement is supported. Most of it is the recorded run of the milestone below; work accepted after that milestone is listed separately under <a href="#since">since the milestone</a>. Source is currently developed privately, and there is nothing to download.</p>
-<p class="note">On this page: <a href="#since">since the milestone</a> · <a href="#labels">labels</a> · <a href="#works">works</a> · <a href="#qualified">qualified</a> · <a href="#not-yet">not yet qualified</a> · <a href="#limits">known limits</a> · <a href="#absent">deliberately absent</a> · <a href="#deferred">deferrals</a>. "Qualified" and "accepted" here mean that recorded checks passed and were re-examined by separate AI model sessions; no independent human has audited the code or the checks (<a href="/about/#how">how it is developed</a>).</p>
+<p>ABSD's current qualification is a single-operator system under QEMU. This page lists what that covers, labelled by how strongly each statement is supported. Most of it is the recorded run of the milestone below; work accepted after that milestone is listed separately under <a href="#since">since the milestone</a>. The source is public; what was published, and how far it has itself been checked, is under <a href="#source">source release</a>.</p>
+<p class="note">On this page: <a href="#source">source release</a> · <a href="#since">since the milestone</a> · <a href="#labels">labels</a> · <a href="#works">works</a> · <a href="#qualified">qualified</a> · <a href="#not-yet">not yet qualified</a> · <a href="#limits">known limits</a> · <a href="#absent">deliberately absent</a> · <a href="#deferred">deferrals</a>. "Qualified" and "accepted" here mean that recorded checks passed and were re-examined by separate AI model sessions; no independent human has audited the code or the checks (<a href="/about/#how">how it is developed</a>).</p>
 
 <section class="facts" aria-labelledby="identity">
 <h2 id="identity">Current milestone</h2>
@@ -38,8 +38,46 @@
 </dl>
 </section>
 
+<section class="facts" aria-labelledby="source">
+<h2 id="source">Source release</h2>
+<dl>
+<dt>Repository</dt><dd><a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a></dd>
+<dt>Release</dt><dd><code>absd-preview-20261010</code> (the id in its manifest, and a tag of the same name), 2026-10-10</dd>
+<dt>Release commit</dt><dd><code>6ed4934ae9baf210b5514c931f0dd9343f74277d</code></dd>
+<dt>Kernel</dt><dd><code>260b4a20755a70db2ec8aa4556b9c576285fe284</code> (development commit named in <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml">SOURCE-MANIFEST.toml</a>)</dd>
+<dt>Platform</dt><dd><code>65cf80f9440f8bba018f5993aa70744e4e0d5b64</code> (likewise)</dd>
+<dt>Licence</dt><dd>Apache-2.0 for ABSD's own source; third-party material keeps its own (<a href="/about/#licence">licence</a>)</dd>
+<dt>Status</dt><dd><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17.</dd>
+</dl>
+</section>
+
+<p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU&#x27;s software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release.</p>
+
+<h3 id="source-run">What you can run</h3>
+<p>The supported build host is Ubuntu 24.04 on x86-64, and the system runs under QEMU only. The steps, the required packages and toolchains, and the commands are in the <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">repository's README</a> and are not repeated here. In outline:</p>
+<ul>
+<li>Fetch the dependencies (the only step that uses the network), build the kernel, the platform and the operator image, and run the smoke test: two boots and an SSH session under QEMU's software emulation. None of this needs KVM. The smoke test shows that the tree builds something that boots and serves a session, and nothing more.</li>
+<li>Boot the image yourself and log in with stock OpenSSH as the one operator.</li>
+<li>Run the kernel's suite (software emulation, no KVM) and the platform gate in its core profile (hours, and it needs KVM).</li>
+</ul>
+
+<h3 id="source-contents">What is in it, and what is not</h3>
+<p>The public tree is the kernel and the platform: the userspace, the servers, the manual, the build and image tooling, and the tests. It is assembled from one exact commit of each, and its history is one commit per release; development happens in separate repositories (<a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/RELEASING.md">RELEASING.md</a>). It contains no source of the author's other projects, and no development records: review transcripts and the receipts of earlier runs are not in it.</p>
+<p>The platform gate has two profiles. The <strong>core</strong> profile is everything that needs nothing but ABSD, and is what a public clone runs. The <strong>extended integration</strong> profile builds programs from the author's other projects for ABSD and runs them on it as demanding workloads; it is run in development only, and from a public clone each of its steps prints <code>NOT_RUN</code> by name. The guest filesystem crash matrix is in the extended profile, because the program it crashes is another project's store. The filesystem library's own crash tests, which cover every crash point of every operation on a host sector device, are in the core profile.</p>
+
+<h3 id="source-boundaries">What publication does not establish</h3>
+<ul class="claims">
+<li><strong>Clean-clone build, not reproducible images.</strong> Building from a fresh clone has been done. Byte-identical builds on different machines: not claimed. The platform gate builds ABSD's own programs and the manual twice on one machine and fails if they differ; the ported programs are built once and images are not compared. Whether two machines produce the same image has not been measured, and is not expected, because the boot image takes GRUB files from the host's package.</li>
+<li><strong>QEMU, not hardware.</strong> Physical hardware qualification: not yet established. Nothing about the source release changes that.</li>
+<li><strong>AI-run review, not independent review.</strong> Public source makes independent checking possible. It has not happened yet: no outside person has audited the design, the code or the tests.</li>
+<li><strong>This release's status, not the earlier records'.</strong> The milestone and release <code>absd-20261003.1</code> were qualified on earlier revisions, with the extended workloads. Those revisions are not in the public repository, so those records cannot be re-run from it, and they are not statements about the source release. The release's own status is the sentence above and nothing more.</li>
+<li><strong>Core, not extended.</strong> A statement on this site that rests on an extended step was established in development, with sources that are not public, and cannot be re-run from the public tree alone. On this page that includes the programs from other projects run as workloads, and the filesystem crash matrix run in the guest, whose workload is another project's SQLite-backed store.</li>
+<li><strong>An observation in progress, not a result.</strong> The seven-day unattended observation listed below runs on a development build until 2026-10-17 and has no result. Publishing the source says nothing about it, and it says nothing about the source release.</li>
+</ul>
+<p class="note">Problems building or running it, and statements here that the source contradicts: <a href="https://github.com/unpingable/absd/issues">issues on the repository</a>. How changes are handled: <a href="/about/#follow">following and contributing</a>.</p>
+
 <h2 id="since">Since the milestone</h2>
-<p>Recorded 2026-10-10. Each entry names its own scope; none of it extends the milestone's claims above. Only the first two entries are a release. The rest is development work: none of it has been released, and where an entry says "not merged" the work is on a development branch outside the main line.</p>
+<p>Recorded 2026-10-10. Each entry names its own scope; none of it extends the milestone's claims above. Only the first two entries are a qualified release. The rest is development work: none of it is in a qualified release, and where an entry says "not merged" the work was on a development branch outside the main line when this was recorded. The <a href="#source">source release</a> is assembled from later revisions; that it contains some of this work changes no label here, because each label is what a run established on its own revision.</p>
 <ul class="claims">
 <li><span class="label l-rq">RELEASE-QUALIFIED</span> Release <code>absd-20261003.1</code> (kernel fcfbab9, platform c54dc90), accepted 2026-10-04. Environment: x86-64 QEMU with TCG or KVM, one CPU, an IDE disk or one NVMe namespace, an e1000 network card. Covered: the whole platform check; files with modification times (filesystem format 2); 300 consecutive SSH sessions returning to the same memory baseline; 87 adversarial program images (60 refused, 27 boundary cases accepted), with resources unchanged after each when run as their own stage (an earlier end-to-end run stopped on a resource-count difference that is not yet explained; see <a href="/evidence/#rel-20261003-1">evidence</a>); a scripted check of every kernel-to-process output path for leaked kernel addresses or stale memory (28 checks, none found; side channels not assessed); floating-point control state kept per process.</li>
 <li><span class="label l-rq">RELEASE-QUALIFIED</span> Updating an installed system from the previous release (<code>absd-20261002.3</code>) to <code>absd-20261003.1</code>, and rolling it back, with both installed generations kept and site state preserved; backup and restore of a halted installed image. Updates are staged from a host onto a halted image and take effect at reboot; there is no updater on the running system, and a filesystem format change is refused rather than migrated silently.</li>
@@ -57,7 +95,7 @@ Beyond release <code>absd-20261003.1</code> it adds:
 <li>More of the shell and commands (command lists with <code>;</code>, <code>&amp;&amp;</code> and <code>||</code>, a system summary command, and ripgrep installed as <code>rg</code>).</li>
 </ul>
 The manual on this site is still the milestone's and does not describe these.</li>
-<li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> A seven-day unattended observation of that same build (kernel 2b4abb4, platform bd99f0fa) is <strong>in progress</strong>: one QEMU guest, TCG, one CPU, probed over SSH every five minutes with file writes and read-backs. It started 2026-10-10 15:22 UTC and is due to end 2026-10-17 15:22 UTC. It has not finished and has no result; nothing is claimed from it. The rules for judging its failures were written down before any failure was observed.</li>
+<li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> A seven-day unattended observation of that same build (kernel 2b4abb4, platform bd99f0fa) is <strong>in progress</strong>: one QEMU guest, TCG, one CPU, probed over SSH every five minutes with file writes and read-backs. It started 2026-10-10 15:22 UTC and is due to end 2026-10-17 15:22 UTC. It has not finished and has no result; nothing is claimed from it, and it is not a run of the source release's revisions. The rules for judging its failures were written down before any failure was observed.</li>
 <li><span class="label l-val">VALIDATED</span> Further 64-bit ARM work, not merged: the ABSD filesystem running as the first ARM process over a virtio block device, with its flush ordering judged from a log of the virtual device's writes; and support for the GICv3 interrupt controller with one, two, or four virtual CPUs. Run under QEMU's <code>virt</code> machine with TCG, and with hardware virtualization (Apple's Hypervisor framework) on one Mac. The two- and four-CPU GICv3 runs completed in full only under the Hypervisor framework; under TCG the several-CPU test ends in a known memory-ordering test failure that also occurs with the older GICv2 controller. These are virtual machines in every case. ABSD has not been booted on any physical ARM machine, and nothing here is evidence about one.</li>
 <li><span class="label l-val">VALIDATED</span> USB host controller (xHCI) enumeration, not merged, as a boot-time kernel probe: against QEMU's <code>qemu-xhci</code> model under TCG it takes over the controller, resets a port, assigns an address to one directly attached device, and reads its device descriptor at three bus speeds, and enumerates a device afresh after it is unplugged and plugged back in; malformed and stale controller responses, injected by the test, are refused. It polls on one CPU, handles one device on the first connected port, and has no hubs and no device drivers: no keyboard, no storage, nothing a user can use. Two features that physical controllers commonly require (scratchpad buffers and taking the controller over from firmware) are not present in QEMU's models, so they were exercised only with injected values and a model of the firmware. It has not been run on a physical controller. This is not USB support.</li>
 <li><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> A successor storage engine is research in progress and not claimed.</li>
@@ -70,7 +108,7 @@ The manual on this site is still the milestone's and does not describe these.</l
 <dt><span class="label l-rq">RELEASE-QUALIFIED</span></dt>
 <dd>Passed the recorded qualification of a named release (an exact kernel and platform pair) and was accepted on review. Limited to that release and the environment named with it.</dd>
 <dt><span class="label l-val">VALIDATED</span></dt>
-<dd>Passed a recorded qualification run of an exact commit, which is recorded privately and not always named here. Limited to that run's environment and the limits stated with it; not by itself a release claim, and it may be on a development branch that has not been merged.</dd>
+<dd>Passed a recorded qualification run of an exact commit. The record is kept with the development repositories, not in the public tree, and the commit is not always named here. Limited to that run's environment and the limits stated with it; not by itself a release claim, and it may be on a development branch that has not been merged.</dd>
 <dt><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dt>
 <dd>Exists on an integration branch or as a one-off experiment. Not qualified, and not a claim.</dd>
 <dt><span class="label l-planned">PLANNED</span></dt>
@@ -88,9 +126,9 @@ The manual on this site is still the milestone's and does not describe these.</l
 </ul>
 
 <h2 id="works">Works</h2>
-<p>What an operator can do on the qualified system. Today the only operator is the developer: the system cannot be downloaded or built by anyone else.</p>
+<p>What an operator can do on the qualified system, as recorded at the milestone's revisions. Anyone can now build and boot a later revision from the <a href="#source">source release</a>; the labels below are the milestone's and do not transfer to it.</p>
 <ul class="claims">
-<li><span class="label l-mq">MILESTONE-QUALIFIED</span> With the source tree, which is private: build an operator image (ISO and 64 MiB disk), boot it, and log in with stock OpenSSH using an ed25519 public key. See <a href="/man/afterboot.8/">afterboot(8)</a>.</li>
+<li><span class="label l-mq">MILESTONE-QUALIFIED</span> With the source tree: build an operator image (ISO and 64 MiB disk), boot it, and log in with stock OpenSSH using an ed25519 public key. See <a href="/man/afterboot.8/">afterboot(8)</a>.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Verify the host key: its fingerprint is printed on the console in <code>ssh-keygen -l</code> form and matches <code>ssh-keyscan</code>.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Run several concurrent SSH sessions, each isolated from the others, with a PTY shell (line editing, <kbd>^C</kbd>) or a single command per connection.</li>
 <li><span class="label l-mq">MILESTONE-QUALIFIED</span> Use a small shell, <a href="/man/absd-sh.1/">absd-sh(1)</a>, with pipes and redirection; 27 commands under <code>/bin</code> (20 native, and seven unmodified uutils 0.12.0 programs); 17 manual pages read with <code>man</code>; <code>ps</code> for the session's own processes.</li>
@@ -160,8 +198,8 @@ The manual on this site is still the milestone's and does not describe these.</l
 </ul>
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="https://github.com/unpingable/absd">source</a> is public under Apache-2.0 (source release <code>absd-preview-20261010</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>

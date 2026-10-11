@@ -19,7 +19,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/" aria-current="page">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/" aria-current="page">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1>Manual</h1>
@@ -28,7 +28,7 @@
 
 <p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span> Rendered when this site is built from the unmodified <code>mdoc(7)</code> sources at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1), with GNU groff version 1.23.0 and the arguments the image build uses (<code>-mdoc -Tascii -P-cbou -rHY=0 -dAD=l</code>). The text is what <code>man</code> prints in an ABSD session; only cross-references are turned into links. The pages describe the qualified QEMU system and label what is not provided. There are no per-command pages beyond <code>date</code> and <code>uptime</code> yet.</p>
 
-<p class="note">Read the pages as dated 2026-09-27. Their build commands and their references to files "in the kernel repository" or "in the platform repository" point into private sources and cannot be followed yet. Later work, including the first boots on a physical machine and the release's lower connection limit, is on the <a href="/status/#since">status page</a>, not here. One known error: e1000(4) says the network address is compiled in; network.conf(5) is correct.</p>
+<p class="note">Read the pages as dated 2026-09-27. They are the milestone's pages, not the <a href="/status/#source">source release</a>'s: the release carries a later manual under <code>platform/man/</code>, with pages that are not here. Their build commands and their references to files "in the kernel repository" or "in the platform repository" describe the development repositories at the milestone; in the public tree those are the <code>kernel/</code> and <code>platform/</code> directories at later revisions, and the way to build is the <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">repository's README</a>. Later work, including the first boots on a physical machine and the release's lower connection limit, is on the <a href="/status/#since">status page</a>, not here. One known error: e1000(4) says the network address is compiled in; network.conf(5) is correct.</p>
 
 <h2 id="section-1">Section 1: General commands</h2>
 <dl class="manindex">
@@ -64,8 +64,8 @@
 </dl>
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="https://github.com/unpingable/absd">source</a> is public under Apache-2.0 (source release <code>absd-preview-20261010</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>

@@ -19,7 +19,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <article class="manpage">
@@ -27,8 +27,10 @@
 <p class="provenance"><span class="label l-mq">MILESTONE-QUALIFIED</span>
 Rendered from the page's mdoc source at <code>milestone/general-usability-qemu-20260927</code> (platform ff025b1)
 with GNU groff version 1.23.0, using the same command the image build uses; an ABSD session running
-<code>man 1 absd-sh</code> prints this text. It is dated 2026-09-27; the build commands and
-repository files it mentions are in private sources, and <a href="/status/#since">later work</a> is not in it.
+<code>man 1 absd-sh</code> prints this text. It is dated 2026-09-27 and is the milestone's page, not the
+<a href="/status/#source">source release</a>'s: the release carries a later manual under <code>platform/man/</code>, and
+the build commands and repository files this page mentions are the milestone's. To build, follow the
+<a href="https://github.com/unpingable/absd#readme">repository's README</a>. <a href="/status/#since">Later work</a> is not in this page.
 <a href="/manual/">All pages</a>.</p>
 <pre class="man" tabindex="0" aria-label="absd-sh(1) manual page">ABSD-SH(1)                  General Commands Manual                 ABSD-SH(1)
 
@@ -221,8 +223,8 @@ ABSD                          September 27, 2026                    ABSD-SH(1)
 </article>
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="https://github.com/unpingable/absd">source</a> is public under Apache-2.0 (source release <code>absd-preview-20261010</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>

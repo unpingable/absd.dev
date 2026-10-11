@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>About — ABSD</title>
-<meta name="description" content="ABSD is an experimental operating system by James Beck, written in Rust and developed privately, largely by AI coding agents under his direction. Why it exists, what it is and is not for, and how to follow it.">
+<meta name="description" content="ABSD is an experimental operating system by James Beck, written in Rust, largely by AI coding agents under his direction. Why it exists, what it is and is not for, where the source is, its licence, and how contributions are handled.">
 <link rel="canonical" href="https://absd.dev/about/">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ABSD">
 <meta property="og:title" content="About — ABSD">
-<meta property="og:description" content="ABSD is an experimental operating system by James Beck, written in Rust and developed privately, largely by AI coding agents under his direction. Why it exists, what it is and is not for, and how to follow it.">
+<meta property="og:description" content="ABSD is an experimental operating system by James Beck, written in Rust, largely by AI coding agents under his direction. Why it exists, what it is and is not for, where the source is, its licence, and how contributions are handled.">
 <meta property="og:url" content="https://absd.dev/about/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
@@ -19,12 +19,12 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/" aria-current="page">About</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/" aria-current="page">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1>About</h1>
 
-<p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Source is currently developed privately; there are no public releases, downloads, or packages.</p>
+<p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Its source is public at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a> under the Apache License 2.0, as source releases assembled from the repositories where development happens. It can be built and booted under QEMU by following that repository's README; no images or packages are offered here.</p>
 
 <h2 id="why">Why it exists</h2>
 <p>Most systems grant a program broad authority by default and report success loosely: a program can usually do whatever its user can, and "written" may mean "in a cache". The rules that matter (who may do what, what happens when something fails, what survives a crash) are then enforced defensively on top. ABSD began as a way to test whether those rules could instead be native, and still survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
@@ -48,17 +48,35 @@
 <h2 id="how">How it is developed</h2>
 <p>One developer, James Beck, directs the work: deciding what is built, setting the acceptance rules, and accepting or rejecting results. AI coding agents wrote most of the code, tests, and documentation, including most of the text of this site.</p>
 <p>Review is also done by AI: releases and merges are accepted after a review by AI model sessions separate from the ones that did the work. That catches some errors and is not independent human review. No outside person has audited ABSD's design, code, or tests, and no human security review has been done. Read "qualified", "validated", and "accepted" on this site as "the recorded checks passed and were re-examined by a separate AI session", and nothing stronger.</p>
-<p>This is why the site leans on what can be checked without trusting the author: named environments, recorded runs, counts taken from the check scripts' own output, checks that are shown able to fail, and failures kept on record. The method is described under <a href="/research/program/#method">bounded acceptance</a>. Until the source is public, a reader cannot verify any of it independently; that is a real limit.</p>
+<p>This is why the site leans on what can be checked without trusting the author: named environments, recorded runs, counts taken from the check scripts' own output, checks that are shown able to fail, and failures kept on record. The method is described under <a href="/research/program/#method">bounded acceptance</a>.</p>
+<p>Publishing the source is what makes independent checking possible; it has not happened yet. Two limits remain even with the source in hand. The review records and the receipts of earlier runs are not in the public tree. And the checks that run programs from the author's other projects on ABSD (the extended integration profile) cannot be re-run from a public clone, because those projects' sources are not in it; what a public clone can re-run is the kernel's suite and the platform gate's core profile. See <a href="/status/#source">status</a>.</p>
 
 <h2 id="bsd">Relation to BSD</h2>
 <p>The operating system's commands, manual, and conventions follow BSD practice where the semantics match. ABSD is not derived from BSD source and is not a BSD distribution.</p>
 
+<h2 id="licence">Licence</h2>
+<p>ABSD's own source (the kernel, the platform, the tools and the tests written for it) is licensed under the Apache License, Version 2.0. Three distinctions go with that:</p>
+<ul>
+<li>Third-party material in the tree keeps its own licences, as do libraries downloaded at build time. The repository lists them in <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/THIRD-PARTY.md">THIRD-PARTY.md</a>, and <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/LICENSING.md">LICENSING.md</a> says what applies to what.</li>
+<li>A boot image built from the source additionally contains GRUB (GPL-3.0-or-later) and a font from the build host's GRUB package. The source tree does not carry them; a built image does, and redistributing an image carries GRUB's obligations.</li>
+<li>Files written for ABSD carry no licence header and no copyright line yet. ABSD was written largely by AI coding agents directed by one developer; what copyright subsists in such code is an open legal question, and the licence grant does not settle it.</li>
+</ul>
+<p>The licence covers the operating system's repository. It is not a licence for this site's text.</p>
+
 <h2 id="follow">Following and contributing</h2>
-<p>The operating system's source is not public, so there is nothing to clone, build, or download, and code contributions are not being accepted. No license has been chosen for it. A public source distribution and a developer preview are intended, without a date; whether, when, and under what terms are still open decisions. When that changes, this page will say where the source is and how outside changes are reviewed. Publishing this site does not publish the source.</p>
+<p>The source is at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>. That repository is a source release, not where development happens: it is assembled from the development repositories at exact revisions, and it changes only when a release is made. That shapes what happens to a contribution (the repository's <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/CONTRIBUTING.md">CONTRIBUTING.md</a> and <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/RELEASING.md">RELEASING.md</a> are the authoritative texts):</p>
+<ul>
+<li>Issues are read and answered on the public repository. A report that names the release, the host, the command and its output is the most useful kind.</li>
+<li>Pull requests are read there as proposals. They are never merged there directly, because the next release would overwrite them.</li>
+<li>An accepted change is applied in the development repository of the component it touches, with its author recorded, and goes through the same checks as any other change. It appears in the public repository in a later source release. Acceptance is the change arriving in a release, not the state of the pull request.</li>
+<li>Small fixes with a test, reproducible failures, and corrections to documents that claim more than their evidence are the easy cases. Larger changes are unlikely to be accepted as pull requests; open an issue first.</li>
+<li>Contributions to ABSD's own source are accepted under the Apache License 2.0. Say where code came from, and say so if an AI system wrote or helped write it.</li>
+</ul>
+<p>To follow the project:</p>
 <ul>
 <li>Progress is recorded on this site when a milestone or release is accepted: <a href="/evidence/">evidence</a> lists the records newest first, and <a href="/status/#since">status</a> lists what has been accepted since the last milestone.</li>
-<li>This site's own source is public at <a href="https://github.com/unpingable/absd.dev">github.com/unpingable/absd.dev</a>. It contains the pages and the manual sources, not the operating system. Every change to a claim on this site is a commit there, so watching that repository is the way to be told when something changes.</li>
-<li>Questions and corrections: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug.</li>
+<li>This site's own source is public at <a href="https://github.com/unpingable/absd.dev">github.com/unpingable/absd.dev</a>. It contains the pages and the milestone's manual sources, not the operating system. Every change to a claim on this site is a commit there, so watching that repository is the way to be told when something changes.</li>
+<li>Corrections to this site: <a href="https://github.com/unpingable/absd.dev/issues">issues on the site's repository</a>. A claim on this site that its record does not support is a bug. Problems with the system itself belong on <a href="https://github.com/unpingable/absd/issues">the source repository</a>.</li>
 <li>Related public work by the same author is listed on the <a href="/research/#related">research page</a>.</li>
 </ul>
 
@@ -68,8 +86,8 @@
 </figure>
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="https://github.com/unpingable/absd">source</a> is public under Apache-2.0 (source release <code>absd-preview-20261010</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>

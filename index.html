@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ABSD</title>
-<meta name="description" content="ABSD is an experimental operating system: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Qualified today as a single-operator system under QEMU.">
+<meta name="description" content="ABSD is an experimental operating system written in Rust: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Runs under QEMU; source is public under Apache-2.0.">
 <link rel="canonical" href="https://absd.dev/">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ABSD">
 <meta property="og:title" content="ABSD">
-<meta property="og:description" content="ABSD is an experimental operating system: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Qualified today as a single-operator system under QEMU.">
+<meta property="og:description" content="ABSD is an experimental operating system written in Rust: isolated processes, explicit authority, bounded scheduling and recovery, and claims stated at the strength of their evidence. Runs under QEMU; source is public under Apache-2.0.">
 <meta property="og:url" content="https://absd.dev/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
@@ -19,7 +19,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1 class="lead"><strong>ABSD</strong> — An experimental operating system.</h1>
@@ -30,14 +30,26 @@
 
 <p>ABSD was built largely by AI coding agents directed by one developer, and has had no independent human review. <a href="/about/#how">How it is developed</a>.</p>
 
+<section class="facts" aria-labelledby="start">
+<h2 id="start">Start here</h2>
+<dl>
+<dt>What it is</dt>
+<dd>A research operating system, not a Unix and not a product: no <code>fork</code>, no user IDs, and existing Unix or Linux software does not run without porting. <a href="/about/">About</a> says what it is for; <a href="#distinct">below</a> is what distinguishes it.</dd>
+<dt>What you can run today</dt>
+<dd>On an Ubuntu 24.04 x86-64 host: clone the source, build the operator image, boot it under QEMU, and log in over SSH. The build and the smoke test need no KVM. Follow the <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">repository's README</a>; <a href="/status/#source">status</a> says what that does and does not show.</dd>
+<dt>Where the source is</dt>
+<dd><a href="https://github.com/unpingable/absd"><strong>github.com/unpingable/absd</strong></a>: the kernel and the platform, under Apache-2.0. Source release <code>absd-preview-20261010</code>, 2026-10-10.</dd>
+</dl>
+</section>
+
 <h2 id="distinct">What distinguishes it</h2>
 <dl class="terms">
 <dt>Isolation</dt>
-<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process sees only itself and its own children. SSH sessions are separate process trees with private scratch space; they belong to one operator and share that operator's files, so they are not a boundary between users. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
+<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process can act only on itself and its own children; a few whole-system counts are readable by any process. SSH sessions are separate process trees with private scratch space; they belong to one operator and share that operator's files, so they are not a boundary between users. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
 <dt>Explicit authority</dt>
 <dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
 <dt>Bounded scheduling and recovery</dt>
-<dd>Bounded here means fixed, stated limits, not timing guarantees: 16 processes in the whole system, four SSH connections by default. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the main development line (not in a release), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
+<dd>Bounded here means fixed, stated limits, not timing guarantees: 16 processes in the whole system, four SSH connections by default. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the development line and in the source release (not in the qualified release <code>absd-20261003.1</code>), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. That budget is demonstrated by its own test, not by the platform gate. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
 <dt>Evidence-oriented engineering</dt>
 <dd>Claims on the status, design, hardware, and evidence pages carry a label saying how strongly each is supported, in which environment, and where the claim stops. Failed runs stay on record. <a href="/status/#labels">How statements are labelled</a>.</dd>
 </dl>
@@ -52,13 +64,13 @@
 <dt>Physical hardware</dt>
 <dd>Physical hardware qualification: not yet established <span class="label l-planned">PLANNED</span>. First read-only boots on one machine have been observed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dd>
 <dt>Since the milestone</dt>
-<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation started 2026-10-10, runs until 2026-10-17, and has no result yet. See <a href="/status/#since">status</a>.</dd>
+<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation of a development build started 2026-10-10, runs until 2026-10-17, and has no result yet; publishing the source says nothing about it. See <a href="/status/#since">status</a>.</dd>
 <dt>Access</dt>
 <dd>Stock OpenSSH, public-key login, one operator, several isolated sessions <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Userspace</dt>
 <dd>A small shell, 27 commands, 17 manual pages; 55 Rust programs built reproducibly <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Source</dt>
-<dd>The operating system is developed privately: no public source, downloads, or releases to install. Only this site's source is public.</dd>
+<dd><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Public at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>, source release <code>absd-preview-20261010</code>. Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17. The milestone and the release above were qualified on earlier revisions, not on this one. See <a href="/status/#source">status</a>.</dd>
 <dt>Development</dt>
 <dd>One developer directs the work; AI coding agents did most of the implementation and the review. No independent human audit has been done. See <a href="/about/#how">how it is developed</a>.</dd>
 </dl>
@@ -100,7 +112,7 @@ sshd: the system is going down for halt; this session ends</code></pre>
 <h2 id="more">Further reading</h2>
 <ul>
 <li><a href="/about/">About</a>: why ABSD exists, what it is and is not for, how it is developed, and how to follow it.</li>
-<li><a href="/status/">Status</a>: what works, what has been qualified and where, and what has not.</li>
+<li><a href="/status/">Status</a>: what works, what has been qualified and where, what has not, and what the <a href="/status/#source">source release</a> establishes.</li>
 <li><a href="/design/">Design</a>: spawn instead of fork, handles and rights, and how durability is stated.</li>
 <li><a href="/manual/">Manual</a>: the 17 pages installed on the operator image, rendered from their mdoc source.</li>
 <li><a href="/hardware/">Hardware</a>: what has been qualified, on what, and how that will be recorded.</li>
@@ -109,8 +121,8 @@ sshd: the system is going down for halt; this session ends</code></pre>
 </ul>
 </main>
 <footer class="site" role="contentinfo">
-<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. The operating system's source is developed privately; there are no public downloads. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is public.</p>
-<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. <a href="/status/#labels">How statements are labelled</a>.</p>
+<p>ABSD is an experimental operating system by James Beck, <a href="/about/#how">built largely by AI coding agents</a> under the author's direction and not independently audited. Its <a href="https://github.com/unpingable/absd">source</a> is public under Apache-2.0 (source release <code>absd-preview-20261010</code>, <a href="/status/#source">what that does and does not establish</a>); it runs under QEMU only, and no physical hardware is supported. <a href="https://github.com/unpingable/absd.dev">This site's source</a> is separate.</p>
+<p>Facts on this site are stated as of <a href="/evidence/">milestone/general-usability-qemu-20260927</a> (kernel 1983172, platform ff025b1) unless labelled otherwise. Those revisions are earlier than the source release. <a href="/status/#labels">How statements are labelled</a>.</p>
 </footer>
 </body>
 </html>
