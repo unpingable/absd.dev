@@ -53,6 +53,13 @@
 
 <p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU&#x27;s software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release.</p>
 
+<aside class="note" aria-label="Current public source standing">
+<p><strong>Current public standing:</strong> Published source preview; qualification suites pending on these exact revisions. Editorial update: 2026-10-11.</p>
+<p><strong>Demonstrated:</strong></p><ul><li>A clean clone built the kernel, platform and operator image, booted under QEMU software emulation and served an SSH session.</li></ul>
+<p><strong>Limits:</strong></p><ul><li>Earlier milestone and qualified-release results apply only to their own revisions.</li><li>Physical hardware qualification is not yet established.</li><li>Experimental development work does not extend the public source release’s qualification.</li></ul>
+<p>Evidence: <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml">Published source manifest</a> · <a href="/evidence/">Recorded evidence and scope</a></p>
+</aside>
+
 <h3 id="source-run">What you can run</h3>
 <p>The supported build host is Ubuntu 24.04 on x86-64, and the system runs under QEMU only. The steps, the required packages and toolchains, and the commands are in the <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">repository's README</a> and are not repeated here. In outline:</p>
 <ul>
