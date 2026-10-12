@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/unpingable/absd",
+  "licence": "Apache-2.0",
+  "release_id": "absd-preview-20261010",
+  "release_commit": "6ed4934ae9baf210b5514c931f0dd9343f74277d",
+  "kernel_commit": "260b4a20755a70db2ec8aa4556b9c576285fe284",
+  "platform_commit": "65cf80f9440f8bba018f5993aa70744e4e0d5b64",
+  "release_date": "2026-10-10",
+  "qualification": "preview",
+  "kernel_suite_result": null,
+  "core_profile_result": null,
+  "qualification_record": null,
+  "editorial_updated": "2026-10-11",
+  "standing": "Published source preview; qualification suites pending on these exact revisions.",
+  "demonstrated": [
+    "A clean clone built the kernel, platform and operator image, booted under QEMU software emulation and served an SSH session."
+  ],
+  "limitations": [
+    "Earlier milestone and qualified-release results apply only to their own revisions.",
+    "Physical hardware qualification is not yet established.",
+    "Experimental development work does not extend the public source release’s qualification."
+  ],
+  "evidence": [
+    {
+      "label": "Published source manifest",
+      "url": "https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml"
+    },
+    {
+      "label": "Recorded evidence and scope",
+      "url": "/evidence/"
+    }
+  ]
+}

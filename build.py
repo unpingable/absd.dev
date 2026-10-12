@@ -14,6 +14,8 @@ the version the ABSD image build pins), run with the same arguments the
 image build uses, so /man/ shows the bytes an ABSD session prints.
 """
 
+import datetime
+import json
 import hashlib
 import html
 import os
@@ -35,37 +37,59 @@ MILESTONE_DATE = "2026-09-27"
 KERNEL = "1983172"
 PLATFORM = "ff025b1"
 
-# ---------------------------------------------------------------------------
-# RELEASE SWITCH: the public source release this site describes.
-#
-# This is the only place these values are set. Every one that still says
-# FILL-AT-DEPLOY must be replaced, at deploy time, from the published
-# repository's SOURCE-MANIFEST.toml and its release commit. While any is
-# unfilled the build still renders (so the pages can be previewed) but
-# scripts/check.py fails, and scripts/stage-pages.sh therefore refuses to
-# stage the site.
-#
-# SOURCE_REPO is the canonical public repository. Do not deploy before it
-# exists and carries the release named here.
-SOURCE_REPO = "https://github.com/unpingable/absd"
-SOURCE_LICENCE = "Apache-2.0"
+# Current public source release; historical qualification stays in page bodies.
+RELEASE_PATH = ROOT / "content" / "release.json"
 UNFILLED = "FILL-AT-DEPLOY"
-SOURCE_RELEASE_ID = "absd-preview-20261010"        # [release] id in the manifest; also the tag name
-SOURCE_RELEASE_COMMIT = "6ed4934ae9baf210b5514c931f0dd9343f74277d"    # 40 hex: the release commit on the public main
-SOURCE_KERNEL_COMMIT = "260b4a20755a70db2ec8aa4556b9c576285fe284"     # 40 hex: [[component]] kernel, commit
-SOURCE_PLATFORM_COMMIT = "65cf80f9440f8bba018f5993aa70744e4e0d5b64"   # 40 hex: [[component]] platform, commit
-SOURCE_RELEASE_DATE = "2026-10-10"      # YYYY-MM-DD: [release] date
-# Which of the two prepared statements below is true of that release:
-#   "preview"    the release commit itself was built, booted and smoke-tested
-#                from a clean clone, and neither suite has run on it;
-#   "qualified"  the kernel suite and the platform gate's core profile have
-#                both passed on it. Needs the three fill-ins that follow.
-SOURCE_QUALIFICATION = "preview"
-# Used only by "qualified". Take them from the runs' own output; never
-# estimate them.
-SOURCE_KERNEL_SUITE_RESULT = UNFILLED   # e.g. the suite's own last line
-SOURCE_CORE_PROFILE_RESULT = UNFILLED   # the gate's last line, with extended=NOT_RUN
-SOURCE_QUALIFICATION_RECORD = UNFILLED  # date of the runs and where the receipt is
+
+
+def load_release(path):
+    record = json.loads(path.read_text(encoding="utf-8"))
+    expected = {"schema_version", "repository", "licence", "release_id", "release_commit",
+                "kernel_commit", "platform_commit", "release_date", "qualification",
+                "kernel_suite_result", "core_profile_result", "qualification_record",
+                "editorial_updated", "standing", "demonstrated", "limitations", "evidence"}
+    if set(record) != expected or type(record["schema_version"]) is not int or record["schema_version"] != 1:
+        raise ValueError("release record: expected schema version 1 and its exact fields")
+    for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence"}:
+        if not isinstance(record[name], str) or not record[name].strip() or UNFILLED in record[name]:
+            raise ValueError(f"release record: missing {name}")
+    for name in ("release_commit", "kernel_commit", "platform_commit"):
+        if not re.fullmatch(r"[0-9a-f]{40}", record[name]):
+            raise ValueError(f"release record: malformed {name}")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", record["release_id"]) or "staging" in record["release_id"].lower():
+        raise ValueError("release record: malformed release_id")
+    datetime.date.fromisoformat(record["release_date"])
+    datetime.date.fromisoformat(record["editorial_updated"])
+    for name in ("demonstrated", "limitations"):
+        if not isinstance(record[name], list) or not record[name] or any(not isinstance(v, str) or not v.strip() for v in record[name]):
+            raise ValueError(f"release record: {name} requires a nonempty list of statements")
+    if not isinstance(record["evidence"], list) or not record["evidence"]:
+        raise ValueError("release record: evidence links required")
+    for link in record["evidence"]:
+        if not isinstance(link, dict) or set(link) != {"label", "url"} or not all(isinstance(v, str) and v.strip() for v in link.values()):
+            raise ValueError("release record: malformed evidence link")
+        if not (link["url"].startswith("https://") or (link["url"].startswith("/") and not link["url"].startswith("//"))):
+            raise ValueError("release record: evidence link requires HTTPS or a site path")
+    if record["repository"] != "https://github.com/unpingable/absd" or record["licence"] != "Apache-2.0":
+        raise ValueError("release record: repository and licence must match the public source")
+    if record["qualification"] not in ("preview", "qualified"):
+        raise ValueError("release record: qualification must be preview or qualified")
+    for name in ("kernel_suite_result", "core_profile_result", "qualification_record"):
+        value = record[name]
+        if record["qualification"] == "preview":
+            if value is not None:
+                raise ValueError(f"release record: preview requires null {name}")
+        elif not isinstance(value, str) or not value.strip() or UNFILLED in value:
+            raise ValueError(f"release record: qualified requires {name}")
+    return record
+
+
+RELEASE = load_release(RELEASE_PATH)
+SOURCE_REPO = RELEASE["repository"]
+SOURCE_LICENCE = RELEASE["licence"]
+for field in ("release_id", "release_commit", "kernel_commit", "platform_commit", "release_date",
+              "qualification", "kernel_suite_result", "core_profile_result", "qualification_record"):
+    globals()["SOURCE_" + field.upper()] = RELEASE[field] or UNFILLED
 
 # The two wordings. "preview" names a date: once the seven-day observation
 # has ended (2026-10-17) and the suites have run, switch to "qualified"
@@ -154,7 +178,13 @@ def source_values():
         css, label = "l-exp", "EXPERIMENTAL-INTEGRATION"
         short = full = f"{UNFILLED}:SOURCE_QUALIFICATION"
     values = {k: html.escape(v) for k, v in values.items()}
+    notice = '<aside class="note" aria-label="Current public source standing">\n'
+    notice += f'<p><strong>Current public standing:</strong> {html.escape(RELEASE["standing"])} Editorial update: {RELEASE["editorial_updated"]}.</p>\n'
+    for name, title in (("demonstrated", "Demonstrated"), ("limitations", "Limits")):
+        notice += f'<p><strong>{title}:</strong></p><ul>' + ''.join(f'<li>{html.escape(v)}</li>' for v in RELEASE[name]) + '</ul>\n'
+    notice += '<p>Evidence: ' + ' · '.join(f'<a href="{html.escape(v["url"], quote=True)}">{html.escape(v["label"])}</a>' for v in RELEASE["evidence"]) + '</p>\n</aside>'
     values.update({
+        "SOURCE_NOTICE": notice,
         "SOURCE_REPO": SOURCE_REPO,
         "SOURCE_LICENCE": SOURCE_LICENCE,
         # Files are linked at the release tag, so a link shows the text this
@@ -320,6 +350,8 @@ def main():
     OUT.mkdir()
     for item in (SRC / "static").iterdir():
         shutil.copy2(item, OUT / item.name)
+
+    (OUT / "release-source.sha256").write_text(hashlib.sha256(RELEASE_PATH.read_bytes()).hexdigest() + "\n")
 
     version = groff_version()
     if version != "GNU groff version 1.23.0":

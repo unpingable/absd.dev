@@ -8,7 +8,7 @@ titles, one h1, heading order, alt text, landmarks, colour contrast of the
 theme tokens in light and dark); responsive basics (viewport meta, no fixed
 widths); both colour schemes define every token; canonical and og:url
 metadata; no private paths, hosts, repository names, e-mail addresses, or
-internal vocabulary; the source-release values in build.py are all filled
+internal vocabulary; the source-release values in content/release.json are all filled
 and well formed, and statements the source release made false are gone. With --screenshots, renders every page at 360, 768,
 and 1280 px wide in both colour schemes with a local headless Chromium and
 fails if a page scrolls horizontally.
@@ -18,6 +18,7 @@ Exit status 0 only when every check passes.
 
 import argparse
 import html
+import hashlib
 import html.parser
 import json
 import os
@@ -280,10 +281,27 @@ def check_withheld():
 
 
 def check_source_release():
-    """The release switch in build.py must be filled before the site can be
+    """The release record in content/release.json must be filled before the site can be
     staged, and nothing unfilled may have reached a page."""
     sys.path.insert(0, str(ROOT))
     import build
+    stamp = SITE / "release-source.sha256"
+    expected_stamp = hashlib.sha256(build.RELEASE_PATH.read_bytes()).hexdigest()
+    if not stamp.exists() or stamp.read_text().strip() != expected_stamp:
+        fail("content/release.json", "built release metadata is stale; run python3 build.py")
+    values = build.source_values()
+    for template in sorted((ROOT / "src/pages").rglob("index.html")):
+        output = SITE / template.relative_to(ROOT / "src/pages")
+        rendered = output.read_text()
+        for line in template.read_text().splitlines():
+            if "{{SOURCE_" not in line:
+                continue
+            expected = line
+            for name, value in values.items():
+                expected = expected.replace("{{" + name + "}}", value)
+            chunks = re.split(r"\{\{[A-Z_]+\}\}", expected)
+            if any(chunk not in rendered for chunk in chunks if chunk.strip()):
+                fail(str(output.relative_to(ROOT)), "source-release snippet differs from record/template")
     hex40 = r"[0-9a-f]{40}"
     fields = [("SOURCE_RELEASE_ID", r"[A-Za-z0-9][A-Za-z0-9._-]*"),
               ("SOURCE_RELEASE_COMMIT", hex40),
