@@ -10,7 +10,8 @@ The public site is generated from `main`; GitHub Pages serves the root of
    qualification receipt from the exact revisions' runs. Publication alone
    does not establish qualification. Confirm the named release is public.
 2. For routine status updates, edit `editorial_updated`, `standing`,
-   `demonstrated`, `limitations` and `evidence` in that same record. They
+   `demonstrated`, `limitations`, `evidence`, `preview_summary` and
+   `preview_details` in that same record. They
    generate the shared home/status notice. Keep the standing consistent with
    the qualification enum and its prepared evidence wording. Do not promote
    a claim without the named run or evidence. For broader changes, edit the relevant `src/pages/**/index.html` prose when claims change.

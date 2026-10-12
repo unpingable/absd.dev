@@ -37,6 +37,8 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     record_path = copy / "content/release.json"
     changed = dict(record, release_id="absd-preview-hypothetical", release_date="2026-10-11")
     changed["evidence"] = [{"label": v["label"], "url": v["url"].replace(record["release_id"], changed["release_id"])} for v in record["evidence"]]
+    changed["preview_summary"] = "Hypothetical preview: QEMU smoke only; suites scheduled after 2026-11-01."
+    changed["preview_details"] = "Hypothetical exact revisions built and booted; qualification remains pending until 2026-11-01."
     changed["standing"] = "Hypothetical public preview status update."
     changed["editorial_updated"] = "2026-10-12"
     changed["demonstrated"] = ["Hypothetical demonstration with bounded QEMU scope."]
@@ -55,6 +57,9 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
         assert changed["standing"] in text and changed["editorial_updated"] in text
         assert changed["demonstrated"][0] in text and changed["limitations"][0] in text
     assert "Physical hardware qualification: not yet established" in (copy / "site/status/index.html").read_text()
+    status = (copy / "site/status/index.html").read_text()
+    assert changed["preview_summary"] in status and changed["preview_details"] in status
+    assert "2026-10-17" not in status.split('<h3 id="source-run">')[0]
     qualified = dict(changed, qualification="qualified", standing="Hypothetical core qualification recorded.", kernel_suite_result="fixture kernel PASS",
                      core_profile_result="fixture core PASS extended=NOT_RUN", qualification_record="hypothetical receipt")
     record_path.write_text(json.dumps(qualified))

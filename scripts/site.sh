@@ -8,6 +8,8 @@ case "${1:-}" in
     preview) python3 -m http.server --bind 127.0.0.1 -d site 8765 ;;
     publish)
         test "$(git branch --show-current)" = main || { echo 'site: publish from main' >&2; exit 1; }
+        python3 scripts/content-check.py
+        git diff origin/main HEAD -- README.md PUBLISHING.md content build.py scripts src
         scripts/stage-pages.sh
         git push origin main
         git push origin gh-pages

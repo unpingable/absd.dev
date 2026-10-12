@@ -47,7 +47,8 @@ def load_release(path):
     expected = {"schema_version", "repository", "licence", "release_id", "release_commit",
                 "kernel_commit", "platform_commit", "release_date", "qualification",
                 "kernel_suite_result", "core_profile_result", "qualification_record",
-                "editorial_updated", "standing", "demonstrated", "limitations", "evidence"}
+                "editorial_updated", "standing", "demonstrated", "limitations", "evidence",
+                "preview_summary", "preview_details"}
     if set(record) != expected or type(record["schema_version"]) is not int or record["schema_version"] != 1:
         raise ValueError("release record: expected schema version 1 and its exact fields")
     for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence"}:
@@ -91,20 +92,11 @@ for field in ("release_id", "release_commit", "kernel_commit", "platform_commit"
               "qualification", "kernel_suite_result", "core_profile_result", "qualification_record"):
     globals()["SOURCE_" + field.upper()] = RELEASE[field] or UNFILLED
 
-# The two wordings. "preview" names a date: once the seven-day observation
-# has ended (2026-10-17) and the suites have run, switch to "qualified"
-# rather than leaving "scheduled after" on the site.
+# Qualification labels remain bounded; preview evidence wording belongs to the record.
 SOURCE_STATEMENTS = {
     "preview": (
         "l-exp", "EXPERIMENTAL-INTEGRATION",
-        "Preview: built, booted and smoke-tested from a clean clone; the qualification suites "
-        "have not yet been run on these revisions and are scheduled after 2026-10-17.",
-        "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, "
-        "built the kernel, the platform and the operator image offline, booted under QEMU's software "
-        "emulation and served an SSH session. Neither the kernel suite nor the platform gate has been "
-        "run on these exact revisions; both are scheduled for after the seven-day observation ends on "
-        "2026-10-17. Until then nothing on this site labelled qualified or validated is a statement "
-        "about the source release."),
+        RELEASE["preview_summary"], RELEASE["preview_details"]),
     "qualified": (
         "l-val", "VALIDATED",
         "The kernel suite and the core profile of the platform gate have passed on these revisions; "
