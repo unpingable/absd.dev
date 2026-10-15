@@ -15,6 +15,9 @@ spec.loader.exec_module(build)
 with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     fixture = pathlib.Path(directory) / "release.json"
     record = dict(build.RELEASE)
+    # The loader adds binary_preview=None in memory for a schema 1 record;
+    # the file has no such field, so fixtures built from `record` must not either.
+    assert record.pop("binary_preview") is None
     for field, value in (("qualification", "unknown"), ("release_commit", "short"),
                          ("release_date", "2026-02-30"), ("schema_version", True),
                          ("qualification", "qualified")):
@@ -29,7 +32,8 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     copy = pathlib.Path(directory) / "site-source"
     shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
     subprocess.run(["python3", "build.py"], cwd=copy, check=True)
-    # The live record has no binary preview: no download page, no link.
+    # The live record has no binary preview: schema 1, no download page, no link.
+    assert record["schema_version"] == 1 and "binary_preview" not in json.loads((ROOT / "content/release.json").read_text())
     assert not (copy / "site/try").exists(), "live record built a download page"
     assert 'href="/try/"' not in (copy / "site/index.html").read_text()
     print("content-check: binary-preview absent-live PASS")
@@ -91,14 +95,14 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
             "host_tiers": ["Linux x86-64 with KVM", "Linux x86-64 without KVM (TCG)"],
             "qualification": "offline-boot-tested",
             "evidence": [{"level": "offline-boot-tested", "label": "Offline boot receipt", "url": "/evidence/"}],
-            "quickstart_url": base + "QUICKSTART.md",
+            "quickstart_url": f"{record['repository']}/blob/{tag}/QUICKSTART.md",
             "limitations": [build.HARDWARE_LIMIT, "Developer preview for QEMU only."],
         }
 
     def bad(name, change, expect):
         preview = synthetic()
         change(preview)
-        fixture.write_text(json.dumps(dict(record, binary_preview=preview)))
+        fixture.write_text(json.dumps(dict(record, schema_version=2, binary_preview=preview)))
         try:
             build.load_release(fixture)
         except ValueError as error:
@@ -122,7 +126,33 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     bad("malformed-sums-line", lambda p: p["sums"].__setitem__(0, "not a sums line"), "malformed sums line")
     bad("bytes-zero", lambda p: asset(p, "absd-try.py").update(bytes=0), "malformed bytes")
     bad("sums-url-wrong", lambda p: p.update(sums_url=base + "SUMS"), "sums_url is not the tagged SHA256SUMS")
-    bad("quickstart-not-an-asset", lambda p: p.update(quickstart_url=base + "OTHER.md"), "quickstart_url is not one of the listed assets")
+    bad("quickstart-not-at-tag", lambda p: p.update(quickstart_url=base + "QUICKSTART.md"),
+        "quickstart_url is not QUICKSTART.md at the tag")
+    bad("duplicate-sums-line", lambda p: p["sums"].append(p["sums"][0]), "lists absd-")
+    bad("dotdot-asset-name", lambda p: p["assets"].append({"name": "..", "url": base + "..", "sha256": "2" * 64, "bytes": 1}),
+        "malformed asset name")
+    bad("duplicate-asset", lambda p: p["assets"].append(dict(p["assets"][0])), "listed twice")
+    sig = {"name": "SHA256SUMS.sig", "url": base + "SHA256SUMS.sig", "sha256": "3" * 64, "bytes": 300}
+    bad("sig-when-unsigned", lambda p: p["assets"].append(dict(sig)), "listed but the record says unsigned")
+    verify = "ssh-keygen -Y verify -f allowed_signers -I release@absd.dev -n file -s SHA256SUMS.sig"
+    bad("signed-without-sig", lambda p: p.update(signature=verify), "must list SHA256SUMS.sig")
+    signed = synthetic()
+    signed.update(signature=verify)
+    signed["assets"].append(dict(sig))
+    fixture.write_text(json.dumps(dict(record, schema_version=2, binary_preview=signed)))
+    assert build.load_release(fixture)["binary_preview"]["signature"] == verify
+    print("content-check: binary-preview signed-with-sig PASS")
+    for name, doc, expect in (("schema2-without-preview", dict(record, schema_version=2, binary_preview=None),
+                               "schema 2 requires a binary preview"),
+                              ("schema1-with-field", dict(record, binary_preview=None), "exact fields")):
+        fixture.write_text(json.dumps(doc))
+        try:
+            build.load_release(fixture)
+        except ValueError as error:
+            assert expect in str(error), (name, str(error))
+            print(f"content-check: binary-preview {name} REFUSED ({error})")
+        else:
+            raise AssertionError(f"accepted: {name}")
     bad("qualification-unknown", lambda p: p.update(qualification="validated"), "qualification must be one of")
     bad("qualification-without-evidence", lambda p: p.update(qualification="published"), "has no evidence entry of that level")
     bad("limitations-missing", lambda p: p.update(limitations=[]), "limitations requires")
@@ -132,7 +162,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     # Positive: the synthetic record builds a pinned /try/ page that the checker accepts.
     preview_copy = pathlib.Path(directory) / "preview-source"
     shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
-    (preview_copy / "content/release.json").write_text(json.dumps(dict(record, binary_preview=synthetic()), indent=2) + "\n")
+    (preview_copy / "content/release.json").write_text(json.dumps(dict(record, schema_version=2, binary_preview=synthetic()), indent=2) + "\n")
     subprocess.run(["python3", "build.py"], cwd=preview_copy, check=True, capture_output=True)
     subprocess.run(["python3", "scripts/check.py"], cwd=preview_copy, check=True, capture_output=True)
     page = (preview_copy / "site/try/index.html").read_text()

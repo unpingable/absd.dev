@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 1,
   "repository": "https://github.com/unpingable/absd",
   "licence": "Apache-2.0",
   "release_id": "absd-preview-20261010",
@@ -32,6 +32,5 @@
     }
   ],
   "preview_summary": "Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17.",
-  "preview_details": "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU's software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release.",
-  "binary_preview": null
+  "preview_details": "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU's software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release."
 }

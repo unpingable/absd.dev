@@ -34,22 +34,33 @@ The public site is generated from `main`; GitHub Pages serves the root of
 
 ## Binary preview (absd-coord #31, #32)
 
-`content/release.json` (schema version 2) carries `binary_preview`. It stays
-`null` until an owner-approved GitHub Release of the source tag carries the
-preview's binary assets. With `null`, the build makes no `/try/` page and no
-navigation link, and the checker refuses any download address.
+A record without a binary preview stays schema version 1, exactly as it is
+today, so the live site is unchanged byte for byte. Schema version 2 adds a
+`binary_preview` object. It is used only once an owner-approved GitHub
+Release of the source tag carries the preview's binary assets, and
+`binary_preview: null` is refused (use schema 1). Without a preview, the
+build makes no `/try/` page and no navigation link, and the checker refuses
+any download address.
 
 The object's fields are `tag`, `assets[] {name, url, sha256, bytes}`,
 `manifest_url`, `sums_url`, `sums` (the release's `SHA256SUMS` lines, copied),
 `signature` (`unsigned` or an `ssh-keygen -Y verify …` command),
 `qemu_profile`, `host_tiers`, `qualification`, `evidence[] {level, label,
-url}`, `quickstart_url` and `limitations`. The build refuses a record where:
+url}`, `quickstart_url` and `limitations`. `quickstart_url` is the source
+repository's `QUICKSTART.md` at the tag (`<repository>/blob/<tag>/QUICKSTART.md`);
+a copy may also be an asset. A signed release lists `SHA256SUMS.sig` as an
+asset outside `SHA256SUMS`, because the signature covers that file. The build
+refuses a record where:
 
 - `tag` differs from `release_id`;
 - an address is not `https://github.com/unpingable/absd/releases/download/<tag>/<name>`;
 - any address uses `releases/latest`;
 - an asset digest is absent from, or different from, the copied `SHA256SUMS`;
-- `SHA256SUMS` lists a file that is not an asset;
+- `SHA256SUMS` lists a file that is not an asset, or lists one twice;
+- an asset is listed twice or is named `.` or `..`;
+- `SHA256SUMS.sig` is listed while `signature` is `unsigned`, or a signed
+  record lacks it;
+- `quickstart_url` is not `QUICKSTART.md` at the tag;
 - a digest is malformed;
 - `qualification` is not on the ladder built → offline-boot-tested →
   qualified → release-authorized → published → outsider-passed;

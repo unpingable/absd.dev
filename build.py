@@ -48,10 +48,18 @@ def load_release(path):
                 "kernel_commit", "platform_commit", "release_date", "qualification",
                 "kernel_suite_result", "core_profile_result", "qualification_record",
                 "editorial_updated", "standing", "demonstrated", "limitations", "evidence",
-                "preview_summary", "preview_details", "binary_preview"}
-    if set(record) != expected or type(record["schema_version"]) is not int or record["schema_version"] != 2:
-        raise ValueError("release record: expected schema version 2 and its exact fields")
-    for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence", "binary_preview"}:
+                "preview_summary", "preview_details"}
+    # Schema 1 is a source release with no binary preview; schema 2 adds the
+    # `binary_preview` object. A record without a binary preview stays schema
+    # 1, so its bytes (and release-source.sha256) are unchanged by this field.
+    version = record.get("schema_version")
+    if type(version) is not int or (version, set(record)) not in ((1, expected), (2, expected | {"binary_preview"})):
+        raise ValueError("release record: expected schema version 1 (no binary preview) or 2 (with one) "
+                         "and its exact fields")
+    if version == 2 and record["binary_preview"] is None:
+        raise ValueError("release record: schema 2 requires a binary preview; use schema 1 without one")
+    record.setdefault("binary_preview", None)
+    for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence"}:
         if not isinstance(record[name], str) or not record[name].strip() or UNFILLED in record[name]:
             raise ValueError(f"release record: missing {name}")
     for name in ("release_commit", "kernel_commit", "platform_commit"):
@@ -111,42 +119,61 @@ def load_binary_preview(record):
     if tag != record["release_id"]:
         raise ValueError("binary preview: tag differs from release_id")
     base = ASSET_BASE + tag + "/"
+    signature = preview["signature"]
+    if signature != "unsigned" and not (isinstance(signature, str) and signature.startswith("ssh-keygen -Y verify ")):
+        raise ValueError("binary preview: signature must be unsigned or an ssh-keygen -Y verify command")
     sums = {}
     if not isinstance(preview["sums"], list) or not preview["sums"]:
         raise ValueError("binary preview: sums requires the SHA256SUMS lines")
     for line in preview["sums"]:
         m = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9._-]+)", line) if isinstance(line, str) else None
-        if not m:
+        if not m or m.group(2) in (".", ".."):
             raise ValueError(f"binary preview: malformed sums line {line!r}")
+        if m.group(2) in sums:
+            raise ValueError(f"binary preview: SHA256SUMS lists {m.group(2)} twice")
         sums[m.group(2)] = m.group(1)
     if not isinstance(preview["assets"], list) or not preview["assets"]:
         raise ValueError("binary preview: assets required")
     names = set()
+    signed = preview["signature"] != "unsigned"
     for asset in preview["assets"]:
         if not isinstance(asset, dict) or set(asset) != {"name", "url", "sha256", "bytes"}:
             raise ValueError("binary preview: malformed asset")
         name = asset["name"]
-        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9._-]+", name) or name == "SHA256SUMS":
+        if (not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9._-]+", name) or name in (".", "..")
+                or name == "SHA256SUMS"):
             raise ValueError(f"binary preview: malformed asset name {name!r}")
+        if name in names:
+            raise ValueError(f"binary preview: asset {name} listed twice")
         if asset["url"] != base + name:
             raise ValueError(f"binary preview: {name} is not at its tagged release address")
         if not isinstance(asset["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", asset["sha256"]):
             raise ValueError(f"binary preview: malformed sha256 for {name}")
+        if name == "SHA256SUMS.sig":
+            # The signature signs SHA256SUMS, so SHA256SUMS cannot list it.
+            if not signed:
+                raise ValueError("binary preview: SHA256SUMS.sig listed but the record says unsigned")
+            if type(asset["bytes"]) is not int or asset["bytes"] <= 0:
+                raise ValueError(f"binary preview: malformed bytes for {name}")
+            names.add(name)
+            continue
         if sums.get(name) != asset["sha256"]:
             raise ValueError(f"binary preview: {name} digest differs from the record's SHA256SUMS")
         if type(asset["bytes"]) is not int or asset["bytes"] <= 0:
             raise ValueError(f"binary preview: malformed bytes for {name}")
         names.add(name)
-    if set(sums) != names:
+    if signed and "SHA256SUMS.sig" not in names:
+        raise ValueError("binary preview: a signed record must list SHA256SUMS.sig")
+    if set(sums) != names - {"SHA256SUMS.sig"}:
         raise ValueError("binary preview: SHA256SUMS lists files that are not assets")
     if preview["sums_url"] != base + "SHA256SUMS":
         raise ValueError("binary preview: sums_url is not the tagged SHA256SUMS")
-    for field in ("manifest_url", "quickstart_url"):
-        if preview[field] not in {base + n for n in names}:
-            raise ValueError(f"binary preview: {field} is not one of the listed assets")
-    signature = preview["signature"]
-    if signature != "unsigned" and not (isinstance(signature, str) and signature.startswith("ssh-keygen -Y verify ")):
-        raise ValueError("binary preview: signature must be unsigned or an ssh-keygen -Y verify command")
+    if preview["manifest_url"] not in {base + n for n in names}:
+        raise ValueError("binary preview: manifest_url is not one of the listed assets")
+    # The quickstart is the source repository's file at the tag (design #31 §8);
+    # a release asset copy may exist, but the site links the tagged source.
+    if preview["quickstart_url"] != f"{record['repository']}/blob/{tag}/QUICKSTART.md":
+        raise ValueError("binary preview: quickstart_url is not QUICKSTART.md at the tag in the source repository")
     if not isinstance(preview["qemu_profile"], str) or not preview["qemu_profile"].strip():
         raise ValueError("binary preview: qemu_profile required")
     for field in ("host_tiers", "limitations"):
