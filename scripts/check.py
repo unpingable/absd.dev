@@ -265,8 +265,15 @@ def check_constellation_status():
 def check_withheld():
     """Statements the evidence does not support must not appear."""
     all_text = " ".join((p.read_text() for p in SITE.rglob("*.html")))
+    # A download address may appear only as one of the record's own pinned
+    # binary-preview asset URLs (content/release.json, binary_preview).
+    sys.path.insert(0, str(ROOT))
+    import build
+    preview = build.RELEASE["binary_preview"]
+    for url in ([a["url"] for a in preview["assets"]] + [preview["sums_url"]]) if preview else []:
+        all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
     for phrase in ("x86-64 PCs supported", "qualified x86-64 hardware", "runs on real hardware",
-                   "/download", "/source/"):
+                   "/download", "/source/", "releases/latest"):
         if phrase in all_text:
             fail("site", f"withheld claim or page present: {phrase!r}")
     # True until the source release; false after it.
@@ -335,6 +342,34 @@ def check_source_release():
     for text in needed:
         if text not in status:
             fail("/status/", f"missing source-release statement: {text!r}")
+
+
+def check_binary_preview():
+    """With a binary preview in the record, /try/ shows every pinned asset
+    address and digest, the checksums and the hardware limit, and is linked
+    from the navigation; without one, no /try/ page or link exists."""
+    sys.path.insert(0, str(ROOT))
+    import build
+    preview = build.RELEASE["binary_preview"]
+    page = SITE / "try" / "index.html"
+    linked = any('href="/try/"' in p.read_text() for p in SITE.rglob("*.html"))
+    if preview is None:
+        if page.exists() or linked:
+            fail("/try/", "a download page or link exists without a binary preview in the record")
+        return
+    if not page.exists():
+        fail("/try/", "the record has a binary preview but no page was built")
+        return
+    text = page.read_text()
+    needed = [html.escape(preview["tag"]), preview["sums_url"], preview["manifest_url"], preview["quickstart_url"],
+              html.escape(build.HARDWARE_LIMIT), f'<strong>{html.escape(preview["qualification"])}</strong>']
+    for asset in preview["assets"]:
+        needed += [asset["url"], asset["sha256"], str(asset["bytes"])]
+    for item in needed:
+        if item not in text:
+            fail("/try/", f"binary preview value missing from the page: {item!r}")
+    if not linked:
+        fail("/try/", "not linked from the navigation")
 
 
 def browser():
@@ -459,6 +494,7 @@ def main():
     check_constellation_status()
     check_withheld()
     check_source_release()
+    check_binary_preview()
     if args.screenshots:
         screenshots(pages, args.screenshots)
     for f in failures:

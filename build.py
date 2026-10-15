@@ -48,10 +48,10 @@ def load_release(path):
                 "kernel_commit", "platform_commit", "release_date", "qualification",
                 "kernel_suite_result", "core_profile_result", "qualification_record",
                 "editorial_updated", "standing", "demonstrated", "limitations", "evidence",
-                "preview_summary", "preview_details"}
-    if set(record) != expected or type(record["schema_version"]) is not int or record["schema_version"] != 1:
-        raise ValueError("release record: expected schema version 1 and its exact fields")
-    for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence"}:
+                "preview_summary", "preview_details", "binary_preview"}
+    if set(record) != expected or type(record["schema_version"]) is not int or record["schema_version"] != 2:
+        raise ValueError("release record: expected schema version 2 and its exact fields")
+    for name in expected - {"schema_version", "kernel_suite_result", "core_profile_result", "qualification_record", "demonstrated", "limitations", "evidence", "binary_preview"}:
         if not isinstance(record[name], str) or not record[name].strip() or UNFILLED in record[name]:
             raise ValueError(f"release record: missing {name}")
     for name in ("release_commit", "kernel_commit", "platform_commit"):
@@ -82,7 +82,94 @@ def load_release(path):
                 raise ValueError(f"release record: preview requires null {name}")
         elif not isinstance(value, str) or not value.strip() or UNFILLED in value:
             raise ValueError(f"release record: qualified requires {name}")
+    load_binary_preview(record)
     return record
+
+
+# The downloadable binary preview (absd-coord #31/#32). Absent (null) until an
+# owner-approved GitHub Release of the source tag carries binary assets.
+PREVIEW_LADDER = ("built", "offline-boot-tested", "qualified", "release-authorized", "published", "outsider-passed")
+PREVIEW_FIELDS = {"tag", "assets", "manifest_url", "sums_url", "sums", "signature", "qemu_profile",
+                  "host_tiers", "qualification", "evidence", "quickstart_url", "limitations"}
+ASSET_BASE = "https://github.com/unpingable/absd/releases/download/"
+HARDWARE_LIMIT = "Physical hardware qualification is not yet established."
+
+
+def load_binary_preview(record):
+    """Validates record["binary_preview"]. Nothing is fetched: every URL must
+    be the exact tagged asset address, every asset digest must equal the
+    record's own copy of SHA256SUMS, and the qualification level must be
+    named by an evidence entry of that same level."""
+    preview = record["binary_preview"]
+    if preview is None:
+        return None
+    if not isinstance(preview, dict) or set(preview) != PREVIEW_FIELDS:
+        raise ValueError("binary preview: expected its exact fields")
+    if "releases/latest" in json.dumps(preview):
+        raise ValueError("binary preview: releases/latest is never a canonical address")
+    tag = preview["tag"]
+    if tag != record["release_id"]:
+        raise ValueError("binary preview: tag differs from release_id")
+    base = ASSET_BASE + tag + "/"
+    sums = {}
+    if not isinstance(preview["sums"], list) or not preview["sums"]:
+        raise ValueError("binary preview: sums requires the SHA256SUMS lines")
+    for line in preview["sums"]:
+        m = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9._-]+)", line) if isinstance(line, str) else None
+        if not m:
+            raise ValueError(f"binary preview: malformed sums line {line!r}")
+        sums[m.group(2)] = m.group(1)
+    if not isinstance(preview["assets"], list) or not preview["assets"]:
+        raise ValueError("binary preview: assets required")
+    names = set()
+    for asset in preview["assets"]:
+        if not isinstance(asset, dict) or set(asset) != {"name", "url", "sha256", "bytes"}:
+            raise ValueError("binary preview: malformed asset")
+        name = asset["name"]
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9._-]+", name) or name == "SHA256SUMS":
+            raise ValueError(f"binary preview: malformed asset name {name!r}")
+        if asset["url"] != base + name:
+            raise ValueError(f"binary preview: {name} is not at its tagged release address")
+        if not isinstance(asset["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", asset["sha256"]):
+            raise ValueError(f"binary preview: malformed sha256 for {name}")
+        if sums.get(name) != asset["sha256"]:
+            raise ValueError(f"binary preview: {name} digest differs from the record's SHA256SUMS")
+        if type(asset["bytes"]) is not int or asset["bytes"] <= 0:
+            raise ValueError(f"binary preview: malformed bytes for {name}")
+        names.add(name)
+    if set(sums) != names:
+        raise ValueError("binary preview: SHA256SUMS lists files that are not assets")
+    if preview["sums_url"] != base + "SHA256SUMS":
+        raise ValueError("binary preview: sums_url is not the tagged SHA256SUMS")
+    for field in ("manifest_url", "quickstart_url"):
+        if preview[field] not in {base + n for n in names}:
+            raise ValueError(f"binary preview: {field} is not one of the listed assets")
+    signature = preview["signature"]
+    if signature != "unsigned" and not (isinstance(signature, str) and signature.startswith("ssh-keygen -Y verify ")):
+        raise ValueError("binary preview: signature must be unsigned or an ssh-keygen -Y verify command")
+    if not isinstance(preview["qemu_profile"], str) or not preview["qemu_profile"].strip():
+        raise ValueError("binary preview: qemu_profile required")
+    for field in ("host_tiers", "limitations"):
+        if not isinstance(preview[field], list) or not preview[field] or any(
+                not isinstance(v, str) or not v.strip() for v in preview[field]):
+            raise ValueError(f"binary preview: {field} requires a nonempty list of statements")
+    if HARDWARE_LIMIT not in preview["limitations"]:
+        raise ValueError("binary preview: the physical hardware limitation must remain")
+    level = preview["qualification"]
+    if level not in PREVIEW_LADDER:
+        raise ValueError(f"binary preview: qualification must be one of {', '.join(PREVIEW_LADDER)}")
+    evidence = preview["evidence"]
+    if not isinstance(evidence, list) or any(
+            not isinstance(e, dict) or set(e) != {"level", "label", "url"}
+            or e["level"] not in PREVIEW_LADDER or not all(isinstance(v, str) and v.strip() for v in e.values())
+            or not (e["url"].startswith("https://") or (e["url"].startswith("/") and not e["url"].startswith("//")))
+            for e in evidence):
+        raise ValueError("binary preview: malformed evidence entry")
+    # Every level above `built` must be named by an evidence entry of that
+    # level: a record cannot claim a step it does not cite.
+    if level != "built" and level not in {e["level"] for e in evidence}:
+        raise ValueError(f"binary preview: qualification {level} has no evidence entry of that level")
+    return preview
 
 
 RELEASE = load_release(RELEASE_PATH)
@@ -110,6 +197,7 @@ SOURCE_STATEMENTS = {
 }
 
 NAV = [
+    *([("/try/", "Try")] if RELEASE["binary_preview"] else []),
     ("/status/", "Status"),
     ("/design/", "Design"),
     ("/manual/", "Manual"),
@@ -330,6 +418,48 @@ the build commands and repository files this page mentions are the milestone's. 
     return "\n".join(rows), len(entries)
 
 
+def try_page():
+    """The Download / Try page, built only when the record has a binary
+    preview: the pinned asset addresses and digests, nothing discovered."""
+    preview = RELEASE["binary_preview"]
+    esc = html.escape
+    rows = "".join(
+        f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
+        f'<td><code class="digest">{a["sha256"]}</code></td><td>{a["bytes"]}</td></tr>\n'
+        for a in preview["assets"])
+    evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
+                       for e in preview["evidence"]) or "<li>None recorded.</li>"
+    signature = ("These files are not signed. The checksums guard against corruption, not against a compromised account."
+                 if preview["signature"] == "unsigned" else
+                 f'Verify the signature on the checksums with <code>{esc(preview["signature"])}</code>.')
+    return f"""<h1>Try ABSD</h1>
+<p>Developer preview <code>{esc(preview["tag"])}</code>, the binary build of source release
+<code>{esc(RELEASE["release_id"])}</code>. It runs under QEMU on the hosts listed below. Its standing is
+<strong>{esc(preview["qualification"])}</strong> on the ladder built, offline-boot-tested, qualified,
+release-authorized, published, outsider-passed. <a href="/status/#source">What the source release establishes</a>.</p>
+<h2 id="files">Files</h2>
+<p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
+<table>
+<thead><tr><th>File</th><th>SHA-256</th><th>Bytes</th></tr></thead>
+<tbody>
+{rows}</tbody>
+</table>
+<p><a href="{esc(preview["sums_url"], quote=True)}">SHA256SUMS</a> ·
+<a href="{esc(preview["manifest_url"], quote=True)}">manifest</a> ·
+<a href="{esc(preview["quickstart_url"], quote=True)}">quickstart</a></p>
+<h2 id="verify">Verify</h2>
+<p>Download every file and <code>SHA256SUMS</code> into one directory, then run <code>sha256sum -c SHA256SUMS</code>.
+{signature}</p>
+<h2 id="hosts">Hosts and QEMU</h2>
+<p>QEMU profile: {esc(preview["qemu_profile"])}</p>
+<ul>{"".join(f"<li>{esc(t)}</li>" for t in preview["host_tiers"])}</ul>
+<h2 id="limits">Limits</h2>
+<ul>{"".join(f"<li>{esc(t)}</li>" for t in preview["limitations"])}</ul>
+<h2 id="evidence">Evidence</h2>
+<ul>{evidence}</ul>
+"""
+
+
 def write(url, content):
     path = OUT / url.lstrip("/") / "index.html"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -377,6 +507,9 @@ def main():
         if unlisted:
             hidden.add(url)
         write(url, layout(url, meta["title"], meta["description"], body, unlisted=unlisted))
+        pages += 1
+    if RELEASE["binary_preview"]:
+        write("/try/", layout("/try/", "Try ABSD", "Download and verify the ABSD developer preview for QEMU.", try_page()))
         pages += 1
     # GitHub Pages serves /404.html for any path that does not exist.
     not_found = """<h1>Page not found</h1>

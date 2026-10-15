@@ -29,6 +29,10 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     copy = pathlib.Path(directory) / "site-source"
     shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
     subprocess.run(["python3", "build.py"], cwd=copy, check=True)
+    # The live record has no binary preview: no download page, no link.
+    assert not (copy / "site/try").exists(), "live record built a download page"
+    assert 'href="/try/"' not in (copy / "site/index.html").read_text()
+    print("content-check: binary-preview absent-live PASS")
     homepage = copy / "site/index.html"
     homepage.write_text(homepage.read_text().replace(record["release_id"], "wrong-release"))
     mutated = subprocess.run(["python3", "scripts/check.py"], cwd=copy, capture_output=True, text=True)
@@ -68,4 +72,77 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     text = (copy / "site/status/index.html").read_text()
     assert "fixture kernel PASS" in text and "fixture core PASS extended=NOT_RUN" in text
     assert "Physical hardware qualification: not yet established" in text
-print("content-check: invalid records, stale build, hypothetical preview/qualified updates passed; fixture removed")
+
+    # Binary preview (absd-coord #31/#32): a synthetic record, every refusal by name.
+    import hashlib
+    tag = record["release_id"]
+    base = build.ASSET_BASE + tag + "/"
+    names = [f"absd-{tag}-operator.iso", f"absd-{tag}-enroll.iso", f"absd-{tag}-disk.img.xz", "absd-try.py",
+             "MANIFEST.toml", "QUICKSTART.md", "NOTICES.md"]
+    digest = {n: hashlib.sha256(n.encode()).hexdigest() for n in names}
+
+    def synthetic():
+        return {
+            "tag": tag,
+            "assets": [{"name": n, "url": base + n, "sha256": digest[n], "bytes": 1000 + i} for i, n in enumerate(names)],
+            "manifest_url": base + "MANIFEST.toml", "sums_url": base + "SHA256SUMS",
+            "sums": [f"{digest[n]}  {n}" for n in names], "signature": "unsigned",
+            "qemu_profile": "x86-64, one CPU, e1000 user network, IDE disk",
+            "host_tiers": ["Linux x86-64 with KVM", "Linux x86-64 without KVM (TCG)"],
+            "qualification": "offline-boot-tested",
+            "evidence": [{"level": "offline-boot-tested", "label": "Offline boot receipt", "url": "/evidence/"}],
+            "quickstart_url": base + "QUICKSTART.md",
+            "limitations": [build.HARDWARE_LIMIT, "Developer preview for QEMU only."],
+        }
+
+    def bad(name, change, expect):
+        preview = synthetic()
+        change(preview)
+        fixture.write_text(json.dumps(dict(record, binary_preview=preview)))
+        try:
+            build.load_release(fixture)
+        except ValueError as error:
+            assert expect in str(error), (name, str(error))
+            print(f"content-check: binary-preview {name} REFUSED ({error})")
+        else:
+            raise AssertionError(f"binary preview accepted: {name}")
+
+    def asset(p, n):
+        return next(a for a in p["assets"] if a["name"] == n)
+
+    bad("tag-mismatch", lambda p: p.update(tag="absd-preview-other"), "tag differs from release_id")
+    bad("url-not-pinned", lambda p: asset(p, "absd-try.py").update(url=build.ASSET_BASE + "absd-preview-other/absd-try.py"),
+        "not at its tagged release address")
+    bad("releases-latest", lambda p: p.update(manifest_url="https://github.com/unpingable/absd/releases/latest/download/MANIFEST.toml"),
+        "releases/latest")
+    bad("digest-differs-from-sums", lambda p: asset(p, "absd-try.py").update(sha256="0" * 64), "digest differs from the record's SHA256SUMS")
+    bad("asset-absent-from-sums", lambda p: p["sums"].pop(), "digest differs from the record's SHA256SUMS")
+    bad("sums-lists-extra-file", lambda p: p["sums"].append("1" * 64 + "  extra.bin"), "lists files that are not assets")
+    bad("malformed-sha256", lambda p: asset(p, "absd-try.py").update(sha256=digest["absd-try.py"].upper()), "malformed sha256")
+    bad("malformed-sums-line", lambda p: p["sums"].__setitem__(0, "not a sums line"), "malformed sums line")
+    bad("bytes-zero", lambda p: asset(p, "absd-try.py").update(bytes=0), "malformed bytes")
+    bad("sums-url-wrong", lambda p: p.update(sums_url=base + "SUMS"), "sums_url is not the tagged SHA256SUMS")
+    bad("quickstart-not-an-asset", lambda p: p.update(quickstart_url=base + "OTHER.md"), "quickstart_url is not one of the listed assets")
+    bad("qualification-unknown", lambda p: p.update(qualification="validated"), "qualification must be one of")
+    bad("qualification-without-evidence", lambda p: p.update(qualification="published"), "has no evidence entry of that level")
+    bad("limitations-missing", lambda p: p.update(limitations=[]), "limitations requires")
+    bad("hardware-limit-removed", lambda p: p.update(limitations=["Developer preview for QEMU only."]), "physical hardware limitation")
+    bad("signature-malformed", lambda p: p.update(signature="gpg --verify SHA256SUMS.asc"), "signature must be")
+
+    # Positive: the synthetic record builds a pinned /try/ page that the checker accepts.
+    preview_copy = pathlib.Path(directory) / "preview-source"
+    shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+    (preview_copy / "content/release.json").write_text(json.dumps(dict(record, binary_preview=synthetic()), indent=2) + "\n")
+    subprocess.run(["python3", "build.py"], cwd=preview_copy, check=True, capture_output=True)
+    subprocess.run(["python3", "scripts/check.py"], cwd=preview_copy, check=True, capture_output=True)
+    page = (preview_copy / "site/try/index.html").read_text()
+    for n in names:
+        assert base + n in page and digest[n] in page, n
+    assert 'href="/try/"' in (preview_copy / "site/index.html").read_text()
+    print("content-check: binary-preview synthetic-page PASS")
+    # A page whose digest no longer matches the record is refused.
+    (preview_copy / "site/try/index.html").write_text(page.replace(digest["absd-try.py"], "f" * 64))
+    tampered = subprocess.run(["python3", "scripts/check.py"], cwd=preview_copy, capture_output=True, text=True)
+    assert tampered.returncode != 0 and "binary preview value missing" in tampered.stdout, tampered.stdout
+    print("content-check: binary-preview tampered-page REFUSED")
+print("content-check: invalid records, stale build, hypothetical preview/qualified updates, binary preview cases passed; fixtures removed")

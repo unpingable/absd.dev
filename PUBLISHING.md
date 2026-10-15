@@ -32,6 +32,50 @@ The public site is generated from `main`; GitHub Pages serves the root of
    and the public home/status pages; a successful push is not a deployment
    receipt. To stage without publishing, run `scripts/stage-pages.sh` alone.
 
+## Binary preview (absd-coord #31, #32)
+
+`content/release.json` (schema version 2) carries `binary_preview`. It stays
+`null` until an owner-approved GitHub Release of the source tag carries the
+preview's binary assets. With `null`, the build makes no `/try/` page and no
+navigation link, and the checker refuses any download address.
+
+The object's fields are `tag`, `assets[] {name, url, sha256, bytes}`,
+`manifest_url`, `sums_url`, `sums` (the release's `SHA256SUMS` lines, copied),
+`signature` (`unsigned` or an `ssh-keygen -Y verify …` command),
+`qemu_profile`, `host_tiers`, `qualification`, `evidence[] {level, label,
+url}`, `quickstart_url` and `limitations`. The build refuses a record where:
+
+- `tag` differs from `release_id`;
+- an address is not `https://github.com/unpingable/absd/releases/download/<tag>/<name>`;
+- any address uses `releases/latest`;
+- an asset digest is absent from, or different from, the copied `SHA256SUMS`;
+- `SHA256SUMS` lists a file that is not an asset;
+- a digest is malformed;
+- `qualification` is not on the ladder built → offline-boot-tested →
+  qualified → release-authorized → published → outsider-passed;
+- `qualification` is above `built` and no `evidence` entry has that same
+  `level`;
+- the physical hardware limitation is missing.
+
+Nothing is fetched.
+
+The stages are kept distinct:
+
+1. **Draft.** The record is prepared on a branch and built locally. The
+   content cases exercise a synthetic record the same way.
+2. **Staged.** The GitHub Release exists as a draft with its assets. Copy
+   its `SHA256SUMS` lines and each file's byte count into the record; do
+   not type them.
+3. **Published.** This needs the owner's release and publication decision,
+   then the ordinary publish step above. `qualification` names only the
+   highest level whose evidence the record cites.
+4. **Reachable.** After publication, fetch every asset URL, compare each
+   digest and byte count with the record, and keep that receipt separately.
+   It is not part of the site build, and a site push is not that receipt.
+
+A later preview gets a new tag and a new record. Do not edit an earlier
+release's assets or point an earlier page at newer files.
+
 Templates use the existing `{{SOURCE_*}}` replacements. Their HTML is generated
 in `site/`, which is disposable and must not be edited. `release-source.sha256`
 is a local build freshness check, not a qualification or provenance receipt.
