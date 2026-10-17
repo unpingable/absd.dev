@@ -39,6 +39,8 @@ def file_bytes(directory, name):
 
 
 def manifest(record, data):
+    if not re.fullmatch(r'[a-z0-9.-]{1,64}', record['release_id']):
+        raise ValueError('documentation: release id is outside the native helper profile')
     doc = tomllib.loads(data.decode("utf-8"))
     if doc.get("schema") != "absd-preview-manifest/1":
         raise ValueError("documentation: expected absd-preview-manifest/1, not an installed-release manifest")

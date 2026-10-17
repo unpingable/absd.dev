@@ -57,6 +57,8 @@ minimum, SeaBIOS, e1000 and a primary IDE disk. The manifest's QEMU table is
 `cpu_tcg="max,vendor=GenuineIntel,+rdrand"`, `memory_mib=256`, `smp=1`,
 `nic="e1000"`, `disk="ide"`, `firmware="SeaBIOS"`. Other profiles require
 an implemented launcher and a separate rehearsal.
+The shared release id/tag is limited to the helper's `[a-z0-9.-]{1,64}`
+domain; a source-only tag outside that domain cannot name this binary profile.
 
 ### Prepare, verify, select
 

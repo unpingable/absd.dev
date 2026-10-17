@@ -137,6 +137,15 @@ class ReleaseDocs(unittest.TestCase):
             with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
                 docs.manifest(self.record, raw.replace(before, after))
 
+    def test_internal_release_id_matches_native_helper_domain(self):
+        original = self.record['release_id']
+        changed = copy.deepcopy(self.record)
+        changed['release_id'] = original.upper()
+        changed['binary_preview']['tag'] = original.upper()
+        raw = (self.assets/'MANIFEST.toml').read_bytes().replace(original.encode(), original.upper().encode())
+        with self.assertRaisesRegex(ValueError, 'outside the native helper profile'):
+            docs.manifest(changed, raw)
+
     def test_stale_quickstart_and_wrong_source_refuse(self):
         (self.assets / "QUICKSTART.md").write_text("old release guide")
         a = next(a for a in self.record["binary_preview"]["assets"] if a["name"] == "QUICKSTART.md")
