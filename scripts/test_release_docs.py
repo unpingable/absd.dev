@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT))
 import release_docs as docs
 
 
-def fixture(directory, tag="absd-preview-fixture"):
+def fixture(directory, tag="absd-preview-fixture", extra_manuals=None):
     directory = pathlib.Path(directory)
     source = directory / "source"
     assets = directory / "assets"
@@ -38,6 +38,8 @@ def fixture(directory, tag="absd-preview-fixture"):
     (source / "SOURCE-MANIFEST.toml").write_text(source_manifest)
     (source / "platform/man").mkdir(parents=True)
     (source / "platform/man/intro.1").write_text('.Dd October 17, 2026\n.Dt INTRO 1\n.Os ABSD\n.Sh NAME\n.Nm intro\n.Nd release fixture manual\n.Sh DESCRIPTION\nThis is a synthetic documentation fixture.\n')
+    for name, data in (extra_manuals or {}).items():
+        (source/'platform/man'/name).write_bytes(data)
     subprocess.run(["git", "init", "-q", str(source)], check=True)
     subprocess.run(["git", "-C", str(source), "add", "."], check=True)
     subprocess.run(["git", "-C", str(source), "-c", "user.name=ABSD fixture", "-c", "user.email=fixture@example.invalid",

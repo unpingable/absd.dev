@@ -178,7 +178,8 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
         shutil.rmtree(preview_copy/'content/releases')
     sys.path.insert(0, str(ROOT / "scripts"))
     from test_release_docs import fixture as documentation_fixture
-    preview_record, source, assets = documentation_fixture(pathlib.Path(directory) / "preview-inputs", tag)
+    notices = {p.name:p.read_bytes() for p in (ROOT/'scripts/testdata/public-manual-notices').iterdir()}
+    preview_record, source, assets = documentation_fixture(pathlib.Path(directory) / "preview-inputs", tag, notices)
     build.release_docs.stage(preview_record, preview_copy, assets, source)
     (preview_copy / "content/release.json").write_text(json.dumps(preview_record, indent=2) + "\n")
     subprocess.run(["python3", "build.py"], cwd=preview_copy, check=True, capture_output=True)
@@ -188,6 +189,42 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
         assert item["url"] in page and item["sha256"] in page, item["name"]
     assert 'href="/try/"' in (preview_copy / "site/index.html").read_text()
     print("content-check: binary-preview synthetic-page PASS")
+    print('content-check: exact-source-public-attribution PASS')
+    home = preview_copy/'site/index.html'
+    original_home = home.read_text()
+    home.write_text(original_home.replace('</main>','<p>cls@lubutu.com</p></main>'))
+    misplaced = subprocess.run(['python3','scripts/check.py'],cwd=preview_copy,capture_output=True,text=True)
+    assert misplaced.returncode != 0 and "e-mail address: 'cls@lubutu.com'" in misplaced.stdout
+    home.write_text(original_home)
+    local_rules=preview_copy/'scripts/private-patterns.local'
+    assert not local_rules.exists(), 'fixture unexpectedly inherited local rules'
+    local_rules.write_text('cls@lubutu[.]com\texplicit local notice block\n')
+    explicit=subprocess.run(['python3','scripts/check.py'],cwd=preview_copy,capture_output=True,text=True)
+    assert explicit.returncode != 0 and 'explicit local notice block' in explicit.stdout
+    local_rules.unlink()
+    manual = preview_copy/'site/releases'/tag/'man/sbase.7/index.html'
+    original_manual = manual.read_text()
+    manual.write_text(original_manual.replace('</main>','<p>private-contact@example.invalid</p></main>'))
+    unrelated = subprocess.run(['python3','scripts/check.py'],cwd=preview_copy,capture_output=True,text=True)
+    assert unrelated.returncode != 0 and "e-mail address: 'private-contact@example.invalid'" in unrelated.stdout
+    manual.write_text(original_manual)
+    # Even a non-rendering source edit invalidates the exact public-notice
+    # exception. Reseal only the disposable metadata fixture to reach it.
+    source_page=preview_copy/'content/releases'/tag/'manual/sbase.7'
+    original_source=source_page.read_bytes()
+    source_page.write_bytes(original_source+b'.\\" fixture comment\n')
+    metadata=preview_copy/'content/releases'/tag/'manual/SHA256SUMS'
+    original_sums=metadata.read_bytes()
+    metadata.write_bytes(build.release_docs.manual_sums(metadata.parent))
+    original_record=(preview_copy/'content/release.json').read_text()
+    altered=json.loads(original_record)
+    altered['binary_preview']['documentation']['manual_sha256']=build.hashlib.sha256(metadata.read_bytes()).hexdigest()
+    (preview_copy/'content/release.json').write_text(json.dumps(altered))
+    changed_source=subprocess.run(['python3','scripts/check.py'],cwd=preview_copy,capture_output=True,text=True)
+    assert changed_source.returncode != 0 and "e-mail address: 'cls@lubutu.com'" in changed_source.stdout
+    source_page.write_bytes(original_source);metadata.write_bytes(original_sums)
+    (preview_copy/'content/release.json').write_text(original_record)
+    print('content-check: attribution-scope-and-source-mutation REFUSED')
     # A page whose digest no longer matches the record is refused.
     helper_digest = next(a["sha256"] for a in preview_record["binary_preview"]["assets"] if a["name"] == "absd-try.py")
     (preview_copy / "site/try/index.html").write_text(page.replace(helper_digest, "f" * 64))

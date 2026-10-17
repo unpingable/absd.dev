@@ -224,12 +224,21 @@ def check_css():
             fail("style.css", f"fixed {m.group(1)} {m.group(2)}px")
 
 
+EMAIL_RULE = (r"[\w.+-]+@[A-Za-z][\w-]*(\.[\w-]+)*\.[A-Za-z]{2,}", "e-mail address")
 PRIVATE = [
     (r"/home/(?!operator\b)[a-z]", "private path"),
-    (r"[\w.+-]+@[A-Za-z][\w-]*(\.[\w-]+)*\.[A-Za-z]{2,}", "e-mail address"),
+    EMAIL_RULE,
     (r"(?i)revolutionary|secure by design|formally verified|next-generation|AI-native", "promotional wording"),
     (r"(?i)BEGIN [A-Z ]*PRIVATE KEY|ssh-ed25519 AAAA[0-9A-Za-z+/]{20,}", "key material"),
 ]
+# Exact unmodified source pages whose upstream licence notices contain public
+# author addresses. This is not a general manual or address exemption.
+# sbase 0.1: https://dl.suckless.org/sbase/sbase-0.1.tar.gz (LICENSE)
+# Toybox: https://landley.net/toybox/license.html
+PUBLIC_MANUAL_NOTICES = {
+    'sbase.7': '40a3abbfcc7dd1ab67681fc485fe4a8c2f34c60ae8da9bdc03b44f6b95440c06',
+    'toybox.7': '6e1ba8c2d5ac2db96634b4a2b0891741f477b2e35b50f3623d68edb1a10a4fe1',
+}
 # Names that must not appear but are themselves private (hosts, repositories,
 # paths) live in an untracked file, one "regex<TAB>description" per line.
 LOCAL_PATTERNS = ROOT / "scripts" / "private-patterns.local"
@@ -240,7 +249,23 @@ if LOCAL_PATTERNS.exists():
             PRIVATE.append((regex, what or "private name"))
 
 
+def public_notice_addresses():
+    sys.path.insert(0, str(ROOT))
+    import build
+    allowed = {}
+    for record in build.documentation_records():
+        directory = build.release_docs.release_dir(ROOT, record) / 'manual'
+        for name, expected in PUBLIC_MANUAL_NOTICES.items():
+            source = directory / name
+            if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != expected:
+                continue
+            page = SITE / 'releases' / record['release_id'] / 'man' / name / 'index.html'
+            allowed[page] = {m.group(0) for m in re.finditer(EMAIL_RULE[0], source.read_text())}
+    return allowed
+
+
 def check_leaks():
+    public_addresses = public_notice_addresses()
     roots = [SITE]
     for root in roots:
         for path in sorted(root.rglob("*")):
@@ -248,8 +273,11 @@ def check_leaks():
                 continue
             text = path.read_text(encoding="utf-8")
             where = str(path.relative_to(ROOT))
-            for pattern, what in PRIVATE:
+            for rule in PRIVATE:
+                pattern, what = rule
                 for m in re.finditer(pattern, text):
+                    if rule is EMAIL_RULE and m.group(0) in public_addresses.get(path, set()):
+                        continue
                     fail(where, f"{what}: {m.group(0)!r}")
             if "Constellation" in text and not re.match(r"site/(research|status)/", where):
                 fail(where, "names Constellation outside /research/ and /status/")
