@@ -308,17 +308,20 @@ def source_values():
         "SOURCE_QUALIFICATION_SHORT": html.escape(short),
         "SOURCE_QUALIFICATION": html.escape(full),
         "SOURCE_GET_STARTED": (
+            f'The selected developer preview <code>{html.escape(RELEASE["release_id"])}</code> has been withdrawn. '
+            '<a href="/try/">Read the withdrawal notice</a> before using any retained files.'
+            if RELEASE["binary_preview"] and RELEASE["binary_preview"]["documentation"]["state"] == "withdrawn" else
             f'The binary developer preview <code>{html.escape(RELEASE["release_id"])}</code> has '
             f'documentation state <strong>{html.escape(RELEASE["binary_preview"]["documentation"]["state"])}</strong>. '
             '<a href="/try/">Download and try ABSD</a> describes its exact files, QEMU profile, '
             'verification and first run. Read that state before using the files; a staged record is not a published release.'
             if RELEASE["binary_preview"] else
             'On an Ubuntu 24.04 x86-64 host: clone the source, build the operator image, boot it under QEMU, '
-            'and log in over SSH. The build and smoke test need no KVM. Follow the '
+            'and log in over SSH. The build and the smoke test need no KVM. Follow the '
             f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">repository\'s README</a>; '
-            '<a href="/status/#source">status</a> states its scope.'),
+            '<a href="/status/#source">status</a> says what that does and does not show.'),
         "SOURCE_RELEASE_MANUAL": (
-            f'<p>The <a href="/releases/{RELEASE["release_id"]}/manual/">manual for binary preview '
+            f'\n\n<p>The <a href="/releases/{RELEASE["release_id"]}/manual/">manual for binary preview '
             f'{html.escape(RELEASE["release_id"])}</a> is pinned to platform '
             f'<code>{RELEASE["platform_commit"]}</code>. The milestone pages below retain their earlier provenance.</p>'
             if RELEASE["binary_preview"] else ''),
@@ -470,9 +473,16 @@ the build commands and repository files this page mentions are the milestone's. 
 def try_page(record=None):
     """The Download / Try page, built only when the record has a binary
     preview: the pinned asset addresses and digests, nothing discovered."""
-    record = RELEASE if record is None else record
+    selected = record is None
+    record = RELEASE if selected else record
     preview = record["binary_preview"]
     esc = html.escape
+    if selected and preview['documentation']['state'] == 'withdrawn':
+        return (f'<h1>ABSD preview withdrawn</h1><p>Developer preview <code>{esc(record["release_id"])}</code> '
+                'is withdrawn. There is no current binary download recommendation.</p><ul>'
+                + ''.join(f'<li>{esc(s)}</li>' for s in preview['limitations'])
+                + f'</ul><p><a href="/releases/{record["release_id"]}/">Retained release record</a>; '
+                'the archived files and instructions remain for history, not a new installation.</p>')
     rows = "".join(
         f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
         f'<td><code class="digest">{a["sha256"]}</code></td><td>{a["bytes"]}</td></tr>\n'
@@ -526,6 +536,12 @@ def documentation_records():
             raise ValueError("documentation: archived and selected release disagree")
         records[RELEASE["release_id"]] = RELEASE
     return list(records.values())
+
+
+def try_description():
+    if RELEASE['binary_preview']['documentation']['state'] == 'withdrawn':
+        return 'Withdrawn ABSD developer preview: read the release notice.'
+    return 'Download and verify the ABSD developer preview for QEMU.'
 
 
 def documentation_outputs(record, version):
@@ -611,7 +627,7 @@ def main():
         write(url, layout(url, meta["title"], meta["description"], body, unlisted=unlisted))
         pages += 1
     if RELEASE["binary_preview"]:
-        write("/try/", layout("/try/", "Try ABSD", "Download and verify the ABSD developer preview for QEMU.", try_page()))
+        write("/try/", layout("/try/", "Try ABSD", try_description(), try_page()))
         pages += 1
     for record in documentation_records():
         for relative, text in documentation_outputs(record, version).items():

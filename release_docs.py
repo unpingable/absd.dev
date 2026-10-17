@@ -17,7 +17,7 @@ CPU = "max,vendor=GenuineIntel,+rdrand"
 HOSTS = ["Linux x86-64 with QEMU 8.2 TCG"]
 STATES = ("draft", "staged", "published", "withdrawn")
 QUALIFICATIONS = ("built", "offline-boot-tested", "qualified", "release-authorized", "published", "outsider-passed")
-DOC_FIELDS = {"state", "manual_sha256"}
+DOC_FIELDS = {"state", "manual_sha256", "source_manifest_sha256"}
 
 
 def digest(data):
@@ -77,6 +77,9 @@ def manifest(record, data):
     roles = doc.get("assets", {})
     if not isinstance(roles, dict) or not {"operator_iso", "enroll_iso", "disk"} <= roles.keys():
         raise ValueError("documentation: preview requires operator, enrollment and disk assets")
+    for role, suffix in [('operator_iso', 'operator.iso'), ('enroll_iso', 'enroll.iso'), ('disk', 'disk.img.xz')]:
+        if roles[role].get('name') not in {suffix, f"absd-{record['release_id']}-{suffix}"}:
+            raise ValueError(f'documentation: unexpected filename for {role}')
     seen = set()
     for role, entry in roles.items():
         if not isinstance(entry, dict) or entry.get("name") in seen:
@@ -102,6 +105,8 @@ def manifest(record, data):
 
 def manual_sums(directory):
     directory = pathlib.Path(directory)
+    if any(p.name != 'SHA256SUMS' and not re.fullmatch(r'[a-z0-9.-]+\.[1-9]', p.name) for p in directory.iterdir()):
+        raise ValueError('documentation: unexpected release manual entry')
     pages = sorted(p for p in directory.iterdir() if re.fullmatch(r"[a-z0-9.-]+\.[1-9]", p.name))
     if not pages or any(p.is_symlink() or not p.is_file() for p in pages):
         raise ValueError("documentation: manual requires regular mdoc pages")
@@ -113,8 +118,8 @@ def load(record, root):
     settings = preview.get("documentation")
     if (not isinstance(settings, dict) or set(settings) != DOC_FIELDS
             or settings["state"] not in STATES
-            or not re.fullmatch(r"[0-9a-f]{64}", str(settings["manual_sha256"]))):
-        raise ValueError("documentation: expected state and manual_sha256")
+            or any(not re.fullmatch(r"[0-9a-f]{64}", str(settings[k])) for k in ['manual_sha256', 'source_manifest_sha256'])):
+        raise ValueError("documentation: expected state and pinned manual/source manifest hashes")
     if (settings['state'] == 'published'
             and QUALIFICATIONS.index(preview['qualification']) < QUALIFICATIONS.index('published')):
         raise ValueError('documentation: published state requires the published qualification/evidence level')
@@ -125,10 +130,17 @@ def load(record, root):
     if digest(data) != asset["sha256"] or len(data) != asset["bytes"]:
         raise ValueError("documentation: manifest bytes disagree with release record")
     doc = manifest(record, data)
+    guide = quickstart(record, doc).encode()
+    entry = next(a for a in preview['assets'] if a['name'] == 'QUICKSTART.md')
+    if entry['sha256'] != digest(guide) or entry['bytes'] != len(guide):
+        raise ValueError('documentation: sealed QUICKSTART.md disagrees with generated instructions')
     sums = file_bytes(directory, "SHA256SUMS").decode("ascii").splitlines()
     if sums != preview["sums"]:
         raise ValueError("documentation: SHA256SUMS disagrees with release record")
-    source = tomllib.loads(file_bytes(directory, "SOURCE-MANIFEST.toml").decode())
+    source_bytes = file_bytes(directory, "SOURCE-MANIFEST.toml")
+    if digest(source_bytes) != settings['source_manifest_sha256']:
+        raise ValueError('documentation: staged source manifest digest disagrees with release record')
+    source = tomllib.loads(source_bytes.decode())
     check_source(record, source, doc)
     actual = manual_sums(directory / "manual")
     if (actual != file_bytes(directory / "manual", "SHA256SUMS")
@@ -329,5 +341,6 @@ def stage(record, root, assets, source):
         if not dest.exists():
             dest.write_bytes(data)
     p["documentation"]["manual_sha256"] = digest(sums)
+    p["documentation"]["source_manifest_sha256"] = digest(src)
     load(record, root)
     return record

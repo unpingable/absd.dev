@@ -9,6 +9,7 @@ import json
 import pathlib
 import re
 import subprocess
+import shutil
 import sys
 import tempfile
 import unittest
@@ -27,7 +28,8 @@ def fixture(directory, tag="absd-preview-fixture"):
     assets = directory / "assets"
     source.mkdir(parents=True)
     assets.mkdir()
-    record = json.loads((ROOT / "content/release.json").read_text())
+    reference = json.loads((ROOT / 'scripts/testdata/schema1-rendering-v1.json').read_text())
+    record = json.loads(reference['release_json'])
     record.update(schema_version=2, release_id=tag, kernel_commit="1" * 40,
                   platform_commit="2" * 40, release_commit="3" * 40)
     source_manifest = (f'[release]\nid = "{tag}"\n'
@@ -51,7 +53,7 @@ def fixture(directory, tag="absd-preview-fixture"):
         "qualification": "built", "evidence": [],
         "quickstart_url": record["repository"] + "/blob/" + tag + "/QUICKSTART.md",
         "limitations": ["Physical hardware qualification is not yet established.", "Synthetic fixture; no public release or boot claim."],
-        "documentation": {"state": "draft", "manual_sha256": "0" * 64},
+        "documentation": {"state": "draft", "manual_sha256": "0" * 64, "source_manifest_sha256": "0" * 64},
     }
     for n in names:
         (assets / n).write_bytes((n + " synthetic bytes\n").encode())
@@ -145,6 +147,76 @@ class ReleaseDocs(unittest.TestCase):
         raw = (self.assets/'MANIFEST.toml').read_bytes().replace(original.encode(), original.upper().encode())
         with self.assertRaisesRegex(ValueError, 'outside the native helper profile'):
             docs.manifest(changed, raw)
+
+    def test_swapped_operator_and_enrollment_roles_refuse(self):
+        raw = (self.assets/'MANIFEST.toml').read_bytes()
+        raw = raw.replace(b'[assets.operator_iso]', b'[assets.swap]')
+        raw = raw.replace(b'[assets.enroll_iso]', b'[assets.operator_iso]').replace(b'[assets.swap]', b'[assets.enroll_iso]')
+        with self.assertRaisesRegex(ValueError, 'unexpected filename for operator_iso'):
+            docs.manifest(self.record, raw)
+
+    def test_load_time_input_and_declaration_drift(self):
+        cases = ['sums', 'missing-asset', 'empty-manifest', 'host', 'published',
+                 'missing-manual', 'empty-manual', 'missing-manual-sums', 'stray-manual',
+                 'source-manifest', 'sealed-guide']
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                root = pathlib.Path(tmp)
+                record, source, assets = fixture(root)
+                docs.stage(record, root, assets, source)
+                directory = docs.release_dir(root, record)
+                p = record['binary_preview']
+                if case == 'sums':
+                    with (directory/'SHA256SUMS').open('a') as handle:
+                        handle.write('0'*64+'  extra.bin\n')
+                elif case in ['missing-asset', 'empty-manifest', 'sealed-guide']:
+                    path = directory/'MANIFEST.toml'
+                    text = path.read_text()
+                    if case == 'missing-asset':
+                        text = re.sub(r'(?ms)^\[assets\.extra_0\]\n.*?(?=^\[|\Z)', '', text)
+                    elif case == 'empty-manifest':
+                        text = ''
+                    else:
+                        guide = next(a for a in p['assets'] if a['name'] == 'QUICKSTART.md')
+                        text = text.replace(guide['sha256'], '0'*64)
+                        guide['sha256'] = '0'*64
+                    path.write_text(text)
+                    m = next(a for a in p['assets'] if a['name'] == 'MANIFEST.toml')
+                    m.update(sha256=docs.digest(path.read_bytes()), bytes=path.stat().st_size)
+                    p['sums'] = [f"{a['sha256']}  {a['name']}" for a in p['assets']]
+                    (directory/'SHA256SUMS').write_text('\n'.join(p['sums'])+'\n')
+                elif case == 'host':
+                    p['host_tiers'] = ['Unqualified KVM host']
+                elif case == 'published':
+                    p['documentation']['state'] = 'published'
+                elif case == 'missing-manual':
+                    shutil.rmtree(directory/'manual')
+                elif case == 'empty-manual':
+                    (directory/'manual/intro.1').unlink()
+                elif case == 'missing-manual-sums':
+                    (directory/'manual/SHA256SUMS').unlink()
+                elif case == 'stray-manual':
+                    (directory/'manual/Intro.1').write_text('unlisted manual')
+                elif case == 'source-manifest':
+                    with (directory/'SOURCE-MANIFEST.toml').open('a') as handle:
+                        handle.write('\n[unbound]\nflag = true\n')
+                with self.assertRaises((ValueError, OSError)):
+                    docs.load(record, root)
+
+    def test_actual_export_and_check_commands_detect_edited_guide(self):
+        snapshot = self.root/'site-copy'
+        shutil.copytree(ROOT, snapshot, ignore=shutil.ignore_patterns('.git', 'site', '__pycache__'))
+        docs.stage(self.record, snapshot, self.assets, self.source)
+        path = self.root/'record.json'
+        path.write_text(json.dumps(self.record))
+        out = self.root/'exports'
+        cli = ['python3', '-B', str(snapshot/'scripts/release-docs.py')]
+        subprocess.run(cli+['export','--record',str(path),'--out',str(out)], check=True, capture_output=True)
+        subprocess.run(cli+['check','--record',str(path),'--out',str(out)], check=True, capture_output=True)
+        (out/'QUICKSTART.md').write_text('another release guide')
+        run = subprocess.run(cli+['check','--record',str(path),'--out',str(out)], capture_output=True, text=True)
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn('release documentation disagrees', run.stderr)
 
     def test_stale_quickstart_and_wrong_source_refuse(self):
         (self.assets / "QUICKSTART.md").write_text("old release guide")

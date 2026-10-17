@@ -16,10 +16,11 @@ spec.loader.exec_module(build)
 
 with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     fixture = pathlib.Path(directory) / "release.json"
-    record = dict(build.RELEASE)
+    reference = json.loads((ROOT/'scripts/testdata/schema1-rendering-v1.json').read_text())
+    record = json.loads(reference['release_json'])
     # The loader adds binary_preview=None in memory for a schema 1 record;
     # the file has no such field, so fixtures built from `record` must not either.
-    assert record.pop("binary_preview") is None
+    assert record.pop("binary_preview", None) is None
     for field, value in (("qualification", "unknown"), ("release_commit", "short"),
                          ("release_date", "2026-02-30"), ("schema_version", True),
                          ("qualification", "qualified")):
@@ -33,9 +34,16 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
             raise AssertionError(f"accepted invalid {field}")
     copy = pathlib.Path(directory) / "site-source"
     shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+    if (copy/'content/releases').exists():
+        shutil.rmtree(copy/'content/releases')
+    (copy/'content/release.json').write_text(reference['release_json'])
     subprocess.run(["python3", "build.py"], cwd=copy, check=True)
+    actual = {str(p.relative_to(copy/'site')): build.hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in sorted((copy/'site').rglob('*')) if p.is_file()}
+    assert actual == reference['files'], 'schema-1 output differs from the accepted source-only baseline'
+    print('content-check: schema1-before-after-byte-identity PASS')
     # The live record has no binary preview: schema 1, no download page, no link.
-    assert record["schema_version"] == 1 and "binary_preview" not in json.loads((ROOT / "content/release.json").read_text())
+    assert record["schema_version"] == 1 and "binary_preview" not in json.loads(reference['release_json'])
     assert not (copy / "site/try").exists(), "live record built a download page"
     assert 'href="/try/"' not in (copy / "site/index.html").read_text()
     print("content-check: binary-preview absent-live PASS")
@@ -99,7 +107,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
             "evidence": [{"level": "offline-boot-tested", "label": "Offline boot receipt", "url": "/evidence/"}],
             "quickstart_url": f"{record['repository']}/blob/{tag}/QUICKSTART.md",
             "limitations": [build.HARDWARE_LIMIT, "Developer preview for QEMU only."],
-            "documentation": {"state": "draft", "manual_sha256": "0" * 64},
+            "documentation": {"state": "draft", "manual_sha256": "0" * 64, "source_manifest_sha256": "0" * 64},
         }
 
     def bad(name, change, expect):
@@ -166,6 +174,8 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     # Positive: the synthetic record builds a pinned /try/ page that the checker accepts.
     preview_copy = pathlib.Path(directory) / "preview-source"
     shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+    if (preview_copy/'content/releases').exists():
+        shutil.rmtree(preview_copy/'content/releases')
     sys.path.insert(0, str(ROOT / "scripts"))
     from test_release_docs import fixture as documentation_fixture
     preview_record, source, assets = documentation_fixture(pathlib.Path(directory) / "preview-inputs", tag)
@@ -216,6 +226,8 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     subprocess.run(['python3', 'build.py'], cwd=preview_copy, check=True, capture_output=True)
     final_check = subprocess.run(['python3', 'scripts/check.py'], cwd=preview_copy, capture_output=True, text=True)
     assert final_check.returncode == 0, final_check.stdout+final_check.stderr
-    assert '<strong>withdrawn</strong>' in (preview_copy/'site/try/index.html').read_text()
+    assert '<h1>ABSD preview withdrawn</h1>' in (preview_copy/'site/try/index.html').read_text()
+    assert build.ASSET_BASE not in (preview_copy/'site/try/index.html').read_text()
+    assert 'Download and try ABSD</a>' not in (preview_copy/'site/index.html').read_text()
     print('content-check: withdrawal-without-retargeting PASS')
 print("content-check: invalid records, stale build, hypothetical preview/qualified updates, binary preview cases passed; fixtures removed")

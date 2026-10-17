@@ -362,6 +362,10 @@ def check_binary_preview():
         fail("/try/", "the record has a binary preview but no page was built")
         return
     text = page.read_text()
+    if preview['documentation']['state'] == 'withdrawn':
+        if build.ASSET_BASE in text or 'is withdrawn' not in text:
+            fail('/try/', 'withdrawn default must show its notice without asset download links')
+        return
     needed = [html.escape(preview["tag"]), preview["sums_url"], preview["manifest_url"], preview["quickstart_url"],
               html.escape(build.HARDWARE_LIMIT), f'<strong>{html.escape(preview["qualification"])}</strong>']
     for asset in preview["assets"]:
@@ -382,7 +386,7 @@ def check_release_documentation():
             if not path.is_file() or path.read_text() != expected:
                 fail(relative, "release documentation differs from record or pinned input")
     if build.RELEASE["binary_preview"]:
-        expected = build.layout("/try/", "Try ABSD", "Download and verify the ABSD developer preview for QEMU.", build.try_page())
+        expected = build.layout("/try/", "Try ABSD", build.try_description(), build.try_page())
         path = SITE / "try/index.html"
         if not path.is_file() or path.read_text() != expected:
             fail("/try/", "release documentation differs from selected record")
