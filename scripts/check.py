@@ -269,9 +269,10 @@ def check_withheld():
     # binary-preview asset URLs (content/release.json, binary_preview).
     sys.path.insert(0, str(ROOT))
     import build
-    preview = build.RELEASE["binary_preview"]
-    for url in ([a["url"] for a in preview["assets"]] + [preview["sums_url"]]) if preview else []:
-        all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
+    for record in build.documentation_records():
+        preview = record["binary_preview"]
+        for url in [a["url"] for a in preview["assets"]] + [preview["sums_url"]]:
+            all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
     for phrase in ("x86-64 PCs supported", "qualified x86-64 hardware", "runs on real hardware",
                    "/download", "/source/", "releases/latest"):
         if phrase in all_text:
@@ -370,6 +371,21 @@ def check_binary_preview():
             fail("/try/", f"binary preview value missing from the page: {item!r}")
     if not linked:
         fail("/try/", "not linked from the navigation")
+
+
+def check_release_documentation():
+    sys.path.insert(0, str(ROOT))
+    import build
+    for record in build.documentation_records():
+        for relative, expected in build.documentation_outputs(record, build.groff_version()).items():
+            path = SITE / relative
+            if not path.is_file() or path.read_text() != expected:
+                fail(relative, "release documentation differs from record or pinned input")
+    if build.RELEASE["binary_preview"]:
+        expected = build.layout("/try/", "Try ABSD", "Download and verify the ABSD developer preview for QEMU.", build.try_page())
+        path = SITE / "try/index.html"
+        if not path.is_file() or path.read_text() != expected:
+            fail("/try/", "release documentation differs from selected record")
 
 
 def browser():
@@ -495,6 +511,7 @@ def main():
     check_withheld()
     check_source_release()
     check_binary_preview()
+    check_release_documentation()
     if args.screenshots:
         screenshots(pages, args.screenshots)
     for f in failures:

@@ -34,60 +34,90 @@ The public site is generated from `main`; GitHub Pages serves the root of
 
 ## Binary preview (absd-coord #31, #32)
 
-A record without a binary preview stays schema version 1, exactly as it is
-today, so the live site is unchanged byte for byte. Schema version 2 adds a
-`binary_preview` object. It is used only once an owner-approved GitHub
-Release of the source tag carries the preview's binary assets, and
-`binary_preview: null` is refused (use schema 1). Without a preview, the
-build makes no `/try/` page and no navigation link, and the checker refuses
-any download address.
+`content/release.json` remains the single current editorial record. Schema 1
+has no binary preview; the live record remains schema 1. The unpublished
+schema-2 preparation contract adds `binary_preview`, with its pinned tag,
+assets (name, tagged GitHub URL, SHA-256, bytes), copied SHA256SUMS, manifest
+and quickstart URLs, signature disposition, QEMU profile, host tiers,
+qualification, evidence, limitations and `documentation {state,
+manual_sha256}`. The v0 path is explicitly unsigned by owner decision.
 
-The object's fields are `tag`, `assets[] {name, url, sha256, bytes}`,
-`manifest_url`, `sums_url`, `sums` (the release's `SHA256SUMS` lines, copied),
-`signature` (`unsigned` or an `ssh-keygen -Y verify …` command),
-`qemu_profile`, `host_tiers`, `qualification`, `evidence[] {level, label,
-url}`, `quickstart_url` and `limitations`. `quickstart_url` is the source
-repository's `QUICKSTART.md` at the tag (`<repository>/blob/<tag>/QUICKSTART.md`);
-a copy may also be an asset. A signed release lists `SHA256SUMS.sig` as an
-asset outside `SHA256SUMS`, because the signature covers that file. The build
-refuses a record where:
+The record consumes the preview producer's `absd-preview-manifest/1`
+MANIFEST.toml. The installed-release reconstruction manifests `/1` and `/2`
+are different inputs and are refused here. The preview manifest binds the
+release id/tag, source/kernel/platform commits, qualification at sealing,
+original limits, and every asset except itself. Every actual asset must
+match both it and SHA256SUMS. URLs use the exact source tag in
+`https://github.com/unpingable/absd/releases/download/<tag>/<file>`;
+`releases/latest`, assets of 2 GiB or more and contradictory identities are
+refused. The quickstart source URL is QUICKSTART.md at that tag.
 
-- `tag` differs from `release_id`;
-- an address is not `https://github.com/unpingable/absd/releases/download/<tag>/<name>`;
-- any address uses `releases/latest`;
-- an asset digest is absent from, or different from, the copied `SHA256SUMS`;
-- `SHA256SUMS` lists a file that is not an asset, or lists one twice;
-- an asset is listed twice or is named `.` or `..`;
-- `SHA256SUMS.sig` is listed while `signature` is `unsigned`, or a signed
-  record lacks it;
-- `quickstart_url` is not `QUICKSTART.md` at the tag;
-- a digest is malformed;
-- `qualification` is not on the ladder built → offline-boot-tested →
-  qualified → release-authorized → published → outsider-passed;
-- `qualification` is above `built` and no `evidence` entry has that same
-  `level`;
-- the physical hardware limitation is missing.
+The current helper profile is QEMU 8.2 TCG on Linux x86-64, one CPU, 256 MiB
+minimum, SeaBIOS, e1000 and a primary IDE disk. The manifest's QEMU table is
+`cpu_tcg="max,vendor=GenuineIntel,+rdrand"`, `memory_mib=256`, `smp=1`,
+`nic="e1000"`, `disk="ide"`, `firmware="SeaBIOS"`. Other profiles require
+an implemented launcher and a separate rehearsal.
 
-Nothing is fetched.
+### Prepare, verify, select
 
-The stages are kept distinct:
+Work on local branches with a separate DRAFT.json and an owned asset staging
+directory. The producer supplies actual digests and byte counts, never values
+typed from memory. These steps do not push or publish.
 
-1. **Draft.** The record is prepared on a branch and built locally. The
-   content cases exercise a synthetic record the same way.
-2. **Staged.** The GitHub Release exists as a draft with its assets. Copy
-   its `SHA256SUMS` lines and each file's byte count into the record; do
-   not type them.
-3. **Published.** This needs the owner's release and publication decision,
-   then the ordinary publish step above. `qualification` names only the
-   highest level whose evidence the record cites.
-4. **Reachable.** After publication, fetch every asset URL, compare each
-   digest and byte count with the record, and keep that receipt separately.
-   It is not part of the site build, and a site push is not that receipt.
+1. Before sealing the guide's digest, run:
+   `python3 scripts/release-docs.py render --record DRAFT.json --manifest ASSETS/MANIFEST.toml --out DOCS`.
+   This renders QUICKSTART.md and README-download.md. Rendering is preparation,
+   not asset verification. A draft source commit may be a placeholder shared
+   with the draft manifest until assembly establishes the real commit.
+2. Add `--release-docs SITE_CHECKOUT DRAFT.json ASSETS/MANIFEST.toml` to the
+   distribution tool's `assemble.py build` invocation. It checks release and
+   component pins, fills the README download section without changing the
+   build-from-source guide, adds QUICKSTART.md, and records their hashes and
+   generator revision in SOURCE-MANIFEST.toml. Neither generated document
+   embeds its own hash or its enclosing Git commit. Record the assembled
+   source commit in the preview manifest/record, then seal the actual assets
+   and SHA256SUMS, including the quickstart and manifest.
+3. Run:
+   `python3 scripts/release-docs.py stage --record DRAFT.json --assets ASSETS --source PUBLIC_SOURCE_CHECKOUT`.
+   It verifies actual asset bytes and the README/guide/source manifest at
+   the exact source commit, then imports metadata and that commit's manual
+   into `content/releases/<id>/`. It copies no image or runtime identity into
+   the site. Replacing an existing release's input bytes is refused.
+4. Run `python3 scripts/release-docs.py select --record DRAFT.json`, then
+   `scripts/site.sh generate` and `scripts/site.sh check`. Selection archives
+   the previous binary record. Current and archived releases get pinned
+   pages at `/releases/<id>/`, with their manual and guide; `/try/` uses the
+   selected record. The milestone manual keeps its original URLs/provenance.
+   Checks compare the full generated instructions and manuals with the record.
+5. Review the diff and local preview. The release owner and docs owner inspect
+   the staged-file rehearsal: fresh key, documented TCG profile, native
+   commands, shutdown and a write/read across reboot. Synthetic metadata
+   controls do not establish boot, SSH or persistence. Independent review
+   precedes a publication proposal. The owner still decides release and
+   publication; GRUB corresponding source and binary notices remain required.
+6. After owner-authorized publication, mark documentation state `published`
+   and run:
+   `python3 scripts/release-docs.py reachable --record content/release.json --out UNIQUE-RECEIPT.json`.
+   This streams the exact public URLs, compares sizes/hashes and SHA256SUMS,
+   and writes a separate receipt. It changes no state and proves neither
+   authenticity nor boot. The independent outsider rehearsal still follows
+   the actual published files/instructions.
 
-A later preview gets a new tag and a new record. Do not edit an earlier
-release's assets or point an earlier page at newer files.
+### Later results, release changes and withdrawal
 
-Templates use the existing `{{SOURCE_*}}` replacements. Their HTML is generated
-in `site/`, which is disposable and must not be edited. `release-source.sha256`
-is a local build freshness check, not a qualification or provenance receipt.
-The structured record does not replace human review of evidence or prose.
+`documentation.state` is `draft`, `staged`, `published` or `withdrawn`.
+Reachability is observed separately. A draft/staged record does not make an
+artifact public; a site push is not a deployment or download receipt.
+
+The manifest's qualification and original limits stay fixed. Later evidence
+and additional limits can update the site's editorial standing without
+rewriting the source tag's instructions. Original limits cannot disappear;
+a record cannot claim less than its manifest while presenting it as the
+same artifact. Evidence links still require independent inspection.
+
+The release owner selects or withdraws the default. The docs owner updates
+the record, generates/checks and corrects claims. For withdrawal, set state
+`withdrawn`, record the reason in limits/evidence and retain the pinned pages.
+Never retarget earlier assets, silently overwrite their metadata or relabel
+an old manual. A later release gets a new identity. Historical captures,
+source-only previews and milestone results keep their own scope.

@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import urllib.parse
+import release_docs
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / "src"
@@ -42,7 +43,7 @@ RELEASE_PATH = ROOT / "content" / "release.json"
 UNFILLED = "FILL-AT-DEPLOY"
 
 
-def load_release(path):
+def load_release(path, check_documentation=True):
     record = json.loads(path.read_text(encoding="utf-8"))
     expected = {"schema_version", "repository", "licence", "release_id", "release_commit",
                 "kernel_commit", "platform_commit", "release_date", "qualification",
@@ -91,6 +92,8 @@ def load_release(path):
         elif not isinstance(value, str) or not value.strip() or UNFILLED in value:
             raise ValueError(f"release record: qualified requires {name}")
     load_binary_preview(record)
+    if record["binary_preview"] is not None and check_documentation:
+        release_docs.load(record, ROOT)
     return record
 
 
@@ -98,7 +101,7 @@ def load_release(path):
 # owner-approved GitHub Release of the source tag carries binary assets.
 PREVIEW_LADDER = ("built", "offline-boot-tested", "qualified", "release-authorized", "published", "outsider-passed")
 PREVIEW_FIELDS = {"tag", "assets", "manifest_url", "sums_url", "sums", "signature", "qemu_profile",
-                  "host_tiers", "qualification", "evidence", "quickstart_url", "limitations"}
+                  "host_tiers", "qualification", "evidence", "quickstart_url", "limitations", "documentation"}
 ASSET_BASE = "https://github.com/unpingable/absd/releases/download/"
 HARDWARE_LIMIT = "Physical hardware qualification is not yet established."
 
@@ -134,6 +137,8 @@ def load_binary_preview(record):
         sums[m.group(2)] = m.group(1)
     if not isinstance(preview["assets"], list) or not preview["assets"]:
         raise ValueError("binary preview: assets required")
+    if len(preview["assets"]) > 1000:
+        raise ValueError("binary preview: at most 1000 assets per release")
     names = set()
     signed = preview["signature"] != "unsigned"
     for asset in preview["assets"]:
@@ -161,6 +166,8 @@ def load_binary_preview(record):
             raise ValueError(f"binary preview: {name} digest differs from the record's SHA256SUMS")
         if type(asset["bytes"]) is not int or asset["bytes"] <= 0:
             raise ValueError(f"binary preview: malformed bytes for {name}")
+        if asset["bytes"] >= 2**31:
+            raise ValueError(f"binary preview: {name} must be under 2 GiB")
         names.add(name)
     if signed and "SHA256SUMS.sig" not in names:
         raise ValueError("binary preview: a signed record must list SHA256SUMS.sig")
@@ -300,6 +307,21 @@ def source_values():
         "SOURCE_LABEL": f'<span class="label {css}">{label}</span>',
         "SOURCE_QUALIFICATION_SHORT": html.escape(short),
         "SOURCE_QUALIFICATION": html.escape(full),
+        "SOURCE_GET_STARTED": (
+            f'The binary developer preview <code>{html.escape(RELEASE["release_id"])}</code> has '
+            f'documentation state <strong>{html.escape(RELEASE["binary_preview"]["documentation"]["state"])}</strong>. '
+            '<a href="/try/">Download and try ABSD</a> describes its exact files, QEMU profile, '
+            'verification and first run. Read that state before using the files; a staged record is not a published release.'
+            if RELEASE["binary_preview"] else
+            'On an Ubuntu 24.04 x86-64 host: clone the source, build the operator image, boot it under QEMU, '
+            'and log in over SSH. The build and smoke test need no KVM. Follow the '
+            f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">repository\'s README</a>; '
+            '<a href="/status/#source">status</a> states its scope.'),
+        "SOURCE_RELEASE_MANUAL": (
+            f'<p>The <a href="/releases/{RELEASE["release_id"]}/manual/">manual for binary preview '
+            f'{html.escape(RELEASE["release_id"])}</a> is pinned to platform '
+            f'<code>{RELEASE["platform_commit"]}</code>. The milestone pages below retain their earlier provenance.</p>'
+            if RELEASE["binary_preview"] else ''),
     })
     return values
 
@@ -445,10 +467,11 @@ the build commands and repository files this page mentions are the milestone's. 
     return "\n".join(rows), len(entries)
 
 
-def try_page():
+def try_page(record=None):
     """The Download / Try page, built only when the record has a binary
     preview: the pinned asset addresses and digests, nothing discovered."""
-    preview = RELEASE["binary_preview"]
+    record = RELEASE if record is None else record
+    preview = record["binary_preview"]
     esc = html.escape
     rows = "".join(
         f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
@@ -461,7 +484,10 @@ def try_page():
                  f'Verify the signature on the checksums with <code>{esc(preview["signature"])}</code>.')
     return f"""<h1>Try ABSD</h1>
 <p>Developer preview <code>{esc(preview["tag"])}</code>, the binary build of source release
-<code>{esc(RELEASE["release_id"])}</code>. It runs under QEMU on the hosts listed below. Its standing is
+<code>{esc(record["release_id"])}</code>. Documentation state:
+<strong>{esc(preview['documentation']['state'])}</strong>. Draft/staged records do not establish public availability;
+withdrawn records are retained for history and must not be used for a new installation.
+It runs under QEMU on the hosts listed below. Its standing is
 <strong>{esc(preview["qualification"])}</strong> on the ladder built, offline-boot-tested, qualified,
 release-authorized, published, outsider-passed. <a href="/status/#source">What the source release establishes</a>.</p>
 <h2 id="files">Files</h2>
@@ -485,6 +511,55 @@ release-authorized, published, outsider-passed. <a href="/status/#source">What t
 <h2 id="evidence">Evidence</h2>
 <ul>{evidence}</ul>
 """
+
+
+def documentation_records():
+    records = {}
+    for path in sorted((ROOT / "content/releases").glob("*/release.json")):
+        record = load_release(path)
+        if path.parent != release_docs.release_dir(ROOT, record):
+            raise ValueError("documentation: archive path disagrees with release id")
+        records[record["release_id"]] = record
+    if RELEASE["binary_preview"]:
+        old = records.get(RELEASE["release_id"])
+        if old is not None and old != RELEASE:
+            raise ValueError("documentation: archived and selected release disagree")
+        records[RELEASE["release_id"]] = RELEASE
+    return list(records.values())
+
+
+def documentation_outputs(record, version):
+    """All release-specific output is a deterministic view of one verified
+    record. The dated milestone manual remains at its original URLs."""
+    doc = release_docs.load(record, ROOT)
+    tag = record["release_id"]
+    prefix = f"/releases/{tag}/"
+    title = f"ABSD {tag}"
+    body = try_page(record) + f'<p><a href="{prefix}QUICKSTART.md">Release quickstart</a> · <a href="{prefix}manual/">Release manual</a></p>'
+    outputs = {f"releases/{tag}/index.html": layout(prefix, title, f"Files and documentation for ABSD {tag}.", body)}
+    outputs.update({f"releases/{tag}/{name}": text for name, text in release_docs.exports(record, doc).items()})
+    directory = release_docs.release_dir(ROOT, record) / "manual"
+    pages = sorted(p for p in directory.iterdir() if re.fullmatch(r"[a-z0-9.-]+\.[1-9]", p.name))
+    known = {(p.stem, p.suffix[1:]) for p in pages}
+    links = []
+    for page in pages:
+        name, sec = page.stem, page.suffix[1:]
+        url = prefix + f"man/{name}.{sec}/"
+        text = man_html(render_man(page), known).replace('href="/man/', f'href="{prefix}man/')
+        provenance = (f'<p>Release <code>{html.escape(tag)}</code>; platform <code>{record["platform_commit"]}</code>. '
+                      f'Rendered from the exact source release\'s mdoc with {html.escape(version)}. '
+                      'These pages describe that revision; their presence is not a qualification result.</p>')
+        body = (f'<h1>{name}({sec})</h1>{provenance}<pre class="man" tabindex="0" '
+                f'aria-label="{name}({sec}) manual page">{text}</pre><p><a href="{prefix}manual/">Release manual index</a></p>')
+        outputs[f"releases/{tag}/man/{name}.{sec}/index.html"] = layout(url, f"{name}({sec}) — {tag}",
+                    f"{name}({sec}): {description_of(page)}. Release {tag}.", body)
+        links.append(f'<li><a href="{url}">{name}({sec})</a>: {html.escape(description_of(page))}</li>')
+    body = (f'<h1>Manual for {html.escape(tag)}</h1><p>Platform <code>{record["platform_commit"]}</code>; '
+            f'<a href="{prefix}">release files and standing</a>. '
+            '<a href="/manual/">Historical milestone manual</a>.</p><ul>' + ''.join(links) + '</ul>')
+    outputs[f"releases/{tag}/manual/index.html"] = layout(prefix + "manual/", f"Manual — {tag}",
+                                                         f"Operator manual for release {tag}.", body)
+    return outputs
 
 
 def write(url, content):
@@ -538,6 +613,11 @@ def main():
     if RELEASE["binary_preview"]:
         write("/try/", layout("/try/", "Try ABSD", "Download and verify the ABSD developer preview for QEMU.", try_page()))
         pages += 1
+    for record in documentation_records():
+        for relative, text in documentation_outputs(record, version).items():
+            path = OUT / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
     # GitHub Pages serves /404.html for any path that does not exist.
     not_found = """<h1>Page not found</h1>
 <p>There is no page at this address. The site is small; everything is one step from here:</p>

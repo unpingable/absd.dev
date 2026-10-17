@@ -1,0 +1,10 @@
+{
+  "schema": "absd-release-documentation-golden/1",
+  "release_id": "absd-preview-fixture",
+  "kernel_commit": "1111111111111111111111111111111111111111",
+  "platform_commit": "2222222222222222222222222222222222222222",
+  "profile": "QEMU 8.2, x86-64, TCG, one CPU, 256 MiB minimum, SeaBIOS, e1000, primary IDE disk",
+  "quickstart_sha256": "50851693d86612021b3d1699be0c7b4c132a5289c1e4810ec76cf2ba64e3059d",
+  "readme_fragment_sha256": "4ded6f4aaf22f2a091839ca7784f11f28f68d1377daad591eaa37f0c44091ca9",
+  "scope": "Synthetic fixture defined by scripts/test_release_docs.py. Shared by site and distribution conformance checks. No boot, authenticity or publication claim."
+}

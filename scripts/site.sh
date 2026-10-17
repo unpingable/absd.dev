@@ -4,7 +4,7 @@ set -eu
 cd "$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 case "${1:-}" in
     generate) python3 build.py ;;
-    check) python3 scripts/check.py; python3 scripts/content-check.py ;;
+    check) python3 scripts/check.py; python3 scripts/content-check.py; python3 -B scripts/test_release_docs.py ;;
     preview) python3 -m http.server --bind 127.0.0.1 -d site 8765 ;;
     publish)
         test "$(git branch --show-current)" = main || { echo 'site: publish from main' >&2; exit 1; }

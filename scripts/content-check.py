@@ -6,8 +6,10 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 spec = importlib.util.spec_from_file_location("absd_build", ROOT / "build.py")
 build = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(build)
@@ -97,6 +99,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
             "evidence": [{"level": "offline-boot-tested", "label": "Offline boot receipt", "url": "/evidence/"}],
             "quickstart_url": f"{record['repository']}/blob/{tag}/QUICKSTART.md",
             "limitations": [build.HARDWARE_LIMIT, "Developer preview for QEMU only."],
+            "documentation": {"state": "draft", "manual_sha256": "0" * 64},
         }
 
     def bad(name, change, expect):
@@ -125,6 +128,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     bad("malformed-sha256", lambda p: asset(p, "absd-try.py").update(sha256=digest["absd-try.py"].upper()), "malformed sha256")
     bad("malformed-sums-line", lambda p: p["sums"].__setitem__(0, "not a sums line"), "malformed sums line")
     bad("bytes-zero", lambda p: asset(p, "absd-try.py").update(bytes=0), "malformed bytes")
+    bad("asset-over-size-limit", lambda p: asset(p, "absd-try.py").update(bytes=2**31), "under 2 GiB")
     bad("sums-url-wrong", lambda p: p.update(sums_url=base + "SUMS"), "sums_url is not the tagged SHA256SUMS")
     bad("quickstart-not-at-tag", lambda p: p.update(quickstart_url=base + "QUICKSTART.md"),
         "quickstart_url is not QUICKSTART.md at the tag")
@@ -140,7 +144,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     signed.update(signature=verify)
     signed["assets"].append(dict(sig))
     fixture.write_text(json.dumps(dict(record, schema_version=2, binary_preview=signed)))
-    assert build.load_release(fixture)["binary_preview"]["signature"] == verify
+    assert build.load_release(fixture, check_documentation=False)["binary_preview"]["signature"] == verify
     print("content-check: binary-preview signed-with-sig PASS")
     for name, doc, expect in (("schema2-without-preview", dict(record, schema_version=2, binary_preview=None),
                                "schema 2 requires a binary preview"),
@@ -162,17 +166,56 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     # Positive: the synthetic record builds a pinned /try/ page that the checker accepts.
     preview_copy = pathlib.Path(directory) / "preview-source"
     shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
-    (preview_copy / "content/release.json").write_text(json.dumps(dict(record, schema_version=2, binary_preview=synthetic()), indent=2) + "\n")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from test_release_docs import fixture as documentation_fixture
+    preview_record, source, assets = documentation_fixture(pathlib.Path(directory) / "preview-inputs", tag)
+    build.release_docs.stage(preview_record, preview_copy, assets, source)
+    (preview_copy / "content/release.json").write_text(json.dumps(preview_record, indent=2) + "\n")
     subprocess.run(["python3", "build.py"], cwd=preview_copy, check=True, capture_output=True)
     subprocess.run(["python3", "scripts/check.py"], cwd=preview_copy, check=True, capture_output=True)
     page = (preview_copy / "site/try/index.html").read_text()
-    for n in names:
-        assert base + n in page and digest[n] in page, n
+    for item in preview_record["binary_preview"]["assets"]:
+        assert item["url"] in page and item["sha256"] in page, item["name"]
     assert 'href="/try/"' in (preview_copy / "site/index.html").read_text()
     print("content-check: binary-preview synthetic-page PASS")
     # A page whose digest no longer matches the record is refused.
-    (preview_copy / "site/try/index.html").write_text(page.replace(digest["absd-try.py"], "f" * 64))
+    helper_digest = next(a["sha256"] for a in preview_record["binary_preview"]["assets"] if a["name"] == "absd-try.py")
+    (preview_copy / "site/try/index.html").write_text(page.replace(helper_digest, "f" * 64))
     tampered = subprocess.run(["python3", "scripts/check.py"], cwd=preview_copy, capture_output=True, text=True)
     assert tampered.returncode != 0 and "binary preview value missing" in tampered.stdout, tampered.stdout
     print("content-check: binary-preview tampered-page REFUSED")
+    subprocess.run(["python3", "build.py"], cwd=preview_copy, check=True, capture_output=True)
+    guide = preview_copy / 'site/releases' / tag / 'QUICKSTART.md'
+    guide.write_text(guide.read_text().replace('--accel tcg', '--accel kvm'))
+    drift = subprocess.run(['python3', 'scripts/check.py'], cwd=preview_copy, capture_output=True, text=True)
+    assert drift.returncode != 0 and 'release documentation differs' in drift.stdout, drift.stdout+drift.stderr
+    print('content-check: contradictory-generated-instructions REFUSED')
+
+    # Switch releases through the actual command. Both manuals and pinned
+    # old artifact URLs must remain, while /try/ selects only the new one.
+    next_record, next_source, next_assets = documentation_fixture(pathlib.Path(directory) / 'next-inputs', 'absd-preview-next-fixture')
+    build.release_docs.stage(next_record, preview_copy, next_assets, next_source)
+    next_path = pathlib.Path(directory) / 'next-record.json'
+    next_path.write_text(json.dumps(next_record))
+    subprocess.run(['python3', 'scripts/release-docs.py', 'select', '--record', str(next_path)], cwd=preview_copy, check=True, capture_output=True)
+    subprocess.run(['python3', 'build.py'], cwd=preview_copy, check=True, capture_output=True)
+    final_check = subprocess.run(['python3', 'scripts/check.py'], cwd=preview_copy, capture_output=True, text=True)
+    assert final_check.returncode == 0, final_check.stdout+final_check.stderr
+    assert (preview_copy/'site/releases'/tag/'manual/index.html').exists()
+    assert (preview_copy/'site/releases/absd-preview-next-fixture/manual/index.html').exists()
+    assert base+'operator.iso' in (preview_copy/'site/releases'/tag/'index.html').read_text()
+    assert 'absd-preview-next-fixture' in (preview_copy/'site/try/index.html').read_text()
+    print('content-check: release-switch-history-and-manuals PASS')
+
+    # Later editorial evidence and withdrawal must not change the sealed
+    # source guide. No source tag, artifact or manual is rewritten.
+    next_record['binary_preview']['documentation']['state'] = 'withdrawn'
+    next_record['binary_preview']['limitations'].append('Withdrawn fixture; retained for history.')
+    next_path.write_text(json.dumps(next_record))
+    subprocess.run(['python3', 'scripts/release-docs.py', 'select', '--record', str(next_path)], cwd=preview_copy, check=True, capture_output=True)
+    subprocess.run(['python3', 'build.py'], cwd=preview_copy, check=True, capture_output=True)
+    final_check = subprocess.run(['python3', 'scripts/check.py'], cwd=preview_copy, capture_output=True, text=True)
+    assert final_check.returncode == 0, final_check.stdout+final_check.stderr
+    assert '<strong>withdrawn</strong>' in (preview_copy/'site/try/index.html').read_text()
+    print('content-check: withdrawal-without-retargeting PASS')
 print("content-check: invalid records, stale build, hypothetical preview/qualified updates, binary preview cases passed; fixtures removed")
