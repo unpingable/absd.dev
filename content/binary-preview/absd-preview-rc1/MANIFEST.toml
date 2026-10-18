@@ -1,0 +1,62 @@
+schema = "absd-preview-manifest/1"
+signature = "unsigned"
+qualification = "built"
+limitations = ["Physical hardware qualification is not yet established.", "RC1 candidate 12c preview built locally; no public release, outsider acceptance or endurance claim.", "No source release is bound to these assets (no release source_commit).", "Exact GRUB and GNU Unifont corresponding source and the third-party binary notices are attached (absd-rc1-boot-corresponding-source.tar, absd-rc1-third-party-notices.tar.gz, NOTICES.md); they are not the first-party ABSD source release.", "A 64 MiB disk cannot take a second staged release under the current layout; staged upgrade and rollback are not supported in this preview."]
+[release]
+id = "absd-rc1-c12c-20261018t161241z.fvcgzh"
+tag = "absd-preview-rc1"
+kernel_commit = "d208b61bcd4826181bf9f401551ab620d4eabba0"
+platform_commit = "0fada7ed031bd84e3a469e717c1d0be5dbefedd6"
+[assets.extra_1]
+name = "NOTICES.md"
+sha256 = "3961f786ad7630d5969f9622c9b8f1d8c36ebb42c1673ff50396a25637579684"
+bytes = 1807
+[assets.extra_2]
+name = "QUICKSTART.md"
+sha256 = "96c18db6bc8463b686012a6d49bc74eca0b0265a11640f8e1e8fb9049cead824"
+bytes = 7863
+[assets.extra_3]
+name = "absd-rc1-boot-corresponding-source.tar"
+sha256 = "5ea66ab67e865f5fe78199ccb6844c45666e44926b97b4fa65cf06898dcac1dd"
+bytes = 46561280
+[assets.disk]
+name = "absd-rc1-c12c-20261018t161241z.fvcgzh-disk.img.xz"
+sha256 = "c3875d06edd7bb965c498a09f4f2ceeb37b0e0c67625ee39fefb4be2a1f9643f"
+bytes = 1822468
+raw_sha256 = "c9913d3bb889ddaffb223e77ac3d8c8c8bb222144ee349068cba79044bc25a78"
+raw_bytes = 67108864
+[assets.enroll_iso]
+name = "absd-rc1-c12c-20261018t161241z.fvcgzh-enroll.iso"
+sha256 = "7251c6262cf3ad311c12bff09a0cfe94f59d8986c38041d50e59b43a63340b7f"
+bytes = 21043200
+[assets.operator_iso]
+name = "absd-rc1-c12c-20261018t161241z.fvcgzh-operator.iso"
+sha256 = "d1181d465f9dcbc1322087e5c3e2235ac48007c081d7f150494436ae7d30ecef"
+bytes = 21977088
+[assets.extra_7]
+name = "absd-rc1-third-party-notices.tar.gz"
+sha256 = "9d2760276584cebce0dac55cdcc9a5cb75618497e8720c26bd5e45c4960eae4b"
+bytes = 274247
+[assets.extra_8]
+name = "absd-try.py"
+sha256 = "9a8ce4870b45784ac5861f0e5e3660d6be5467b0af1ae6e12eda69415baae667"
+bytes = 31805
+[assets.extra_9]
+name = "absd_fs.py"
+sha256 = "809bc314cdd797ecfc70001d4867b58397f74b4c615bb723bccb83dcd23629b0"
+bytes = 13142
+[assets.extra_10]
+name = "absd_image.py"
+sha256 = "01e1da8d6687642c880f4dff32a6ea91e2f755ee9f7c00c0d9135f7075a72730"
+bytes = 15636
+[assets.extra_11]
+name = "served_ram.py"
+sha256 = "232c63d71884be4216860614108c4527b30a1f48debb6a6226abd94b49cf7bba"
+bytes = 3656
+[qemu]
+cpu_tcg = "max,vendor=GenuineIntel,+rdrand"
+memory_mib = 256
+smp = 1
+nic = "e1000"
+disk = "ide"
+firmware = "SeaBIOS"

@@ -136,3 +136,26 @@ check recognizes their public author addresses only on the corresponding
 generated manual pages and only for the exact source hashes listed in
 `scripts/check.py`. A changed source, another page, another address or an
 explicit local rule does not receive that exception.
+
+## Binary-only preview (no source release)
+
+A preview whose release set has no first-party source release, and whose
+public tag may differ from the media's release id, uses a separate record:
+`content/binary-preview.json` (`absd-binary-preview/1`), with the sealed
+`MANIFEST.toml`, `SHA256SUMS` and `QUICKSTART.md` copied byte for byte into
+`content/binary-preview/<tag>/`. `content/release.json` stays the
+source-release record; its schema and validation are unchanged, and it must
+not also select a binary preview.
+
+`binary_preview.py` checks the record against those three files without
+re-rendering anything: the SHA256SUMS bytes against `sums_sha256`, every
+asset against SHA256SUMS, the manifest (no `source_commit`; id, tag, commits,
+signature, qualification, QEMU profile, roles and every asset bound) against
+the record, every sealed limitation kept, and QUICKSTART.md's digest against
+all three. The guide is only checked to download this record's files from
+this tag and to verify them; sections appended before sealing are served as
+shipped. The build serves the three files under `/releases/<tag>/` and
+renders `/try/`, that page and the status section from the record. The
+record's `works` and `not_in_preview` describe the released image, not the
+development line. `scripts/test_binary_preview.py` runs the committed inputs
+and the refusals.

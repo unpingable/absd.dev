@@ -36,6 +36,10 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
     if (copy/'content/releases').exists():
         shutil.rmtree(copy/'content/releases')
+    # The binary-only preview is a separate record; the source-only case has none.
+    if (copy/'content/binary-preview').exists():
+        shutil.rmtree(copy/'content/binary-preview')
+        (copy/'content/binary-preview.json').unlink()
     (copy/'content/release.json').write_text(reference['release_json'])
     subprocess.run(["python3", "build.py"], cwd=copy, check=True)
     actual = {str(p.relative_to(copy/'site')): build.hashlib.sha256(p.read_bytes()).hexdigest()
@@ -176,6 +180,9 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
     shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
     if (preview_copy/'content/releases').exists():
         shutil.rmtree(preview_copy/'content/releases')
+    if (preview_copy/'content/binary-preview').exists():
+        shutil.rmtree(preview_copy/'content/binary-preview')
+        (preview_copy/'content/binary-preview.json').unlink()
     sys.path.insert(0, str(ROOT / "scripts"))
     from test_release_docs import fixture as documentation_fixture
     notices = {p.name:p.read_bytes() for p in (ROOT/'scripts/testdata/public-manual-notices').iterdir()}

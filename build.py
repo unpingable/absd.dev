@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import urllib.parse
+import binary_preview
 import release_docs
 
 ROOT = pathlib.Path(__file__).resolve().parent
@@ -207,6 +208,11 @@ def load_binary_preview(record):
 
 
 RELEASE = load_release(RELEASE_PATH)
+# A binary-only preview (no source release) is a separate record; the source
+# record above and its validation are unchanged by it.
+BINARY = binary_preview.load(ROOT, RELEASE["release_id"])
+if BINARY and RELEASE["binary_preview"]:
+    raise ValueError("binary-only preview: the source record already selects a binary preview")
 SOURCE_REPO = RELEASE["repository"]
 SOURCE_LICENCE = RELEASE["licence"]
 for field in ("release_id", "release_commit", "kernel_commit", "platform_commit", "release_date",
@@ -231,7 +237,7 @@ SOURCE_STATEMENTS = {
 }
 
 NAV = [
-    *([("/try/", "Try")] if RELEASE["binary_preview"] else []),
+    *([("/try/", "Try")] if RELEASE["binary_preview"] or BINARY else []),
     ("/status/", "Status"),
     ("/design/", "Design"),
     ("/manual/", "Manual"),
@@ -316,6 +322,7 @@ def source_values():
             '<a href="/try/">Download and try ABSD</a> describes its exact files, QEMU profile, '
             'verification and first run. Read that state before using the files; a staged record is not a published release.'
             if RELEASE["binary_preview"] else
+            binary_get_started() if BINARY else
             'On an Ubuntu 24.04 x86-64 host: clone the source, build the operator image, boot it under QEMU, '
             'and log in over SSH. The build and the smoke test need no KVM. Follow the '
             f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">repository\'s README</a>; '
@@ -325,8 +332,54 @@ def source_values():
             f'{html.escape(RELEASE["release_id"])}</a> is pinned to platform '
             f'<code>{RELEASE["platform_commit"]}</code>. The milestone pages below retain their earlier provenance.</p>'
             if RELEASE["binary_preview"] else ''),
+        "BINARY_STATUS": binary_status(),
     })
     return values
+
+
+def binary_get_started():
+    record = BINARY[0]
+    esc = html.escape
+    if record["state"] == "withdrawn":
+        return (f'The binary developer preview <code>{esc(record["tag"])}</code> has been withdrawn. '
+                '<a href="/try/">Read the withdrawal notice</a> before using any retained files.')
+    return (f'Binary developer preview <code>{esc(record["tag"])}</code> (state <strong>{esc(record["state"])}</strong>): '
+            '<a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, '
+            'with no build tools. To build from source instead, follow the source release\'s '
+            f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">README</a>; '
+            '<a href="/status/#source">status</a> says what each does and does not show.')
+
+
+def binary_source_note(record):
+    esc = html.escape
+    attached = [a["name"] for a in record["assets"]
+                if a["name"].endswith(("-corresponding-source.tar", "-notices.tar.gz"))]
+    names = " and ".join(f"<code>{esc(n)}</code>" for n in attached)
+    return (f'<p>No first-party ABSD source release accompanies <code>{esc(record["tag"])}</code>: its kernel '
+            f'<code>{record["kernel_commit"]}</code> and platform <code>{record["platform_commit"]}</code> are not published as source. '
+            + (f'Its download set does include {names}: the exact GRUB and GNU Unifont corresponding-source '
+               'packages for the boot components, and the third-party notices. The release\'s NOTICES.md says how to '
+               'extract and check them. ' if attached else '')
+            + f'The earlier public source release <code>{esc(RELEASE["release_id"])}</code> remains available '
+            '(<a href="/status/#source">source release</a>).</p>')
+
+
+def binary_status():
+    """The status page's section for the selected binary-only preview."""
+    if not BINARY:
+        return ""
+    record = BINARY[0]
+    esc = html.escape
+    items = "".join(f"<li>{esc(s)}</li>" for s in record["not_in_preview"])
+    works = "".join(f"<li>{esc(s)}</li>" for s in record["works"])
+    return (f'<section class="facts" aria-labelledby="binary-preview">\n<h2 id="binary-preview">Binary developer preview</h2>\n<dl>\n'
+            f'<dt>Tag</dt><dd><code>{esc(record["tag"])}</code>; media release id <code>{esc(record["release_id"])}</code></dd>\n'
+            f'<dt>Kernel</dt><dd><code>{record["kernel_commit"]}</code></dd>\n'
+            f'<dt>Platform</dt><dd><code>{record["platform_commit"]}</code></dd>\n'
+            f'<dt>State</dt><dd>{esc(record["state"])}; standing <strong>{esc(record["qualification"])}</strong> '
+            '(<a href="/try/">files and limits</a>)</dd>\n</dl>\n</section>\n'
+            f'<p>This describes the preview image as released, not the development line. In the image:</p>\n<ul>{works}</ul>\n'
+            f'<p>Not in this preview:</p>\n<ul>{items}</ul>\n' + binary_source_note(record))
 
 
 def layout(url, title, description, body, h1_in_body=True, unlisted=False):
@@ -523,6 +576,77 @@ release-authorized, published, outsider-passed. <a href="/status/#source">What t
 """
 
 
+def binary_page():
+    """The release page and /try/ for the selected binary-only preview. Every
+    value is the record's, which was verified against the sealed inputs."""
+    record, _ = BINARY
+    esc = html.escape
+    tag = record["tag"]
+    prefix = f"/releases/{tag}/"
+    limits = "".join(f"<li>{esc(t)}</li>" for t in record["limitations"])
+    if record["state"] == "withdrawn":
+        return (f'<h1>ABSD preview withdrawn</h1><p>Developer preview <code>{esc(tag)}</code> is withdrawn. '
+                f'There is no current binary download recommendation.</p><ul>{limits}</ul>'
+                f'<p>The <a href="{prefix}QUICKSTART.md">sealed QUICKSTART.md</a> is retained for history, not a new installation.</p>')
+    quick = binary_preview.base(record) + "QUICKSTART.md"
+    state = ("" if record["state"] == "published" else
+             f'<p class="note"><strong>State: {esc(record["state"])}.</strong> A draft record does not make these files '
+             'public; the addresses below work only once the release is published.</p>\n')
+    rows = "".join(
+        f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
+        f'<td><code class="digest">{a["sha256"]}</code></td><td>{a["bytes"]}</td></tr>\n'
+        for a in record["assets"])
+    evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
+                       for e in record["evidence"]) or "<li>None recorded.</li>"
+    return f"""<h1>Try ABSD {esc(tag)}</h1>
+{state}<p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>{record["kernel_commit"][:12]}</code>,
+platform <code>{record["platform_commit"][:12]}</code>, standing <strong>{esc(record["qualification"])}</strong> on the ladder
+built, offline-boot-tested, qualified, release-authorized, published, outsider-passed. Unsigned.</p>
+<h2 id="works">What works</h2>
+<ul>{"".join(f"<li>{esc(s)}</li>" for s in record["works"])}</ul>
+<h2 id="not-in-preview">What is not in this preview</h2>
+<ul>{"".join(f"<li>{esc(s)}</li>" for s in record["not_in_preview"])}</ul>
+<h2 id="how">How to try it</h2>
+<p>Follow <a href="{esc(quick, quote=True)}">QUICKSTART.md</a> from the release (the same bytes, as sealed:
+<a href="{prefix}QUICKSTART.md">copy on this site</a>). In a new empty directory: download the files below and
+<code>SHA256SUMS</code>, run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
+with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
+{binary_source_note(record)}
+<h2 id="files">Files</h2>
+<p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
+<table>
+<thead><tr><th>File</th><th>SHA-256</th><th>Bytes</th></tr></thead>
+<tbody>
+{rows}</tbody>
+</table>
+<p><a href="{esc(binary_preview.base(record) + "SHA256SUMS", quote=True)}">SHA256SUMS</a>
+(sha256 <code class="digest">{record["sums_sha256"]}</code>) · <a href="{prefix}MANIFEST.toml">manifest</a> ·
+<a href="{prefix}SHA256SUMS">checksums</a> (copies on this site)</p>
+<h2 id="limits">Limits</h2>
+<p>Sealed with the files, and later notes:</p>
+<ul>{limits}</ul>
+<h2 id="evidence">Evidence</h2>
+<ul>{evidence}</ul>
+"""
+
+
+def binary_outputs():
+    """Site-relative path -> bytes for the binary-only preview."""
+    if not BINARY:
+        return {}
+    record, files = BINARY
+    tag = record["tag"]
+    description = ("Withdrawn ABSD developer preview: read the release notice." if record["state"] == "withdrawn"
+                   else f"What works, what does not, and how to try ABSD {tag} under QEMU.")
+    page = binary_page()
+    outputs = {"try/index.html": layout("/try/", "Try ABSD", description, page),
+               f"releases/{tag}/index.html": layout(f"/releases/{tag}/", f"ABSD {tag}", description, page)}
+    outputs = {k: v.encode("utf-8") for k, v in outputs.items()}
+    # The sealed inputs, byte for byte; QUICKSTART.md is never re-rendered.
+    outputs.update({f"releases/{tag}/{name}": data for name, data in files.items()})
+    return outputs
+
+
 def documentation_records():
     records = {}
     for path in sorted((ROOT / "content/releases").glob("*/release.json")):
@@ -629,6 +753,11 @@ def main():
     if RELEASE["binary_preview"]:
         write("/try/", layout("/try/", "Try ABSD", try_description(), try_page()))
         pages += 1
+    for relative, data in binary_outputs().items():
+        path = OUT / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        pages += relative.endswith(".html")
     for record in documentation_records():
         for relative, text in documentation_outputs(record, version).items():
             path = OUT / relative
