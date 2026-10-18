@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
         else:
             raise AssertionError(f"accepted invalid {field}")
     copy = pathlib.Path(directory) / "site-source"
-    shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+    shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__", "private-patterns.local"))
     if (copy/'content/releases').exists():
         shutil.rmtree(copy/'content/releases')
     # The binary-only preview is a separate record; the source-only case has none.
@@ -177,7 +177,7 @@ with tempfile.TemporaryDirectory(prefix="absd-content-") as directory:
 
     # Positive: the synthetic record builds a pinned /try/ page that the checker accepts.
     preview_copy = pathlib.Path(directory) / "preview-source"
-    shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+    shutil.copytree(ROOT, preview_copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__", "private-patterns.local"))
     if (preview_copy/'content/releases').exists():
         shutil.rmtree(preview_copy/'content/releases')
     if (preview_copy/'content/binary-preview').exists():
