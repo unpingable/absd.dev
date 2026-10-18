@@ -109,12 +109,11 @@ HARDWARE_LIMIT = "Physical hardware qualification is not yet established."
 
 
 def ladder(level):
-    """The standing and what is still ahead, so the ladder is not read as a
-    list of steps reached."""
-    reached = PREVIEW_LADDER.index(level) + 1
-    ahead = ", ".join(PREVIEW_LADDER[reached:]) or "none"
-    return (f"Standing: <strong>{html.escape(level)}</strong> ({reached} of {len(PREVIEW_LADDER)} steps). "
-            f"Not yet reached: {html.escape(ahead)}. The steps, in order: {', '.join(PREVIEW_LADDER)}.")
+    """The standing and the stages still ahead. Earlier stages are named, not
+    counted as established: the evidence entries say what is."""
+    ahead = ", ".join(PREVIEW_LADDER[PREVIEW_LADDER.index(level) + 1:]) or "none"
+    return (f"Standing: <strong>{html.escape(level)}</strong>. Not yet reached: {html.escape(ahead)}. "
+            f"Stages, in order: {', '.join(PREVIEW_LADDER)}.")
 
 
 def load_binary_preview(record):
