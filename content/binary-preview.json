@@ -6,10 +6,16 @@
   "kernel_commit": "d208b61bcd4826181bf9f401551ab620d4eabba0",
   "platform_commit": "0fada7ed031bd84e3a469e717c1d0be5dbefedd6",
   "release_date": "2026-10-18",
-  "state": "draft",
+  "state": "published",
   "signature": "unsigned",
-  "qualification": "built",
-  "evidence": [],
+  "qualification": "published",
+  "evidence": [
+    {
+      "level": "published",
+      "label": "GitHub release absd-preview-rc1",
+      "url": "https://github.com/unpingable/absd/releases/tag/absd-preview-rc1"
+    }
+  ],
   "assets": [
     {
       "name": "MANIFEST.toml",
@@ -98,7 +104,7 @@
     "Your own ed25519 key is enrolled when the machine is created. You log in with stock OpenSSH as the one operator. The guest has one static IPv4 address on QEMU user networking (network.conf(5)) and accepts SSH connections forwarded from 127.0.0.1 on your host; it makes no outbound connections.",
     "A small native shell and commands, unmodified uutils programs and ripgrep, a few C programs (sbase and Toybox adaptations, including the line editor ed), and the manual pages, read with man inside ABSD.",
     "Files under /home/operator persist across shutdown and reboot. Files are copied byte-exactly over SSH exec; there is no scp or sftp.",
-    "The QUICKSTART steps were rehearsed end to end, from staged copies of these exact files, in a fresh unprivileged account on one Linux host with TCG: verification, machine creation and key enrollment, SSH login, man, uptime, a file written and read back after a reboot, and clean shutdowns. Public downloads and a run by an outside reader have not been tried yet."
+    "The QUICKSTART steps were rehearsed end to end, from staged copies of these exact files, in a fresh unprivileged account on one Linux host with TCG: verification, machine creation and key enrollment, SSH login, man, uptime, a file written and read back after a reboot, and clean shutdowns. The staged-file rehearsal did not test public downloads or an outside reader."
   ],
   "not_in_preview": [
     "Physical hardware of any kind.",

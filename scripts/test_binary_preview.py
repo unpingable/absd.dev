@@ -162,10 +162,14 @@ class BinaryPreview(unittest.TestCase):
         self.refuses("physical hardware limitation")
 
     def test_publication_claim_needs_published_level_and_evidence(self):
-        self.inputs.record["state"] = "published"
+        record = self.inputs.record
+        self.inputs.verify()
+        record.update(state="published", qualification="built", evidence=[])
         self.refuses("published state requires")
-        self.inputs.record["qualification"] = "published"
+        record["qualification"] = "published"
         self.refuses("has no evidence entry")
+        record.update(state="draft", evidence=[{"level": "published", "label": "Release", "url": "https://example.invalid/r"}])
+        self.refuses("a draft record cannot claim publication")
 
     def test_first_party_source_must_stay_null_and_fields_exact(self):
         self.inputs.record["first_party_source"] = "absd-preview-20261010"
