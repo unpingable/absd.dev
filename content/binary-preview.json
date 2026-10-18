@@ -1,0 +1,112 @@
+{
+  "schema": "absd-binary-preview/1",
+  "repository": "https://github.com/unpingable/absd",
+  "tag": "absd-preview-rc1",
+  "release_id": "absd-rc1-c12c-20261018t161241z.fvcgzh",
+  "kernel_commit": "d208b61bcd4826181bf9f401551ab620d4eabba0",
+  "platform_commit": "0fada7ed031bd84e3a469e717c1d0be5dbefedd6",
+  "release_date": "2026-10-18",
+  "state": "draft",
+  "signature": "unsigned",
+  "qualification": "built",
+  "evidence": [],
+  "assets": [
+    {
+      "name": "MANIFEST.toml",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/MANIFEST.toml",
+      "sha256": "71066f42b41886834af4f56b8a98973635a4b2e617d355f4c806432a35246567",
+      "bytes": 2733
+    },
+    {
+      "name": "NOTICES.md",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/NOTICES.md",
+      "sha256": "3961f786ad7630d5969f9622c9b8f1d8c36ebb42c1673ff50396a25637579684",
+      "bytes": 1807
+    },
+    {
+      "name": "QUICKSTART.md",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/QUICKSTART.md",
+      "sha256": "96c18db6bc8463b686012a6d49bc74eca0b0265a11640f8e1e8fb9049cead824",
+      "bytes": 7863
+    },
+    {
+      "name": "absd-rc1-boot-corresponding-source.tar",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-boot-corresponding-source.tar",
+      "sha256": "5ea66ab67e865f5fe78199ccb6844c45666e44926b97b4fa65cf06898dcac1dd",
+      "bytes": 46561280
+    },
+    {
+      "name": "absd-rc1-c12c-20261018t161241z.fvcgzh-disk.img.xz",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-c12c-20261018t161241z.fvcgzh-disk.img.xz",
+      "sha256": "c3875d06edd7bb965c498a09f4f2ceeb37b0e0c67625ee39fefb4be2a1f9643f",
+      "bytes": 1822468
+    },
+    {
+      "name": "absd-rc1-c12c-20261018t161241z.fvcgzh-enroll.iso",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-c12c-20261018t161241z.fvcgzh-enroll.iso",
+      "sha256": "7251c6262cf3ad311c12bff09a0cfe94f59d8986c38041d50e59b43a63340b7f",
+      "bytes": 21043200
+    },
+    {
+      "name": "absd-rc1-c12c-20261018t161241z.fvcgzh-operator.iso",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-c12c-20261018t161241z.fvcgzh-operator.iso",
+      "sha256": "d1181d465f9dcbc1322087e5c3e2235ac48007c081d7f150494436ae7d30ecef",
+      "bytes": 21977088
+    },
+    {
+      "name": "absd-rc1-third-party-notices.tar.gz",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-third-party-notices.tar.gz",
+      "sha256": "9d2760276584cebce0dac55cdcc9a5cb75618497e8720c26bd5e45c4960eae4b",
+      "bytes": 274247
+    },
+    {
+      "name": "absd-try.py",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-try.py",
+      "sha256": "9a8ce4870b45784ac5861f0e5e3660d6be5467b0af1ae6e12eda69415baae667",
+      "bytes": 31805
+    },
+    {
+      "name": "absd_fs.py",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd_fs.py",
+      "sha256": "809bc314cdd797ecfc70001d4867b58397f74b4c615bb723bccb83dcd23629b0",
+      "bytes": 13142
+    },
+    {
+      "name": "absd_image.py",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd_image.py",
+      "sha256": "01e1da8d6687642c880f4dff32a6ea91e2f755ee9f7c00c0d9135f7075a72730",
+      "bytes": 15636
+    },
+    {
+      "name": "served_ram.py",
+      "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/served_ram.py",
+      "sha256": "232c63d71884be4216860614108c4527b30a1f48debb6a6226abd94b49cf7bba",
+      "bytes": 3656
+    }
+  ],
+  "sums_sha256": "22850b3193fbe99f0623970096f14e5ff4b941e9713e676f7fe103ed59913d71",
+  "limitations": [
+    "Physical hardware qualification is not yet established.",
+    "RC1 candidate 12c preview built locally; no public release, outsider acceptance or endurance claim.",
+    "No source release is bound to these assets (no release source_commit).",
+    "Exact GRUB and GNU Unifont corresponding source and the third-party binary notices are attached (absd-rc1-boot-corresponding-source.tar, absd-rc1-third-party-notices.tar.gz, NOTICES.md); they are not the first-party ABSD source release.",
+    "A 64 MiB disk cannot take a second staged release under the current layout; staged upgrade and rollback are not supported in this preview.",
+    "The files are unsigned. SHA256SUMS detects corruption; it does not establish who produced the files."
+  ],
+  "works": [
+    "Boots under QEMU 8.2 with TCG on a Linux x86-64 host, using the release's own helper, absd-try.py. No Rust, Clang, GRUB or source checkout is needed.",
+    "Your own ed25519 key is enrolled when the machine is created. You log in with stock OpenSSH as the one operator. The guest has one static IPv4 address on QEMU user networking (network.conf(5)) and accepts SSH connections forwarded from 127.0.0.1 on your host; it makes no outbound connections.",
+    "A small native shell and commands, unmodified uutils programs and ripgrep, a few C programs (sbase and Toybox adaptations, including the line editor ed), and the manual pages, read with man inside ABSD.",
+    "Files under /home/operator persist across shutdown and reboot. Files are copied byte-exactly over SSH exec; there is no scp or sftp.",
+    "The QUICKSTART steps were rehearsed end to end, from staged copies of these exact files, in a fresh unprivileged account on one Linux host with TCG: verification, machine creation and key enrollment, SSH login, man, uptime, a file written and read back after a reboot, and clean shutdowns. Public downloads and a run by an outside reader have not been tried yet."
+  ],
+  "not_in_preview": [
+    "Physical hardware of any kind.",
+    "IPv6, UDP, DNS, DHCP and outbound connections. There are no kernel sockets. Network capabilities beyond SSH over static IPv4 are under development and are not part of this preview.",
+    "Upgrading in place or rolling back: the 64 MiB disk cannot hold a second staged release. A newer preview means a new machine; the QUICKSTART says how.",
+    "fork, signals, threads and job control; users, groups and permission bits; dynamic linking and Linux binaries.",
+    "A screen editor, a pager, scp or sftp, packages, cron, a GUI.",
+    "KVM, several CPUs and hosts other than Linux x86-64 with QEMU 8.2 TCG are untested for this preview; the guide uses TCG."
+  ],
+  "first_party_source": null
+}

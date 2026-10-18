@@ -56,6 +56,8 @@
 </ul>
 <p class="note">Problems building or running it, and statements here that the source contradicts: <a href="{{SOURCE_REPO}}/issues">issues on the repository</a>. How changes are handled: <a href="/about/#follow">following and contributing</a>.</p>
 
+{{BINARY_STATUS}}
+
 <h2 id="since">Since the milestone</h2>
 <p>Recorded 2026-10-10. Each entry names its own scope; none of it extends the milestone's claims above. Only the first two entries are a qualified release. The rest is development work: none of it is in a qualified release, and where an entry says "not merged" the work was on a development branch outside the main line when this was recorded. The <a href="#source">source release</a> is assembled from later revisions; that it contains some of this work changes no label here, because each label is what a run established on its own revision.</p>
 <ul class="claims">
@@ -157,13 +159,13 @@ The manual on this site is still the milestone's and does not describe these.</l
 </ul>
 
 <h2 id="absent">Deliberately absent</h2>
-<p>Not missing by accident. Each would need a mechanism or an authority decision that no current workload has earned.</p>
+<p>Not missing by accident. Each would need a mechanism or an authority decision that no current workload has earned. The list describes the operator image of the binary developer preview; intro(1) in that image lists its deliberate absences in its own terms.</p>
 <ul class="claims">
 <li><span class="label l-unsupported">UNSUPPORTED</span> <code>fork</code>, <code>exec</code> replacing a running image, signals, job control, process groups, threads.</li>
 <li><span class="label l-unsupported">UNSUPPORTED</span> Users, groups, UIDs, permission bits, <code>su</code>. Several sessions are not several users.</li>
-<li><span class="label l-unsupported">UNSUPPORTED</span> Kernel sockets, IPv6, UDP, DNS, DHCP, outbound connections.</li>
-<li><span class="label l-unsupported">UNSUPPORTED</span> Dynamic linking, C programs and a libc, Linux binaries.</li>
-<li><span class="label l-unsupported">UNSUPPORTED</span> Packages, <code>/etc/rc.d</code>, <code>syslogd</code>, <code>cron</code>, <code>/proc</code>, <code>fsck</code>, a text editor, a pager, a GUI.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Kernel sockets. Not in this preview: IPv6, UDP, DNS, DHCP and outbound connections; the image serves SSH over one static IPv4 address. Network capabilities beyond that are under development and are not part of this preview.</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Dynamic linking and Linux binaries. The preview image does include a few C programs, built statically with ABSD's C kit (sbase and Toybox adaptations; see intro(1) in the image).</li>
+<li><span class="label l-unsupported">UNSUPPORTED</span> Packages, <code>/etc/rc.d</code>, <code>syslogd</code>, <code>cron</code>, <code>/proc</code>, <code>fsck</code>, a screen editor, a pager, a GUI. The line editor <code>ed</code> is included.</li>
 <li><span class="label l-unsupported">UNSUPPORTED</span> <code>kill</code>, <code>top</code>, a system-wide process list: a process sees only itself and its own children.</li>
 </ul>
 

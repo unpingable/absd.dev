@@ -301,6 +301,10 @@ def check_withheld():
         preview = record["binary_preview"]
         for url in [a["url"] for a in preview["assets"]] + [preview["sums_url"]]:
             all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
+    if build.BINARY:
+        record = build.BINARY[0]
+        for url in [a["url"] for a in record["assets"]] + [build.binary_preview.base(record) + "SHA256SUMS"]:
+            all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
     for phrase in ("x86-64 PCs supported", "qualified x86-64 hardware", "runs on real hardware",
                    "/download", "/source/", "releases/latest"):
         if phrase in all_text:
@@ -383,6 +387,8 @@ def check_binary_preview():
     page = SITE / "try" / "index.html"
     linked = any('href="/try/"' in p.read_text() for p in SITE.rglob("*.html"))
     if preview is None:
+        if build.BINARY:
+            return check_binary_only(linked)
         if page.exists() or linked:
             fail("/try/", "a download page or link exists without a binary preview in the record")
         return
@@ -401,6 +407,42 @@ def check_binary_preview():
     for item in needed:
         if item not in text:
             fail("/try/", f"binary preview value missing from the page: {item!r}")
+    if not linked:
+        fail("/try/", "not linked from the navigation")
+
+
+def check_binary_only(linked):
+    """The binary-only preview: /try/ and its release page are the record's
+    rendering, the sealed inputs are served byte for byte (QUICKSTART.md as
+    shipped, never re-rendered), and the status page carries its section."""
+    import build
+    record, files = build.BINARY
+    for relative, expected in build.binary_outputs().items():
+        path = SITE / relative
+        if not path.is_file() or path.read_bytes() != expected:
+            fail(relative, "binary-only preview output differs from record or sealed input")
+    tag = record["tag"]
+    assets = {a["name"]: a for a in record["assets"]}
+    for name, data in files.items():
+        served = SITE / "releases" / tag / name
+        if served.is_file() and served.read_bytes() != data:
+            fail(f"/releases/{tag}/{name}", "served bytes differ from the sealed input")
+    served = SITE / "releases" / tag / "QUICKSTART.md"
+    if not served.is_file() or hashlib.sha256(served.read_bytes()).hexdigest() != assets["QUICKSTART.md"]["sha256"]:
+        fail(f"/releases/{tag}/QUICKSTART.md", "served guide is not the sealed QUICKSTART.md")
+    text = (SITE / "try" / "index.html").read_text()
+    if record["state"] != "withdrawn":
+        needed = [html.escape(tag), html.escape(build.HARDWARE_LIMIT), record["sums_sha256"],
+                  f'href="/releases/{tag}/QUICKSTART.md"', f'<strong>{html.escape(record["qualification"])}</strong>']
+        for a in record["assets"]:
+            needed += [a["url"], a["sha256"], str(a["bytes"])]
+        for item in needed:
+            if item not in text:
+                fail("/try/", f"binary-only preview value missing from the page: {item!r}")
+    elif build.ASSET_BASE in text:
+        fail("/try/", "withdrawn binary-only preview must not link its assets")
+    if build.binary_status() not in (SITE / "status" / "index.html").read_text():
+        fail("/status/", "binary-only preview section differs from the record")
     if not linked:
         fail("/try/", "not linked from the navigation")
 
