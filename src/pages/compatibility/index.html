@@ -17,7 +17,7 @@
 <dt>Linux binary personality <span class="label l-planned">PLANNED</span></dt>
 <dd>Deferred, with no commitment. If built, it would sit above the native interfaces and translate Linux behaviour into native mechanisms, adding Linux behaviour only when a real binary needs it. It would not become the native specification.</dd>
 <dt>C programs <span class="label l-unsupported">UNSUPPORTED</span></dt>
-<dd>There is no C runtime, <code>crt0</code>, or libc for the target. The only C on ABSD is the SQLite amalgamation, compiled freestanding.</dd>
+<dd>At this page's milestone, the target has no general C runtime, <code>crt0</code>, or libc. C used there is compiled freestanding: the SQLite amalgamation and, in the AG integration build, the <code>ring</code> crate's C and assembly. The experimental C toolchain and other later development builds belong to their own revisions and do not change the results below.</dd>
 </dl>
 
 <h2 id="probe">Source-compatibility probe</h2>
