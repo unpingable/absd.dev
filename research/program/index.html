@@ -19,7 +19,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/" aria-current="page">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/try/">Try</a></li><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/" aria-current="page">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1>Research program</h1>
@@ -64,7 +64,7 @@
 <tr><td>2026-10-05</td><td>First read-only native boots on one physical machine, read from photographs of the screen</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
 <tr><td>2026-10-10</td><td>The main development line passes the whole platform check. It includes multi-sector block requests, a boot that survives a network link that is down, and a bounded recovery budget (the budget qualified by its own separate run). Not a release</td><td><span class="label l-val">VALIDATED</span></td></tr>
 <tr><td>2026-10-09 to 10-10</td><td>On unmerged development branches, in virtual machines only: the filesystem on the ARM port, GICv3 support, and USB controller (xHCI) enumeration of one device</td><td><span class="label l-val">VALIDATED</span></td></tr>
-<tr><td>2026-10-10</td><td>A seven-day unattended observation of the main development line under QEMU started; it ends 2026-10-17 and has no result yet</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
+<tr><td>2026-10-10</td><td>A seven-day unattended observation of a development build under QEMU (TCG, one CPU, one host) ran 2026-10-10 to 2026-10-17: 2017 of 2017 rounds OK in one boot; adjudicated SEVEN_DAY_OBSERVATION_PASSED, while the tool's raw verdict stays RUNNING because the guest was left running. A 14-day run continues to 2026-10-29. Not KVM, several CPUs or physical hardware</td><td><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></td></tr>
 </tbody>
 </table>
 

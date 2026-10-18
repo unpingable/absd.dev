@@ -19,7 +19,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site" role="banner">
 <a class="wordmark" href="/">ABSD</a>
-<nav aria-label="Site"><ul><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
+<nav aria-label="Site"><ul><li><a href="/try/">Try</a></li><li><a href="/status/">Status</a></li><li><a href="/design/">Design</a></li><li><a href="/manual/">Manual</a></li><li><a href="/hardware/">Hardware</a></li><li><a href="/compatibility/">Compatibility</a></li><li><a href="/research/">Research</a></li><li><a href="/evidence/">Evidence</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/unpingable/absd">Source</a></li></ul></nav>
 </header>
 <main id="main" role="main">
 <h1 class="lead"><strong>ABSD</strong> — An experimental operating system.</h1>
@@ -43,7 +43,7 @@
 <dt>What it is</dt>
 <dd>A research operating system, not a Unix and not a product: no <code>fork</code>, no user IDs, and existing Unix or Linux software does not run without porting. <a href="/about/">About</a> says what it is for; <a href="#distinct">below</a> is what distinguishes it.</dd>
 <dt>What you can run today</dt>
-<dd>On an Ubuntu 24.04 x86-64 host: clone the source, build the operator image, boot it under QEMU, and log in over SSH. The build and the smoke test need no KVM. Follow the <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">repository's README</a>; <a href="/status/#source">status</a> says what that does and does not show.</dd>
+<dd>Binary developer preview <code>absd-preview-rc1</code> (state <strong>published</strong>): <a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, with no build tools. To build from source instead, follow the source release's <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">README</a>; <a href="/status/#source">status</a> says what each does and does not show.</dd>
 <dt>Where the source is</dt>
 <dd><a href="https://github.com/unpingable/absd"><strong>github.com/unpingable/absd</strong></a>: the kernel and the platform, under Apache-2.0. Source release <code>absd-preview-20261010</code>, 2026-10-10.</dd>
 </dl>
@@ -71,7 +71,7 @@
 <dt>Physical hardware</dt>
 <dd>Physical hardware qualification: not yet established <span class="label l-planned">PLANNED</span>. First read-only boots on one machine have been observed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dd>
 <dt>Since the milestone</dt>
-<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation of a development build started 2026-10-10, runs until 2026-10-17, and has no result yet; publishing the source says nothing about it. See <a href="/status/#since">status</a>.</dd>
+<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation of a development build ran from 2026-10-10 to 2026-10-17 and passed: 2017 of 2017 five-minute rounds succeeded in one boot, on one emulated guest (TCG, one CPU) on one host. The tool's own verdict still reads RUNNING because the guest was left running on purpose; the adjudicated verdict is SEVEN_DAY_OBSERVATION_PASSED. It is not evidence about KVM, several CPUs or physical hardware, and publishing the source says nothing about it. See <a href="/status/#since">status</a>.</dd>
 <dt>Access</dt>
 <dd>Stock OpenSSH, public-key login, one operator, several isolated sessions <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
 <dt>Userspace</dt>
