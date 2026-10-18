@@ -223,7 +223,16 @@ class BuiltSite(unittest.TestCase):
             self.assertNotIn(" of 6 steps", page)
             self.assertNotIn("on the ladder", page)
             self.assertIn("quoted from the release's MANIFEST.toml, written before publication", page)
-            home = (copy / "site/index.html").read_text()
+            # #62: the complete set, its size from the sealed metadata, host packages, QEMU versions,
+            # helper modules before verification, and why the sealed guide says "built".
+            self.assertIn("Both verification commands need all 13 files", page)
+            self.assertIn("(46,561,280 bytes)", page)
+            self.assertIn("The complete download is 91,756,032 bytes.", page)
+            self.assertIn("qemu-system-x86 python3 openssh-client curl xz-utils", page)
+            self.assertIn("the helper does not check the QEMU version", page)
+            self.assertLess(page.index("<code>absd_fs.py</code>"), page.index("python3 absd-try.py verify ."))
+            self.assertIn("reports its artifact standing as <q>built</q>", page)
+            home =(copy / "site/index.html").read_text()
             self.assertLess(home.index("Current release:"), home.index("Source release absd-preview-20261010 standing:"))
             served.write_bytes(served.read_bytes().replace(b"absd-preview-rc1", b"absd-preview-rcX", 1))
             bad = subprocess.run(["python3", "scripts/check.py"], cwd=copy, capture_output=True, text=True)

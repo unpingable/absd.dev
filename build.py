@@ -639,6 +639,17 @@ def binary_page():
         for a in record["assets"])
     evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
                        for e in record["evidence"]) or "<li>None recorded.</li>"
+    # Download facts derived from the sealed record and SHA256SUMS bytes, not
+    # written by hand: the complete set both verification commands need.
+    count = len(record["assets"]) + 1
+    total = sum(a["bytes"] for a in record["assets"]) + len(BINARY[1]["SHA256SUMS"])
+    largest = max(record["assets"], key=lambda a: a["bytes"])
+    helpers = [a["name"] for a in record["assets"] if a["name"].endswith(".py") and a["name"] != "absd-try.py"]
+    helper_list = ", ".join(f"<code>{esc(n)}</code>" for n in helpers)
+    sealed_standing = ("" if record["state"] != "published" else
+                       f'<p>The sealed QUICKSTART.md reports its artifact standing as <q>built</q>: it was written and '
+                       f'sealed before the release was published on {esc(record["release_date"])}, and it cannot change. '
+                       f'This page reports the later publication; the guide\'s instructions are unchanged.</p>\n')
     return f"""<h1>Try ABSD {esc(tag)}</h1>
 {state}<p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>{record["kernel_commit"][:12]}</code>,
 platform <code>{record["platform_commit"][:12]}</code>. Unsigned.
@@ -650,9 +661,15 @@ platform <code>{record["platform_commit"][:12]}</code>. Unsigned.
 <h2 id="how">How to try it</h2>
 <p>Follow <a href="{esc(quick, quote=True)}">QUICKSTART.md</a> from the release (the same bytes, as sealed:
 <a href="{prefix}QUICKSTART.md">copy on this site</a>). In a new empty directory: download the files below and
-<code>SHA256SUMS</code>, run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
+<code>SHA256SUMS</code>, keeping <code>absd-try.py</code> and its helper modules ({helper_list}) together in that directory,
+run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
 with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
-{binary_source_note(record)}
+<p>Both verification commands need all {count} files, including <code>{esc(largest["name"])}</code>
+({largest["bytes"]:,} bytes), even if you only want to boot the image. The complete download is {total:,} bytes.</p>
+<p>Host tools on Ubuntu 24.04: <code>sudo apt-get install qemu-system-x86 python3 openssh-client curl xz-utils</code>.
+The preview was tested with QEMU 8.2. Newer QEMU versions are untested; the helper does not check the QEMU version,
+so it does not refuse them.</p>
+{sealed_standing}{binary_source_note(record)}
 <h2 id="files">Files</h2>
 <p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
 <table>
