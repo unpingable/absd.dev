@@ -24,8 +24,8 @@
 <main id="main" role="main">
 <h1>Try ABSD absd-preview-rc1</h1>
 <p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>d208b61bcd48</code>,
-platform <code>0fada7ed031b</code>, standing <strong>published</strong> on the ladder
-built, offline-boot-tested, qualified, release-authorized, published, outsider-passed. Unsigned.</p>
+platform <code>0fada7ed031b</code>. Unsigned.
+Standing: <strong>published</strong>. Not yet reached: outsider-passed. Stages, in order: built, offline-boot-tested, qualified, release-authorized, published, outsider-passed.</p>
 <h2 id="works">What works</h2>
 <ul><li>Boots under QEMU 8.2 with TCG on a Linux x86-64 host, using the release&#x27;s own helper, absd-try.py. No Rust, Clang, GRUB or source checkout is needed.</li><li>Your own ed25519 key is enrolled when the machine is created. You log in with stock OpenSSH as the one operator. The guest has one static IPv4 address on QEMU user networking (network.conf(5)) and accepts SSH connections forwarded from 127.0.0.1 on your host; it makes no outbound connections.</li><li>A small native shell and commands, unmodified uutils programs and ripgrep, a few C programs (sbase and Toybox adaptations, including the line editor ed), and the manual pages, read with man inside ABSD.</li><li>Files under /home/operator persist across shutdown and reboot. Files are copied byte-exactly over SSH exec; there is no scp or sftp.</li><li>The QUICKSTART steps were rehearsed end to end, from staged copies of these exact files, in a fresh unprivileged account on one Linux host with TCG: verification, machine creation and key enrollment, SSH login, man, uptime, a file written and read back after a reboot, and clean shutdowns. The staged-file rehearsal did not test public downloads or an outside reader.</li></ul>
 <h2 id="not-in-preview">What is not in this preview</h2>
@@ -59,8 +59,10 @@ with your own new key, boot it, and log in over SSH. Stop if either verification
 (sha256 <code class="digest">22850b3193fbe99f0623970096f14e5ff4b941e9713e676f7fe103ed59913d71</code>) · <a href="/releases/absd-preview-rc1/MANIFEST.toml">manifest</a> ·
 <a href="/releases/absd-preview-rc1/SHA256SUMS">checksums</a> (copies on this site)</p>
 <h2 id="limits">Limits</h2>
-<p>Sealed with the files, and later notes:</p>
-<ul><li>Physical hardware qualification is not yet established.</li><li>RC1 candidate 12c preview built locally; no public release, outsider acceptance or endurance claim.</li><li>No source release is bound to these assets (no release source_commit).</li><li>Exact GRUB and GNU Unifont corresponding source and the third-party binary notices are attached (absd-rc1-boot-corresponding-source.tar, absd-rc1-third-party-notices.tar.gz, NOTICES.md); they are not the first-party ABSD source release.</li><li>A 64 MiB disk cannot take a second staged release under the current layout; staged upgrade and rollback are not supported in this preview.</li><li>The files are unsigned. SHA256SUMS detects corruption; it does not establish who produced the files.</li></ul>
+<p>These limitations are quoted from the release's MANIFEST.toml, written before publication; the release was published on 2026-10-18.</p>
+<ul><li>Physical hardware qualification is not yet established.</li><li>RC1 candidate 12c preview built locally; no public release, outsider acceptance or endurance claim.</li><li>No source release is bound to these assets (no release source_commit).</li><li>Exact GRUB and GNU Unifont corresponding source and the third-party binary notices are attached (absd-rc1-boot-corresponding-source.tar, absd-rc1-third-party-notices.tar.gz, NOTICES.md); they are not the first-party ABSD source release.</li><li>A 64 MiB disk cannot take a second staged release under the current layout; staged upgrade and rollback are not supported in this preview.</li></ul>
+<p>Added on this site:</p>
+<ul><li>The files are unsigned. SHA256SUMS detects corruption; it does not establish who produced the files.</li></ul>
 <h2 id="evidence">Evidence</h2>
 <ul><li>published: <a href="https://github.com/unpingable/absd/releases/tag/absd-preview-rc1">GitHub release absd-preview-rc1</a></li></ul>
 </main>
