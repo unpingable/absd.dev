@@ -214,6 +214,10 @@ class BuiltSite(unittest.TestCase):
             page = (copy / "site/try/index.html").read_text()
             self.assertIn('href="/releases/absd-preview-rc1/QUICKSTART.md"', page)
             self.assertIn("No first-party ABSD source release accompanies", page)
+            sentence = ("RC1's first-party source is not yet published, so independent parties cannot currently "
+                        "reproduce its builds from the published materials.")
+            self.assertIn(sentence, page)
+            self.assertIn(sentence, (copy / "site/status/index.html").read_text())
             self.assertIn("absd-rc1-boot-corresponding-source.tar", page)
             self.assertIn("Standing: <strong>published</strong>. Not yet reached: outsider-passed.", page)
             self.assertNotIn(" of 6 steps", page)

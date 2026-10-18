@@ -390,6 +390,8 @@ def binary_source_note(record):
     names = " and ".join(f"<code>{esc(n)}</code>" for n in attached)
     return (f'<p>No first-party ABSD source release accompanies <code>{esc(record["tag"])}</code>: its kernel '
             f'<code>{record["kernel_commit"]}</code> and platform <code>{record["platform_commit"]}</code> are not published as source. '
+            "RC1's first-party source is not yet published, so independent parties cannot currently reproduce its builds "
+            'from the published materials. '
             + (f'Its download set does include {names}: the exact GRUB and GNU Unifont corresponding-source '
                'packages for the boot components, and the third-party notices. The release\'s NOTICES.md says how to '
                'extract and check them. ' if attached else '')
