@@ -24,6 +24,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 import urllib.parse
 import binary_preview
 import release_docs
@@ -105,6 +106,15 @@ PREVIEW_FIELDS = {"tag", "assets", "manifest_url", "sums_url", "sums", "signatur
                   "host_tiers", "qualification", "evidence", "quickstart_url", "limitations", "documentation"}
 ASSET_BASE = "https://github.com/unpingable/absd/releases/download/"
 HARDWARE_LIMIT = "Physical hardware qualification is not yet established."
+
+
+def ladder(level):
+    """The standing and what is still ahead, so the ladder is not read as a
+    list of steps reached."""
+    reached = PREVIEW_LADDER.index(level) + 1
+    ahead = ", ".join(PREVIEW_LADDER[reached:]) or "none"
+    return (f"Standing: <strong>{html.escape(level)}</strong> ({reached} of {len(PREVIEW_LADDER)} steps). "
+            f"Not yet reached: {html.escape(ahead)}. The steps, in order: {', '.join(PREVIEW_LADDER)}.")
 
 
 def load_binary_preview(record):
@@ -299,7 +309,8 @@ def source_values():
         short = full = f"{UNFILLED}:SOURCE_QUALIFICATION"
     values = {k: html.escape(v) for k, v in values.items()}
     notice = '<aside class="note" aria-label="Current public source standing">\n'
-    notice += f'<p><strong>Current public standing:</strong> {html.escape(RELEASE["standing"])} Editorial update: {RELEASE["editorial_updated"]}.</p>\n'
+    standing = (f'Source release {html.escape(RELEASE["release_id"])} standing' if BINARY else 'Current public standing')
+    notice += f'<p><strong>{standing}:</strong> {html.escape(RELEASE["standing"])} Editorial update: {RELEASE["editorial_updated"]}.</p>\n'
     for name, title in (("demonstrated", "Demonstrated"), ("limitations", "Limits")):
         notice += f'<p><strong>{title}:</strong></p><ul>' + ''.join(f'<li>{html.escape(v)}</li>' for v in RELEASE[name]) + '</ul>\n'
     notice += '<p>Evidence: ' + ' · '.join(f'<a href="{html.escape(v["url"], quote=True)}">{html.escape(v["label"])}</a>' for v in RELEASE["evidence"]) + '</p>\n</aside>'
@@ -333,6 +344,7 @@ def source_values():
             f'<code>{RELEASE["platform_commit"]}</code>. The milestone pages below retain their earlier provenance.</p>'
             if RELEASE["binary_preview"] else ''),
         "BINARY_STATUS": binary_status(),
+        "BINARY_NOTICE": binary_notice(),
     })
     return values
 
@@ -348,6 +360,28 @@ def binary_get_started():
             'with no build tools. To build from source instead, follow the source release\'s '
             f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">README</a>; '
             '<a href="/status/#source">status</a> says what each does and does not show.')
+
+
+def binary_notice():
+    """The home page's lead for the selected binary-only preview, ahead of the
+    source release's standing. Empty, with no trailing text, when absent."""
+    if not BINARY:
+        return ""
+    record = BINARY[0]
+    esc = html.escape
+    tag = record["tag"]
+    if record["state"] == "withdrawn":
+        body = (f'Binary developer preview <code>{esc(tag)}</code> has been withdrawn. '
+                '<a href="/try/">Read the withdrawal notice</a>.')
+    else:
+        evidence = "".join(f' · <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a>'
+                           for e in record["evidence"] if e["level"] == "published")
+        body = (f'Binary developer preview <code>{esc(tag)}</code>, state <strong>{esc(record["state"])}</strong>. '
+                f'{ladder(record["qualification"])} For QEMU on a Linux x86-64 host, with no build tools: '
+                f'<a href="/try/">what works, what does not, and how to try it</a> · '
+                f'<a href="/releases/{esc(tag)}/">release page</a>{evidence}.')
+    return (f'<aside class="note" aria-label="Current binary preview">\n<p><strong>Current release:</strong> {body}</p>\n'
+            '<p>The source release below is a separate, earlier publication.</p>\n</aside>\n\n')
 
 
 def binary_source_note(record):
@@ -376,7 +410,7 @@ def binary_status():
             f'<dt>Tag</dt><dd><code>{esc(record["tag"])}</code>; media release id <code>{esc(record["release_id"])}</code></dd>\n'
             f'<dt>Kernel</dt><dd><code>{record["kernel_commit"]}</code></dd>\n'
             f'<dt>Platform</dt><dd><code>{record["platform_commit"]}</code></dd>\n'
-            f'<dt>State</dt><dd>{esc(record["state"])}; standing <strong>{esc(record["qualification"])}</strong> '
+            f'<dt>State</dt><dd>{esc(record["state"])}. {ladder(record["qualification"])} '
             '(<a href="/try/">files and limits</a>)</dd>\n</dl>\n</section>\n'
             f'<p>This describes the preview image as released, not the development line. In the image:</p>\n<ul>{works}</ul>\n'
             f'<p>Not in this preview:</p>\n<ul>{items}</ul>\n' + binary_source_note(record))
@@ -550,9 +584,8 @@ def try_page(record=None):
 <code>{esc(record["release_id"])}</code>. Documentation state:
 <strong>{esc(preview['documentation']['state'])}</strong>. Draft/staged records do not establish public availability;
 withdrawn records are retained for history and must not be used for a new installation.
-It runs under QEMU on the hosts listed below. Its standing is
-<strong>{esc(preview["qualification"])}</strong> on the ladder built, offline-boot-tested, qualified,
-release-authorized, published, outsider-passed. <a href="/status/#source">What the source release establishes</a>.</p>
+It runs under QEMU on the hosts listed below. {ladder(preview["qualification"])}
+<a href="/status/#source">What the source release establishes</a>.</p>
 <h2 id="files">Files</h2>
 <p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
 <table>
@@ -584,6 +617,13 @@ def binary_page():
     tag = record["tag"]
     prefix = f"/releases/{tag}/"
     limits = "".join(f"<li>{esc(t)}</li>" for t in record["limitations"])
+    quoted = tomllib.loads(BINARY[1]["MANIFEST.toml"].decode())["limitations"]
+    sealed = "".join(f"<li>{esc(t)}</li>" for t in quoted)
+    later = [t for t in record["limitations"] if t not in quoted]
+    added = (f'<p>Added on this site:</p>\n<ul>{"".join(f"<li>{esc(t)}</li>" for t in later)}</ul>' if later else "")
+    sealed_note = ("These limitations are quoted from the release's MANIFEST.toml, written before publication; "
+                   f"the release was published on {record['release_date']}." if record["state"] == "published" else
+                   "These limitations are quoted from the release's MANIFEST.toml, as sealed.")
     if record["state"] == "withdrawn":
         return (f'<h1>ABSD preview withdrawn</h1><p>Developer preview <code>{esc(tag)}</code> is withdrawn. '
                 f'There is no current binary download recommendation.</p><ul>{limits}</ul>'
@@ -600,8 +640,8 @@ def binary_page():
                        for e in record["evidence"]) or "<li>None recorded.</li>"
     return f"""<h1>Try ABSD {esc(tag)}</h1>
 {state}<p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>{record["kernel_commit"][:12]}</code>,
-platform <code>{record["platform_commit"][:12]}</code>, standing <strong>{esc(record["qualification"])}</strong> on the ladder
-built, offline-boot-tested, qualified, release-authorized, published, outsider-passed. Unsigned.</p>
+platform <code>{record["platform_commit"][:12]}</code>. Unsigned.
+{ladder(record["qualification"])}</p>
 <h2 id="works">What works</h2>
 <ul>{"".join(f"<li>{esc(s)}</li>" for s in record["works"])}</ul>
 <h2 id="not-in-preview">What is not in this preview</h2>
@@ -623,8 +663,9 @@ with your own new key, boot it, and log in over SSH. Stop if either verification
 (sha256 <code class="digest">{record["sums_sha256"]}</code>) · <a href="{prefix}MANIFEST.toml">manifest</a> ·
 <a href="{prefix}SHA256SUMS">checksums</a> (copies on this site)</p>
 <h2 id="limits">Limits</h2>
-<p>Sealed with the files, and later notes:</p>
-<ul>{limits}</ul>
+<p>{sealed_note}</p>
+<ul>{sealed}</ul>
+{added}
 <h2 id="evidence">Evidence</h2>
 <ul>{evidence}</ul>
 """
