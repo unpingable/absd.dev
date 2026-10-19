@@ -488,6 +488,12 @@ def layout(url, title, description, body, h1_in_body=True, unlisted=False):
 <meta property="og:title" content="{html.escape(full_title)}">
 <meta property="og:description" content="{html.escape(description)}">
 <meta property="og:url" content="{BASE}{url}">
+<meta property="og:image" content="{BASE}/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ABSD, an experimental capability-based operating system: the trilobite emblem and an SSH session on the RC1 preview.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{BASE}/og-card.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
 </head>
