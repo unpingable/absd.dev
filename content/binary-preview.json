@@ -114,5 +114,18 @@
     "A screen editor, a pager, scp or sftp, packages, cron, a GUI.",
     "KVM, several CPUs and hosts other than Linux x86-64 with QEMU 8.2 TCG are untested for this preview; the guide uses TCG."
   ],
-  "first_party_source": null
+  "first_party_source": {
+    "tag": "absd-source-rc1",
+    "commit": "370badf53442983d8076d38273df67b056e810ac",
+    "tree": "618549573803186289720b0985cebe680782b14f",
+    "source_manifest_sha256": "784c0b92a5e53c90221a2972205447f1eecd9a51441a6efc878bf1ecc13e7f22",
+    "kernel_commit": "d208b61bcd4826181bf9f401551ab620d4eabba0",
+    "platform_commit": "0fada7ed031bd84e3a469e717c1d0be5dbefedd6"
+  },
+  "notices_correction": {
+    "name": "absd-rc1-third-party-notices-correction-1.tar.gz",
+    "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-third-party-notices-correction-1.tar.gz",
+    "sha256": "4c3096ab9a4a7a41b39bdf382c57f471ad30c2fdcd5439b315b9674552667c4a",
+    "bytes": 64836
+  }
 }

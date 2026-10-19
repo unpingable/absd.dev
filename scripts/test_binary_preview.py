@@ -16,6 +16,7 @@ import sys
 import tempfile
 import tomllib
 import unittest
+from unittest.mock import patch
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -89,7 +90,20 @@ class BinaryPreview(unittest.TestCase):
         self.assertNotEqual(record["tag"], record["release_id"])
         doc = tomllib.loads(files["MANIFEST.toml"].decode())
         self.assertNotIn("source_commit", doc["release"])
-        self.assertEqual(record["first_party_source"], None)
+        self.assertEqual(record["first_party_source"]["tag"], "absd-source-rc1")
+
+    def test_source_association_refuses_wrong_components_and_tags(self):
+        original = json.loads(json.dumps(self.inputs.record["first_party_source"]))
+        for key, value in [("kernel_commit", "0" * 40), ("platform_commit", "0" * 40),
+                           ("tag", self.inputs.record["tag"]), ("tag", SOURCE_ID),
+                           ("commit", "latest"), ("tree", "x" * 40),
+                           ("source_manifest_sha256", "bad")]:
+            with self.subTest(key=key, value=value):
+                self.inputs.record["first_party_source"] = dict(original, **{key: value})
+                with self.assertRaises(ValueError):
+                    self.inputs.verify()
+        self.inputs.record["first_party_source"] = None
+        self.inputs.verify()  # Original binary-only records remain supported.
 
     def test_tampered_quickstart_refuses(self):
         self.inputs.write("QUICKSTART.md", self.inputs.read("QUICKSTART.md") + b"\n")
@@ -171,15 +185,68 @@ class BinaryPreview(unittest.TestCase):
         record.update(state="draft", evidence=[{"level": "published", "label": "Release", "url": "https://example.invalid/r"}])
         self.refuses("a draft record cannot claim publication")
 
-    def test_first_party_source_must_stay_null_and_fields_exact(self):
+    def test_first_party_source_requires_exact_structure_and_fields(self):
         self.inputs.record["first_party_source"] = "absd-preview-20261010"
-        self.refuses("first_party_source must be null")
+        self.refuses("malformed first_party_source")
         self.inputs.record["first_party_source"] = None
         self.inputs.record["release_commit"] = "0" * 40
         self.refuses("exact fields")
 
+    def test_later_notices_correction_is_separate_from_sealed_assets(self):
+        original_assets = json.loads(json.dumps(self.inputs.record["assets"]))
+        original_sums = self.inputs.read("SHA256SUMS")
+        self.inputs.record["notices_correction"] = dict(bp.CORRECTION)
+        self.inputs.verify()
+        self.assertEqual(self.inputs.record["assets"], original_assets)
+        self.assertEqual(self.inputs.read("SHA256SUMS"), original_sums)
+        self.inputs.record["notices_correction"] = None
+        self.inputs.verify()
+
+    def test_later_notices_correction_refuses_changed_identity(self):
+        variants = ["published", {}, dict(bp.CORRECTION, bytes=64836.0),
+                    dict(bp.CORRECTION, bytes=True), dict(bp.CORRECTION, bytes=1),
+                    dict(bp.CORRECTION, sha256="0" * 64),
+                    dict(bp.CORRECTION, url="https://example.invalid/correction"),
+                    dict(bp.CORRECTION, name="different.tar.gz"),
+                    dict(bp.CORRECTION, extra="unknown")]
+        for correction in variants:
+            with self.subTest(correction=correction):
+                self.inputs.record["notices_correction"] = correction
+                self.refuses("notices_correction differs")
+
 
 class SourcePathUnchanged(unittest.TestCase):
+    def test_source_and_notice_pointers_survive_both_source_states(self):
+        import build
+        record = json.loads(bp.record_path(ROOT).read_text())
+        source = record["first_party_source"]
+        for current in (source, None):
+            with self.subTest(source=current):
+                record["first_party_source"] = current
+                record["notices_correction"] = dict(bp.CORRECTION)
+                note = build.binary_source_note(record)
+                for text in ("GRUB", "GNU Unifont", "absd-rc1-boot-corresponding-source.tar",
+                             "absd-rc1-third-party-notices.tar.gz", "absd-preview-20261010",
+                             bp.CORRECTION["name"], bp.CORRECTION["sha256"], "64,836 bytes",
+                             "original SHA256SUMS and NOTICES.md are unchanged"):
+                    self.assertIn(text, note)
+                with patch.object(build, "BINARY", (record, {})):
+                    if current is not None:
+                        self.assertIn("states which checks ran", build.rc1_check_standing())
+                        self.assertNotIn("what a public clone can re-run", build.rc1_check_standing())
+        record.pop("notices_correction")
+        self.assertNotIn(bp.CORRECTION["name"], build.binary_source_note(record))
+
+    def test_absent_later_source_retains_binary_only_wording(self):
+        import build
+        record = json.loads(bp.record_path(ROOT).read_text())
+        record["first_party_source"] = None
+        with patch.object(build, "BINARY", (record, {})):
+            self.assertIn("No first-party ABSD source release accompanies", build.binary_source_note(record))
+            self.assertIn("it has not happened yet", build.rc1_source_standing())
+        with patch.object(build, "BINARY", None):
+            self.assertIn("it has not happened yet", build.rc1_source_standing())
+
     def test_source_record_still_validates_alone(self):
         import build
         record = build.load_release(build.RELEASE_PATH)
@@ -213,11 +280,17 @@ class BuiltSite(unittest.TestCase):
             self.assertEqual(sha(served.read_bytes()), SEALED["QUICKSTART.md"])
             page = (copy / "site/try/index.html").read_text()
             self.assertIn('href="/releases/absd-preview-rc1/QUICKSTART.md"', page)
-            self.assertIn("No first-party ABSD source release accompanies", page)
+            self.assertIn("First-party ABSD source for", page)
             sentence = ("RC1's first-party source is not yet published, so independent parties cannot currently "
                         "reproduce its builds from the published materials.")
-            self.assertIn(sentence, page)
-            self.assertIn(sentence, (copy / "site/status/index.html").read_text())
+            self.assertNotIn(sentence, page)
+            source = json.loads(bp.record_path(ROOT).read_text())["first_party_source"]
+            link = "https://github.com/unpingable/absd/tree/" + source["tag"]
+            self.assertIn(link, page)
+            self.assertIn(link, (copy / "site/status/index.html").read_text())
+            self.assertIn(source["commit"], page)
+            self.assertIn("does not change the sealed binary manifest", page)
+            self.assertIn("or establish byte-for-byte independent reproduction", page)
             self.assertIn("absd-rc1-boot-corresponding-source.tar", page)
             self.assertIn("Standing: <strong>published</strong>. Not yet reached: outsider-passed.", page)
             self.assertNotIn(" of 6 steps", page)

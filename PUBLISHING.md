@@ -139,6 +139,20 @@ explicit local rule does not receive that exception.
 
 ## Binary-only preview (no source release)
 
+A later corresponding first-party source publication uses the existing
+`first_party_source` field: null keeps the original binary-only rendering;
+an object names the separate source tag, commit, tree, source-manifest
+SHA-256 and original kernel/platform component commits. Component commits
+must agree with the sealed binary record. This association does not edit
+the original manifest, checksums, quickstart or binary tag, and does not
+claim byte-for-byte independent reproduction. Before applying such an
+object or the accompanying source-link prose, the steward verifies that
+the exact source tag/tree and manifest are public and that source review,
+clean-environment build, provenance, licensing and private-material gates
+passed. The offline site validator checks structure and local consistency;
+it does not prove that the remote source tag exists or that source matches
+the released binaries. Those remain publication receipts.
+
 A preview whose release set has no first-party source release, and whose
 public tag may differ from the media's release id, uses a separate record:
 `content/binary-preview.json` (`absd-binary-preview/1`), with the sealed
@@ -159,3 +173,18 @@ renders `/try/`, that page and the status section from the record. The
 record's `works` and `not_in_preview` describe the released image, not the
 development line. `scripts/test_binary_preview.py` runs the committed inputs
 and the refusals.
+# Later RC1 notice correction
+
+The optional `notices_correction` metadata names the one reviewed additive
+RC1 notices archive. It is separate from `assets`, MANIFEST.toml and
+SHA256SUMS; none of those sealed inputs is regenerated. Leave the field
+absent or null until the correction is authorized, attached to the binary
+release and downloaded with the exact recorded size and digest. The offline
+validator checks identity, not remote existence or publication authority.
+
+Source-present pages keep the GRUB/Unifont source and original notices
+pointers and the earlier source release. Their about-page wording points
+to the source release's actual clean-environment results instead of
+inferring that included check scripts passed. Bind the final reviewed
+source identity and release text before publishing this metadata; a failed
+or superseded source candidate is not a publication input.

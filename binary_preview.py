@@ -1,4 +1,4 @@
-"""Binary-only developer preview: a sealed release set with no source release.
+"""Binary developer preview: a sealed release set and later source association.
 
 content/release.json stays the source-release record and keeps its own
 validation (release_docs.py). A binary-only preview has no source commit, its
@@ -23,6 +23,12 @@ SCHEMA = "absd-binary-preview/1"
 FIELDS = {"schema", "repository", "tag", "release_id", "kernel_commit", "platform_commit", "release_date",
           "state", "signature", "qualification", "evidence", "assets", "sums_sha256", "limitations",
           "works", "not_in_preview", "first_party_source"}
+CORRECTION = {
+    "name": "absd-rc1-third-party-notices-correction-1.tar.gz",
+    "url": "https://github.com/unpingable/absd/releases/download/absd-preview-rc1/absd-rc1-third-party-notices-correction-1.tar.gz",
+    "sha256": "4c3096ab9a4a7a41b39bdf382c57f471ad30c2fdcd5439b315b9674552667c4a",
+    "bytes": 64836,
+}
 STATES = ("draft", "published", "withdrawn")
 REPOSITORY = "https://github.com/unpingable/absd"
 ASSET_BASE = REPOSITORY + "/releases/download/"
@@ -56,7 +62,7 @@ def statements(record, field):
 
 
 def check_record(record, source_release_id):
-    if not isinstance(record, dict) or set(record) != FIELDS or record["schema"] != SCHEMA:
+    if not isinstance(record, dict) or set(record) - {"notices_correction"} != FIELDS or record["schema"] != SCHEMA:
         raise ValueError(f"binary-only preview: expected {SCHEMA} and its exact fields")
     if "releases/latest" in json.dumps(record):
         raise ValueError("binary-only preview: releases/latest is never a canonical address")
@@ -77,8 +83,21 @@ def check_record(record, source_release_id):
         raise ValueError(f"binary-only preview: state must be one of {', '.join(STATES)}")
     if record["signature"] != "unsigned":
         raise ValueError("binary-only preview: v0 owner decision is an explicitly unsigned preview")
-    if record["first_party_source"] is not None:
-        raise ValueError("binary-only preview: first_party_source must be null (no first-party source release)")
+    source = record["first_party_source"]
+    if source is not None:
+        fields = {"tag", "commit", "tree", "source_manifest_sha256", "kernel_commit", "platform_commit"}
+        if not isinstance(source, dict) or set(source) != fields:
+            raise ValueError("binary-only preview: malformed first_party_source")
+        if (not isinstance(source["tag"], str) or not re.fullmatch(r"[a-z0-9.-]{1,64}", source["tag"])
+                or source["tag"] in (record["tag"], source_release_id)):
+            raise ValueError("binary-only preview: source association needs a separate source tag")
+        for name in ("commit", "tree", "kernel_commit", "platform_commit"):
+            if not isinstance(source[name], str) or not re.fullmatch(r"[0-9a-f]{40}", source[name]):
+                raise ValueError(f"binary-only preview: malformed source {name}")
+        if not isinstance(source["source_manifest_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", source["source_manifest_sha256"]):
+            raise ValueError("binary-only preview: malformed source manifest digest")
+        if any(source[name] != record[name] for name in ("kernel_commit", "platform_commit")):
+            raise ValueError("binary-only preview: source components disagree with binary record")
     level = record["qualification"]
     if level not in release_docs.QUALIFICATIONS:
         raise ValueError("binary-only preview: unknown qualification")
@@ -124,6 +143,14 @@ def check_record(record, source_release_id):
     for name in REQUIRED:
         if name not in names:
             raise ValueError(f"binary-only preview: missing release asset {name}")
+    # A later addition is separate from the sealed asset set. Setting this
+    # requires owner publication authority and verified remote bytes; this
+    # offline check only validates the one reviewed correction's identity.
+    correction = record.get("notices_correction")
+    if correction is not None and (not isinstance(correction, dict)
+                                   or type(correction.get("bytes")) is not int
+                                   or record["tag"] != "absd-preview-rc1" or correction != CORRECTION):
+        raise ValueError("binary-only preview: notices_correction differs from the reviewed RC1 addition")
 
 
 def check_manifest(record, data):

@@ -385,9 +385,35 @@ def binary_notice():
 
 def binary_source_note(record):
     esc = html.escape
+    source = record["first_party_source"]
+    correction = record.get("notices_correction")
+    correction_note = ""
+    if correction is not None:
+        release_url = record["repository"] + "/releases/tag/" + record["tag"]
+        correction_note = (f'<p>The additive notices correction on the <a href="{esc(release_url, quote=True)}">'
+                           f'RC1 binary release</a>, <code>{esc(correction["name"])}</code>, is {correction["bytes"]:,} bytes, '
+                           f'SHA-256 <code>{correction["sha256"]}</code>. Keep it with the original notices archive. '
+                           'The original SHA256SUMS and NOTICES.md are unchanged and do not list this addition.</p>')
     attached = [a["name"] for a in record["assets"]
                 if a["name"].endswith(("-corresponding-source.tar", "-notices.tar.gz"))]
     names = " and ".join(f"<code>{esc(n)}</code>" for n in attached)
+    if source is not None:
+        url = record["repository"] + "/tree/" + source["tag"]
+        instructions = record["repository"] + "/blob/" + source["commit"] + "/docs/RC1-SOURCE.md"
+        return (f'<p>First-party ABSD source for <code>{esc(record["tag"])}</code> is published separately at '
+                f'<a href="{esc(url, quote=True)}"><code>{esc(source["tag"])}</code></a>, commit '
+                f'<code>{source["commit"]}</code>. Read the <a href="{esc(instructions, quote=True)}">'
+                'reconstruction instructions and limits</a> for the exact component revisions and curated edits. '
+                'This later source association does not change the sealed binary manifest, which has no source_commit, '
+                'or establish byte-for-byte independent reproduction. The binary release tag and its automatic '
+                'Source code archives still name the earlier public source preview.</p>'
+                + (f'<p>The download set also includes {names}: the exact GRUB and GNU Unifont '
+                   'corresponding-source packages for the boot components, and the original third-party notices. '
+                   'The release\'s NOTICES.md says how to extract and check them. '
+                   f'Supplementary notice texts are in the <a href="{esc(record["repository"], quote=True)}/tree/'
+                   f'{source["commit"]}/docs/rc1/notices">source notice directory</a>.</p>' if attached else '')
+                + f'<p>The earlier public source release <code>{esc(RELEASE["release_id"])}</code> remains available '
+                  '(<a href="/status/#source">source release</a>).</p>' + correction_note)
     return (f'<p>No first-party ABSD source release accompanies <code>{esc(record["tag"])}</code>: its kernel '
             f'<code>{record["kernel_commit"]}</code> and platform <code>{record["platform_commit"]}</code> are not published as source. '
             "RC1's first-party source is not yet published, so independent parties cannot currently reproduce its builds "
@@ -396,7 +422,29 @@ def binary_source_note(record):
                'packages for the boot components, and the third-party notices. The release\'s NOTICES.md says how to '
                'extract and check them. ' if attached else '')
             + f'The earlier public source release <code>{esc(RELEASE["release_id"])}</code> remains available '
-            '(<a href="/status/#source">source release</a>).</p>')
+            '(<a href="/status/#source">source release</a>).</p>' + correction_note)
+
+
+def rc1_source_standing():
+    if BINARY and BINARY[0]["first_party_source"] is not None:
+        record = BINARY[0]
+        source = record["first_party_source"]
+        url = record["repository"] + "/tree/" + source["tag"]
+        return (f'RC1\'s <a href="{html.escape(url, quote=True)}">first-party source and reconstruction instructions</a> '
+                'are published separately from its binary release. The source manifest describes the curated edits '
+                'and reconstruction limits.')
+    return ("Publishing RC1's exact first-party source is what makes independent checking of RC1 possible; "
+            "it has not happened yet.")
+
+
+def rc1_check_standing():
+    if BINARY and BINARY[0]["first_party_source"] is not None:
+        source = BINARY[0]["first_party_source"]
+        url = BINARY[0]["repository"] + "/releases/tag/" + source["tag"]
+        return ('the public tree includes the kernel suite and core-profile check scripts. '
+                f'The <a href="{html.escape(url, quote=True)}">source release record</a> states which checks ran '
+                'in a clean environment and records the reconstruction differences')
+    return "what a public clone can re-run is the kernel's suite and the platform gate's core profile"
 
 
 def binary_status():
@@ -793,6 +841,8 @@ def main():
         "{{GROFF}}": html.escape(version),
     }
     replacements.update({"{{" + k + "}}": v for k, v in source_values().items()})
+    replacements["{{RC1_SOURCE_STANDING}}"] = rc1_source_standing()
+    replacements["{{RC1_CHECK_STANDING}}"] = rc1_check_standing()
     pages = 0
     hidden = set()
     for page in sorted((SRC / "pages").rglob("index.html")):
