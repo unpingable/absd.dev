@@ -33,8 +33,15 @@ Standing: <strong>published</strong>. Not yet reached: outsider-passed. Stages, 
 <h2 id="how">How to try it</h2>
 <p>Follow <a href="https://github.com/unpingable/absd/releases/download/absd-preview-rc1/QUICKSTART.md">QUICKSTART.md</a> from the release (the same bytes, as sealed:
 <a href="/releases/absd-preview-rc1/QUICKSTART.md">copy on this site</a>). In a new empty directory: download the files below and
-<code>SHA256SUMS</code>, run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
+<code>SHA256SUMS</code>, keeping <code>absd-try.py</code> and its helper modules (<code>absd_fs.py</code>, <code>absd_image.py</code>, <code>served_ram.py</code>) together in that directory,
+run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
 with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
+<p>Both verification commands need all 13 files, including <code>absd-rc1-boot-corresponding-source.tar</code>
+(46,561,280 bytes), even if you only want to boot the image. The complete download is 91,756,032 bytes.</p>
+<p>Host tools on Ubuntu 24.04: <code>sudo apt-get install qemu-system-x86 python3 openssh-client curl xz-utils</code>.
+The preview was tested with QEMU 8.2. Newer QEMU versions are untested; the helper does not check the QEMU version,
+so it does not refuse them.</p>
+<p>The sealed QUICKSTART.md reports its artifact standing as <q>built</q>: it was written and sealed before the release was published on 2026-10-18, and it cannot change. This page reports the later publication; the guide's instructions are unchanged.</p>
 <p>No first-party ABSD source release accompanies <code>absd-preview-rc1</code>: its kernel <code>d208b61bcd4826181bf9f401551ab620d4eabba0</code> and platform <code>0fada7ed031bd84e3a469e717c1d0be5dbefedd6</code> are not published as source. RC1's first-party source is not yet published, so independent parties cannot currently reproduce its builds from the published materials. Its download set does include <code>absd-rc1-boot-corresponding-source.tar</code> and <code>absd-rc1-third-party-notices.tar.gz</code>: the exact GRUB and GNU Unifont corresponding-source packages for the boot components, and the third-party notices. The release's NOTICES.md says how to extract and check them. The earlier public source release <code>absd-preview-20261010</code> remains available (<a href="/status/#source">source release</a>).</p>
 <h2 id="files">Files</h2>
 <p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
