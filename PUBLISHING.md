@@ -34,6 +34,23 @@ The public site is generated from `main`; GitHub Pages serves the root of
 
 ## Binary preview (absd-coord #31, #32)
 
+### Visual and editorial updates
+
+Home and About can be updated independently of operating-system development.
+Keep the selected release, its limits and its evidence distinct from newer
+development. The homepage keeps the older source-preview record in an
+expandable section; the full record remains on Status. The stylesheet adds
+graph-paper decoration outside the reading surfaces, with print and
+forced-colors overrides. Inspect desktop and narrow layouts in both themes.
+
+The source-only rendering reference also pins page and stylesheet bytes.
+After an intentional template or CSS edit, review its changed hashes in
+`scripts/testdata/schema1-rendering-v1.json` separately from release claims.
+Keep the fixture's `release_json` and file set unchanged, name the source
+commit used to render it, and explain every changed file. Do not update
+reference hashes to conceal an unexplained failure. Run the full checks
+after the reviewed refresh. Publication still follows the procedure above.
+
 `content/release.json` remains the single current editorial record. Schema 1
 has no binary preview; the live record remains schema 1. The unpublished
 schema-2 preparation contract adds `binary_preview`, with its pinned tag,
