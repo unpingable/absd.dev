@@ -1,7 +1,10 @@
-/* absd.dev: text first, one column, system fonts, light and dark. */
+/* absd.dev: text first, graph-paper margins, system fonts, light and dark. */
 
 :root {
-  --bg: #fafaf8;
+  --bg: #faf9f4;
+  --grid: #dbe3e8;
+  --grid-paper: linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   --bg-inset: #f0f1ee;
   --fg: #16181a;
   --fg-muted: #4b5157;
@@ -22,6 +25,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #121416;
+    --grid: #252e36;
     --bg-inset: #1a1d20;
     --fg: #d7dadd;
     --fg-muted: #9ea5ac;
@@ -43,6 +47,8 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
+  background-image: var(--grid-paper);
+  background-size: 1.25rem 1.25rem;
   color: var(--fg);
   font-family: var(--serif);
   font-size: 1.0625rem;
@@ -54,6 +60,7 @@ body {
   left: -999rem;
 }
 .skip:focus {
+  z-index: 1;
   left: 1rem;
   top: 1rem;
   background: var(--bg);
@@ -62,6 +69,7 @@ body {
 }
 
 header.site, main, footer.site {
+  background-color: var(--bg);
   max-width: 46rem;
   margin: 0 auto;
   padding-left: 1.25rem;
@@ -80,7 +88,21 @@ header.site {
   font-size: 0.875rem;
 }
 
+/* A short grid strip keeps the identity visible when margins disappear. */
+header.site::before {
+  content: "";
+  flex-basis: 100%;
+  height: 0.75rem;
+  background-image: var(--grid-paper);
+  background-size: 1.25rem 1.25rem;
+  border: 1px solid var(--grid);
+  margin-bottom: 0.25rem;
+}
+
 .wordmark {
+  display: inline-block;
+  border: 1px solid currentColor;
+  padding: 0.15rem 0.45rem;
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: 0.08em;
@@ -239,3 +261,26 @@ footer.site p { margin: 0 0 0.5rem; }
 figure.emblem { margin: 2rem 0 0; max-width: 28rem; }
 figure.emblem img { display: block; width: 100%; height: auto; border-radius: 3px; }
 figure.emblem figcaption { font-size: 0.85rem; color: var(--fg-muted); margin-top: 0.4rem; }
+
+@media print, (forced-colors: active) {
+  body { background-image: none; }
+  header.site::before { display: none; }
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --bg: #fff;
+    --bg-inset: #fff;
+    --fg: #000;
+    --fg-muted: #333;
+    --border: #777;
+    --accent: #000;
+    --accent-hover: #000;
+    --l-mq: #000;
+    --l-cq: #000;
+    --l-exp: #000;
+    --l-planned: #000;
+    --l-unsupported: #000;
+  }
+}
