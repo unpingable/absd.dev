@@ -30,12 +30,19 @@
 <main id="main" role="main">
 <h1 class="lead"><strong>ABSD</strong> — An experimental operating system.</h1>
 
-<p>ABSD is a small operating system, written in Rust, built to find out what a system looks like when isolation, authority, and failure are stated explicitly and checked. It boots, runs isolated processes, keeps files across reboots, runs some unmodified Rust programs, and is administered over stock OpenSSH.</p>
+<p>ABSD is a small operating system written in Rust. It boots under QEMU, runs isolated processes, keeps files across reboots, and is administered over stock OpenSSH. Its userspace includes a shell, commands, manual pages, and some unmodified Rust programs.</p>
 
-<p><strong>Current qualification: single-operator system under QEMU</strong> (a machine emulator). It is not production-ready, and no physical hardware is supported.</p>
+<section class="facts" aria-labelledby="start">
+<h2 id="start">Try ABSD</h2>
+<p>Binary developer preview <code>absd-preview-rc1</code> (state <strong>published</strong>): <a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, with no build tools. To build from source instead, follow the source release's <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">README</a>; <a href="/status/#source">status</a> says what each does and does not show.</p>
+<p>ABSD is experimental and is not production-ready. It is a single-operator system: SSH sessions have separate process trees and private scratch space, but share the operator's files. They are not a boundary between users. No physical hardware is supported.</p>
+<p>There is no <code>fork</code>, no user IDs, and existing Unix or Linux software needs porting. The published RC1 preview has no staged upgrade or rollback; a newer preview requires a new machine. Read the selected release's instructions and limits before running it.</p>
+</section>
 
-<p>ABSD was built largely by AI coding agents directed by one developer, and has had no independent human review. <a href="/about/#how">How it is developed</a>.</p>
+<p>One developer directs the work. AI coding agents wrote most of the code, tests, documentation and reviews; no independent human audit has been done. <a href="/about/#how">How ABSD is developed</a>.</p>
 
+<details>
+<summary>Release records</summary>
 <aside class="note" aria-label="Current binary preview">
 <p><strong>Current release:</strong> Binary developer preview <code>absd-preview-rc1</code>, state <strong>published</strong>. Standing: <strong>published</strong>. Not yet reached: outsider-passed. Stages, in order: built, offline-boot-tested, qualified, release-authorized, published, outsider-passed. For QEMU on a Linux x86-64 host, with no build tools: <a href="/try/">what works, what does not, and how to try it</a> · <a href="/releases/absd-preview-rc1/">release page</a> · <a href="https://github.com/unpingable/absd/releases/tag/absd-preview-rc1">GitHub release absd-preview-rc1</a>.</p>
 <p>The source release below is a separate, earlier publication.</p>
@@ -47,18 +54,7 @@
 <p><strong>Limits:</strong></p><ul><li>Earlier milestone and qualified-release results apply only to their own revisions.</li><li>Physical hardware qualification is not yet established.</li><li>Experimental development work does not extend the public source release’s qualification.</li></ul>
 <p>Evidence: <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml">Published source manifest</a> · <a href="/evidence/">Recorded evidence and scope</a></p>
 </aside>
-
-<section class="facts" aria-labelledby="start">
-<h2 id="start">Start here</h2>
-<dl>
-<dt>What it is</dt>
-<dd>A research operating system, not a Unix and not a product: no <code>fork</code>, no user IDs, and existing Unix or Linux software does not run without porting. <a href="/about/">About</a> says what it is for; <a href="#distinct">below</a> is what distinguishes it.</dd>
-<dt>What you can run today</dt>
-<dd>Binary developer preview <code>absd-preview-rc1</code> (state <strong>published</strong>): <a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, with no build tools. To build from source instead, follow the source release's <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">README</a>; <a href="/status/#source">status</a> says what each does and does not show.</dd>
-<dt>Where the source is</dt>
-<dd><a href="https://github.com/unpingable/absd"><strong>github.com/unpingable/absd</strong></a>: the kernel and the platform, under Apache-2.0 for ABSD's own source; third-party material keeps its own licences. Source release <code>absd-preview-20261010</code>, 2026-10-10.</dd>
-</dl>
-</section>
+</details>
 
 <h2 id="distinct">What distinguishes it</h2>
 <dl class="terms">
@@ -67,32 +63,16 @@
 <dt>Explicit authority</dt>
 <dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
 <dt>Bounded scheduling and recovery</dt>
-<dd>Bounded here means fixed, stated limits, not timing guarantees: 16 processes in the whole system, four SSH connections by default. Processes are preempted by a timer; a fixed-priority periodic scheduling class exists as an experiment, with no real-time guarantee. On the development line and in the source release (not in the qualified release <code>absd-20261003.1</code>), a failure of the SSH or file server after the system has come up is answered by a whole-machine reset at most three times; the fourth stops the machine and names the reason. That budget is demonstrated by its own test, not by the platform gate. A restart is never counted as a recovery. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
+<dd>Bounds are fixed limits, not timing guarantees: 16 processes in the whole system and four SSH connections by default. Processes are preempted by a timer; the experimental periodic scheduling class has no real-time guarantee. Failure handling and its evidence depend on the revision. <a href="/design/#replacement">Design: replacement is not recovery</a>.</dd>
 <dt>Evidence-oriented engineering</dt>
 <dd>Claims on the status, design, hardware, and evidence pages carry a label saying how strongly each is supported, in which environment, and where the claim stops. Failed runs stay on record. <a href="/status/#labels">How statements are labelled</a>.</dd>
 </dl>
 
 <section class="facts" aria-labelledby="now">
-<h2 id="now">Status</h2>
-<dl>
-<dt>Milestone</dt>
-<dd>General usability under QEMU, 2026-09-27 <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
-<dt>Runs on</dt>
-<dd>QEMU, x86-64, one CPU, e1000 network and IDE disk models <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
-<dt>Physical hardware</dt>
-<dd>Physical hardware qualification: not yet established <span class="label l-planned">PLANNED</span>. First read-only boots on one machine have been observed <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span></dd>
-<dt>Since the milestone</dt>
-<dd>Release <code>absd-20261003.1</code>: the same system under TCG or KVM, with host-staged update and rollback <span class="label l-rq">RELEASE-QUALIFIED</span>. Several-CPU scheduling, a 64-bit ARM kernel port, and a boot-time probe that enumerates one USB device on an emulated controller (not USB support, not merged), each in virtual machines only and as research <span class="label l-val">VALIDATED</span>. A seven-day unattended observation of a development build ran from 2026-10-10 to 2026-10-17 and passed: 2017 of 2017 five-minute rounds succeeded in one boot, on one emulated guest (TCG, one CPU) on one host. The tool's own verdict still reads RUNNING because the guest was left running on purpose; the adjudicated verdict is SEVEN_DAY_OBSERVATION_PASSED. It is not evidence about KVM, several CPUs or physical hardware, and publishing the source says nothing about it. See <a href="/status/#since">status</a>.</dd>
-<dt>Access</dt>
-<dd>Stock OpenSSH, public-key login, one operator, several isolated sessions <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
-<dt>Userspace</dt>
-<dd>A small shell, 27 commands, 17 manual pages; 55 Rust programs built reproducibly <span class="label l-mq">MILESTONE-QUALIFIED</span></dd>
-<dt>Source</dt>
-<dd><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Public at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>, source release <code>absd-preview-20261010</code>. Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17. The milestone and the release above were qualified on earlier revisions, not on this one. See <a href="/status/#source">status</a>.</dd>
-<dt>Development</dt>
-<dd>One developer directs the work; AI coding agents did most of the implementation and the review. No independent human audit has been done. See <a href="/about/#how">how it is developed</a>.</dd>
-</dl>
-<p class="note">Details, limits, and what is deliberately absent: <a href="/status/">status</a>. The recorded qualification runs: <a href="/evidence/">evidence</a>.</p>
+<h2 id="now">Releases and evidence</h2>
+<p>The published preview, earlier qualification runs and ongoing development are separate. A result applies to the named revisions and environment; newer development does not extend a published release's capabilities or evidence.</p>
+<p>The earlier release <code>absd-20261003.1</code> was <span class="label l-rq">RELEASE-QUALIFIED</span>, including host-staged update and rollback. That result does not establish those capabilities for RC1. <a href="/status/">Status</a> describes the releases and their limits; <a href="/evidence/">evidence</a> records the runs, including failures.</p>
+<p>ABSD's own source is public under Apache-2.0 at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>; third-party material keeps its own licences. The earlier source release is <code>absd-preview-20261010</code>, 2026-10-10. <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17. See <a href="/status/#source">source identities and reconstruction limits</a>.</p>
 </section>
 
 <h2 id="session">A session</h2>
