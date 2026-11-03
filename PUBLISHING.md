@@ -32,9 +32,7 @@ The public site is generated from `main`; GitHub Pages serves the root of
    and the public home/status pages; a successful push is not a deployment
    receipt. To stage without publishing, run `scripts/stage-pages.sh` alone.
 
-## Binary preview (absd-coord #31, #32)
-
-### Visual and editorial updates
+## Visual and editorial updates
 
 Home and About can be updated independently of operating-system development.
 Keep the selected release, its limits and its evidence distinct from newer
@@ -50,6 +48,8 @@ Keep the fixture's `release_json` and file set unchanged, name the source
 commit used to render it, and explain every changed file. Do not update
 reference hashes to conceal an unexplained failure. Run the full checks
 after the reviewed refresh. Publication still follows the procedure above.
+
+## Binary preview (absd-coord #31, #32)
 
 `content/release.json` remains the single current editorial record. Schema 1
 has no binary preview; the live record remains schema 1. The unpublished
