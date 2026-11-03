@@ -2,11 +2,13 @@
 <!-- description: ABSD is an experimental operating system by James Beck, written in Rust, largely by AI coding agents under his direction. Why it exists, what it is and is not for, where the source is, its licence, and how contributions are handled. -->
 <h1>About</h1>
 
-<p>ABSD is an experimental operating system by James Beck. The kernel and userspace are written in Rust. Its source is public at <a href="{{SOURCE_REPO}}">github.com/unpingable/absd</a> under the Apache License 2.0, as source releases assembled from the repositories where development happens. It can be built and booted under QEMU by following that repository's README; no images or packages are offered here.</p>
+<p>ABSD is an experimental operating system by James Beck. Its kernel and platform are written in Rust, with third-party programs and libraries under their own licences. It runs as a single-operator system under QEMU, administered over SSH. It is not production-ready, and no physical hardware is supported.</p>
+<p>{{SOURCE_GET_STARTED}}</p>
+<p>The source is public at <a href="{{SOURCE_REPO}}">github.com/unpingable/absd</a>. Published releases are assembled from the repositories where development happens. A release describes its own capabilities and evidence; work on the development line does not change what that release supports. <a href="/status/">Status</a> and <a href="/evidence/">evidence</a> keep those distinctions.</p>
 
 <h2 id="why">Why it exists</h2>
-<p>Most systems grant a program broad authority by default and report success loosely: a program can usually do whatever its user can, and "written" may mean "in a cache". The rules that matter (who may do what, what happens when something fails, what survives a crash) are then enforced defensively on top. ABSD began as a way to test whether those rules could instead be native, and still survive contact with real operating-system workloads. It now runs enough software (an SSH server, a file server, a shell, commands, and real programs from another project) to be its own testbed.</p>
-<p>The ideas are not new. Capability systems such as KeyKOS, EROS, seL4, and Zircon made authority explicit long before ABSD, and crash-consistency research made storage guarantees testable. ABSD's interest is in putting them together in one small system and recording honestly where that holds and where it does not. The <a href="/research/program/">research program</a> page says more.</p>
+<p>ABSD studies how a small system behaves when authority, failure and durability are explicit and testable. It runs an SSH server, a file server, a shell and real programs so those rules can be checked against working software.</p>
+<p>The ideas build on capability systems such as KeyKOS, EROS, seL4 and Zircon, and on crash-consistency research. The <a href="/research/program/">research program</a> describes the questions, method and prior work.</p>
 
 <h2 id="for">What it is for</h2>
 <ul>
