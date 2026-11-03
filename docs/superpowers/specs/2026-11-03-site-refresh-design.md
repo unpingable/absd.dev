@@ -22,7 +22,7 @@ JavaScript or external resources.
 
 A header-only grid would be smaller but less visible on desktop. A broader
 layout redesign would take longer and work against the requested text-first
-site. The recommended approach is a proposal pending owner response.
+site. The owner approved the recommended approach on 2026-11-03.
 
 ## Editorial lane
 
@@ -59,3 +59,7 @@ Codex lane. Retire disposable renders after review/publication evidence is
 retained; preserve unique source commits and replay instructions. No VM or
 large build is required. Initial storage observation: root 178,611,929,088
 bytes free; /data 399,148,912,640 bytes free; inodes ample on both.
+
+## Approval
+
+Owner approved this design on 2026-11-03 and directed prompt execution.
