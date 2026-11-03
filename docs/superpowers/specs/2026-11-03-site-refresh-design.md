@@ -49,16 +49,15 @@ reader reviews final copy and screenshots for readability and truthful claims.
 Record source identities and verification limits beside the screenshots.
 
 Work in lane/absd-site-refresh-20261103, based on public main e013ce7, in the
-existing workspace worktree convention. The old absd.dev checkout points to
-private history and is not the source baseline. No push, publication or
+existing workspace worktree convention. No push, publication or
 release nomination is part of implementation approval; prepare the reviewed
 update first and request the owner's publication decision on the concrete result.
 
 The responsible owner for this worktree and its small evidence set is this
 Codex lane. Retire disposable renders after review/publication evidence is
 retained; preserve unique source commits and replay instructions. No VM or
-large build is required. Initial storage observation: root 178,611,929,088
-bytes free; /data 399,148,912,640 bytes free; inodes ample on both.
+large build is required. Storage and artifact custody are recorded with the
+lane evidence, separately from these public design notes.
 
 ## Approval
 

@@ -30,23 +30,33 @@
 
 **Files:** src/static/style.css.
 
-- [ ] Add cool, theme-specific CSS graph-paper margins and a framed wordmark; retain opaque reading surfaces.
-- [ ] Suppress decoration for print and forced colors; preserve focus indication.
-- [ ] Verify generated output at 360/768/1280 widths in light/dark; inspect print and forced colors separately.
+- [x] Add cool, theme-specific CSS graph-paper margins and a framed wordmark; retain opaque reading surfaces.
+- [x] Suppress decoration for print and forced colors; preserve focus indication.
+- [x] Verify generated output at 360/768/1280 widths in light/dark; inspect print and forced colors separately.
 
 ### Task 2: Editorial lane
 
 **Files:** src/pages/index.html, src/pages/about/index.html.
 
-- [ ] Lead with useful capabilities, the existing try path and limits; shorten history into precise links.
-- [ ] Preserve anchors, exact capture provenance, source placeholders, licensing and review disclosures.
-- [ ] Correct About's obsolete image availability statement. Distinguish published releases from development.
+- [x] Lead with useful capabilities, the existing try path and limits; shorten history into precise links.
+- [x] Preserve anchors, exact capture provenance, source placeholders, licensing and review disclosures.
+- [x] Correct About's obsolete image availability statement. Distinguish published releases from development.
 
 ### Task 3: Integration and evidence
 
 **Files:** build.py only if needed for release-aware entry copy; scripts/testdata/schema1-rendering-v1.json only for reviewed rendering refresh; README.md/PUBLISHING.md where changed operator workflow needs explanation.
 
-- [ ] Run generation and existing checks. For intentional template/CSS changes, refresh only the changed source-only fixture hashes and preserve the record and file set; document exact differences.
-- [ ] Capture before/after screenshots with the existing helper; inspect focus, print, forced colors and all-page overflow.
-- [ ] Independently review copy, CSS, screenshots and fixture delta. No new unit tests for reversible visual/prose changes; existing behavioral release checks remain binding.
-- [ ] Commit the reviewed change and record immutable lane completion, branch, evidence and publication status. Keep a runnable client-accessible review artifact through existing SSH/SFTP; do not advertise a crow-local URL.
+- [x] Run generation and existing checks. For intentional template/CSS changes, refresh only the changed source-only fixture hashes and preserve the record and file set; document exact differences.
+- [x] Capture before/after screenshots with the existing helper; inspect focus, print, forced colors and all-page overflow.
+- [x] Independently review copy, CSS, screenshots and fixture delta. No new unit tests for reversible visual/prose changes; existing behavioral release checks remain binding.
+- [x] Commit the reviewed change and record immutable lane completion, branch, evidence and publication status. Keep a runnable client-accessible review artifact through existing SSH/SFTP; do not advertise a crow-local URL.
+
+## Result
+
+Implemented and independently reviewed. Generation, 30-page validation, content
+checks and 39 tests passed. Browser checks passed at 360/768/1280 in both
+themes, including keyboard navigation and disclosure, print and forced colors.
+Before/after Home and Design screenshots received a separate readability review.
+Release records, sealed inputs, captures and generator logic are unchanged.
+The rendering reference changed only for Home, About and the stylesheet.
+Publication remains pending the owner decision.
