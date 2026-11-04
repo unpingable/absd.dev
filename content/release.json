@@ -11,8 +11,8 @@
   "kernel_suite_result": null,
   "core_profile_result": null,
   "qualification_record": null,
-  "editorial_updated": "2026-10-11",
-  "standing": "Published source preview; qualification suites pending on these exact revisions.",
+  "editorial_updated": "2026-11-03",
+  "standing": "Historical source preview: built, booted and smoke-tested. Full qualification is not recorded for these exact revisions.",
   "demonstrated": [
     "A clean clone built the kernel, platform and operator image, booted under QEMU software emulation and served an SSH session."
   ],
@@ -31,6 +31,6 @@
       "url": "/evidence/"
     }
   ],
-  "preview_summary": "Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17.",
-  "preview_details": "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU's software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release."
+  "preview_summary": "Historical source-preview result, recorded 2026-10-11: built, booted and smoke-tested from a clean clone; full qualification was not established for these exact revisions.",
+  "preview_details": "From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU's software emulation and served an SSH session. The 2026-10-11 record said the kernel suite and platform gate were planned after 2026-10-17. That was a plan, not a result: this source-release record contains no completed qualification receipt for these exact revisions. Earlier qualification and later releases keep their own identities and evidence."
 }

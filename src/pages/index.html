@@ -7,7 +7,7 @@
 <section class="facts" aria-labelledby="start">
 <h2 id="start">Try ABSD</h2>
 <p>{{SOURCE_GET_STARTED}}</p>
-<p>ABSD is experimental and is not production-ready. It is a single-operator system: SSH sessions have separate process trees and private scratch space, but share the operator's files. They are not a boundary between users. No physical hardware is supported.</p>
+<p>ABSD is experimental, single-operator software, not ready for production. SSH sessions share the operator's files; they are not separate user accounts. No physical hardware is supported. <a href="/design/#sessions">How sessions are isolated</a>.</p>
 <p>There is no <code>fork</code>, no user IDs, and existing Unix or Linux software needs porting. The published RC1 preview has no staged upgrade or rollback; a newer preview requires a new machine. Read the selected release's instructions and limits before running it.</p>
 </section>
 
@@ -21,7 +21,7 @@
 <h2 id="distinct">What distinguishes it</h2>
 <dl class="terms">
 <dt>Isolation</dt>
-<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process can act only on itself and its own children; a few whole-system counts are readable by any process. SSH sessions are separate process trees with private scratch space; they belong to one operator and share that operator's files, so they are not a boundary between users. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
+<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process can act only on itself and its own children; a few whole-system counts are readable by any process. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
 <dt>Explicit authority</dt>
 <dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
 <dt>Bounded scheduling and recovery</dt>
