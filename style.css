@@ -116,7 +116,7 @@ header.site nav ul {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1rem;
+  gap: 0.25rem 0.75rem;
 }
 
 header.site nav a { color: var(--fg-muted); text-decoration: none; }
