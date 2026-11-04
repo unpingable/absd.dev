@@ -35,7 +35,7 @@
 <section class="facts" aria-labelledby="start">
 <h2 id="start">Try ABSD</h2>
 <p>Binary developer preview <code>absd-preview-rc1</code> (state <strong>published</strong>): <a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, with no build tools. To build from source instead, follow the source release's <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/README.md#build-boot-test">README</a>; <a href="/status/#source">status</a> says what each does and does not show.</p>
-<p>ABSD is experimental and is not production-ready. It is a single-operator system: SSH sessions have separate process trees and private scratch space, but share the operator's files. They are not a boundary between users. No physical hardware is supported.</p>
+<p>ABSD is experimental, single-operator software, not ready for production. SSH sessions share the operator's files; they are not separate user accounts. No physical hardware is supported. <a href="/design/#sessions">How sessions are isolated</a>.</p>
 <p>There is no <code>fork</code>, no user IDs, and existing Unix or Linux software needs porting. The published RC1 preview has no staged upgrade or rollback; a newer preview requires a new machine. Read the selected release's instructions and limits before running it.</p>
 </section>
 
@@ -49,7 +49,7 @@
 </aside>
 
 <aside class="note" aria-label="Current public source standing">
-<p><strong>Source release absd-preview-20261010 standing:</strong> Published source preview; qualification suites pending on these exact revisions. Editorial update: 2026-10-11.</p>
+<p><strong>Source release absd-preview-20261010 standing:</strong> Historical source preview: built, booted and smoke-tested. Full qualification is not recorded for these exact revisions. Editorial update: 2026-11-03.</p>
 <p><strong>Demonstrated:</strong></p><ul><li>A clean clone built the kernel, platform and operator image, booted under QEMU software emulation and served an SSH session.</li></ul>
 <p><strong>Limits:</strong></p><ul><li>Earlier milestone and qualified-release results apply only to their own revisions.</li><li>Physical hardware qualification is not yet established.</li><li>Experimental development work does not extend the public source release’s qualification.</li></ul>
 <p>Evidence: <a href="https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml">Published source manifest</a> · <a href="/evidence/">Recorded evidence and scope</a></p>
@@ -59,7 +59,7 @@
 <h2 id="distinct">What distinguishes it</h2>
 <dl class="terms">
 <dt>Isolation</dt>
-<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process can act only on itself and its own children; a few whole-system counts are readable by any process. SSH sessions are separate process trees with private scratch space; they belong to one operator and share that operator's files, so they are not a boundary between users. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
+<dd>Every program is a separate process in its own address space, started by spawn; there is no <code>fork</code>. A process can act only on itself and its own children; a few whole-system counts are readable by any process. <a href="/design/#spawn">Design: spawn, not fork</a>.</dd>
 <dt>Explicit authority</dt>
 <dd>A process can touch only what it was handed: handles to kernel objects, each carrying rights that can be dropped and never added. There are no user IDs and no ambient privilege. This is the capability model of earlier systems, not a new invention. <a href="/design/#handles">Design: handles and rights</a>.</dd>
 <dt>Bounded scheduling and recovery</dt>
@@ -72,7 +72,7 @@
 <h2 id="now">Releases and evidence</h2>
 <p>The published preview, earlier qualification runs and ongoing development are separate. A result applies to the named revisions and environment; newer development does not extend a published release's capabilities or evidence.</p>
 <p>The earlier release <code>absd-20261003.1</code> was <span class="label l-rq">RELEASE-QUALIFIED</span>, including host-staged update and rollback. That result does not establish those capabilities for RC1. <a href="/status/">Status</a> describes the releases and their limits; <a href="/evidence/">evidence</a> records the runs, including failures.</p>
-<p>ABSD's own source is public under Apache-2.0 at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>; third-party material keeps its own licences. The earlier source release is <code>absd-preview-20261010</code>, 2026-10-10. <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17. See <a href="/status/#source">source identities and reconstruction limits</a>.</p>
+<p>ABSD's own source is public under Apache-2.0 at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>; third-party material keeps its own licences. The earlier source release is <code>absd-preview-20261010</code>, 2026-10-10. <span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Historical source-preview result, recorded 2026-10-11: built, booted and smoke-tested from a clean clone; full qualification was not established for these exact revisions. See <a href="/status/#source">source identities and reconstruction limits</a>.</p>
 </section>
 
 <h2 id="session">A session</h2>
