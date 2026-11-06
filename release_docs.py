@@ -211,7 +211,7 @@ generated for each machine.
 ```sh
 ssh-keygen -t ed25519 -N '' -f ./absd-key
 python3 absd-try.py create ./machine --assets . --key ./absd-key.pub --accel tcg
-python3 absd-try.py boot ./machine --port 2222 --accel tcg
+python3 absd-try.py boot ./machine --port 2222 --accel tcg --login-key ./absd-key
 ```
 
 Leave boot running in that terminal. It records the host key from the local
@@ -247,7 +247,7 @@ site's older milestone manual describes its own earlier revision.
 - Port 2222 busy: stop your other guest, or choose a different --port and use that same SSH port.
 - No READY: inspect machine/console.log and machine/qemu.log. Use --accel tcg and the recorded files. Do not switch device models.
 - Login refused: use the enrolled private key and machine/known_hosts. A changed host key requires diagnosis; do not disable verification.
-- Ctrl-C stops QEMU abruptly. Use shutdown inside ABSD for the documented clean stop. Never run two guests on one writable disk.
+- Ctrl-C in the boot terminal asks the machine to shut down cleanly, using --login-key. If it cannot confirm the shutdown, it leaves the machine running and prints the command to try again; your files are kept. A second Ctrl-C forces a stop, and the next boot may need recovery. Never run two guests on one writable disk.
 
 ## Limits and provenance
 
