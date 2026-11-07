@@ -730,8 +730,8 @@ separate qualification case; follow the TCG commands here. The preview was teste
 Newer QEMU versions are untested; the helper does not check the QEMU version, so it does not refuse them.</p>
 <h3 id="headless">Headless boot and SSH</h3>
 <p>The guest runs without a graphical display. Keep <code>absd-try.py boot</code> running in one host terminal.
-After it prints <code>READY</code>, use the guide's SSH command in a second terminal on the same host, with
-your new private key and <code>machine/known_hosts</code>. The helper records the guest console in
+After it prints <code>READY</code>, use the guide's SSH command in a second terminal in the same directory
+on the same host, with your new private key and <code>machine/known_hosts</code>. The helper records the guest console in
 <code>machine/console.log</code>; interact with ABSD over SSH. On a remote host, use two existing SSH sessions
 to that host for these terminals; the guide's <code>127.0.0.1</code> address refers to that host.</p>"""
     evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
