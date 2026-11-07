@@ -1,0 +1,66 @@
+schema = "absd-preview-manifest/1"
+signature = "unsigned"
+qualification = "built"
+limitations = ["Physical hardware qualification is not yet established.", "Experimental absd-preview-2; outsider acceptance and endurance qualification are not established.", "Matching curated first-party source records this kernel/platform pair separately; this binary manifest does not record a source_commit field.", "Notice texts accompany this preview; actual build/media correspondence and the remaining recorded release obligations require their stated checks.", "The documented preview boot path uses local QEMU TCG, SeaBIOS and an IDE disk.", "An unclean shutdown fences writable restart; recovery requires an explicit supported operator procedure.", "This product includes software developed at Cygnus Support, Inc.", "This product includes software developed by the University of California, Berkeley.", "This product includes software developed by the University of California, Berkeley and its contributors", "Naming an organisation acknowledges its work; it does not imply that it endorses ABSD."]
+[release]
+id = "absd-preview-2"
+tag = "absd-preview-2"
+kernel_commit = "919f0676eacbdd06bfa17e1da9d951fb374e3a1b"
+platform_commit = "0b002f732b1d11ec503868d99896c6bd5db80757"
+[qemu]
+cpu_tcg = "max,vendor=GenuineIntel,+rdrand"
+memory_mib = 256
+smp = 1
+nic = "e1000"
+disk = "ide"
+firmware = "SeaBIOS"
+[assets.extra_0]
+name = "BUILD-INPUTS.json"
+sha256 = "b1793bfbabf7f602d1bbebf5dccdd1e47d6052747f644f378cf9f22fa69850b0"
+bytes = 2863
+[assets.extra_1]
+name = "NOTICES.md"
+sha256 = "0d50e75c2a8e4d1c9e81cf87549b891d6b88fc66763742a04840d9897cfd55ac"
+bytes = 2765259
+[assets.extra_2]
+name = "QUICKSTART-INPUT.json"
+sha256 = "1b04f90fe9a4d261e3a4c8c2b582d332b4cad60875b3776b9228c3485f5196c0"
+bytes = 2401
+[assets.extra_6]
+name = "QUICKSTART.md"
+sha256 = "45fccebacba15b93bd88838a952e83ee6c93975e5471e4b686dad816af9a63fc"
+bytes = 6659
+[assets.extra_3]
+name = "absd-try.py"
+sha256 = "1eff8833a8f141ced89d3835504f836d8864a56d7c5f8639fb0635dd063e8d33"
+bytes = 41195
+[assets.extra_4]
+name = "absd_fs.py"
+sha256 = "809bc314cdd797ecfc70001d4867b58397f74b4c615bb723bccb83dcd23629b0"
+bytes = 13142
+[assets.extra_5]
+name = "absd_image.py"
+sha256 = "00ea38d2cff23241619b43d3a77441d82272900168f61d828c94f6a3220b470b"
+bytes = 15878
+[assets.boot_source]
+name = "boot-corresponding-source.tar"
+sha256 = "5ea66ab67e865f5fe78199ccb6844c45666e44926b97b4fa65cf06898dcac1dd"
+bytes = 46561280
+[assets.disk]
+name = "disk.img.xz"
+raw_sha256 = "b0da3741a099ca6dfd249cd9f1d9eeac93bbc07e21970b002045bf1c5c49f75d"
+raw_bytes = 134217728
+sha256 = "dfeabce1aa8328b701d1deffb0eca5061eb5e118466bdd19a230b7c33badaf9d"
+bytes = 2145892
+[assets.enroll_iso]
+name = "enroll.iso"
+sha256 = "6ee1d00634e6f530799a915569e1fb701c3a3d8248747951b8cb98e4b8c83376"
+bytes = 25868288
+[assets.operator_iso]
+name = "operator.iso"
+sha256 = "6381d1a8daaaf0b9ccfbf29913cb8c3d2fa25c269356ff66d3d663eff0451c10"
+bytes = 28364800
+[assets.extra_10]
+name = "served_ram.py"
+sha256 = "232c63d71884be4216860614108c4527b30a1f48debb6a6226abd94b49cf7bba"
+bytes = 3656
