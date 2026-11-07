@@ -1,6 +1,6 @@
 {
   "schema": "absd-schema1-rendering-reference/1",
-  "source_revision": "93ea8ec6427b50e0983068001cd08dcec066d218",
+  "source_revision": "433b80b1d42bde7dcf87cf7f61014dcb4fb5df7f",
   "release_json": "{\n  \"schema_version\": 1,\n  \"repository\": \"https://github.com/unpingable/absd\",\n  \"licence\": \"Apache-2.0\",\n  \"release_id\": \"absd-preview-20261010\",\n  \"release_commit\": \"6ed4934ae9baf210b5514c931f0dd9343f74277d\",\n  \"kernel_commit\": \"260b4a20755a70db2ec8aa4556b9c576285fe284\",\n  \"platform_commit\": \"65cf80f9440f8bba018f5993aa70744e4e0d5b64\",\n  \"release_date\": \"2026-10-10\",\n  \"qualification\": \"preview\",\n  \"kernel_suite_result\": null,\n  \"core_profile_result\": null,\n  \"qualification_record\": null,\n  \"editorial_updated\": \"2026-10-11\",\n  \"standing\": \"Published source preview; qualification suites pending on these exact revisions.\",\n  \"demonstrated\": [\n    \"A clean clone built the kernel, platform and operator image, booted under QEMU software emulation and served an SSH session.\"\n  ],\n  \"limitations\": [\n    \"Earlier milestone and qualified-release results apply only to their own revisions.\",\n    \"Physical hardware qualification is not yet established.\",\n    \"Experimental development work does not extend the public source release\u2019s qualification.\"\n  ],\n  \"evidence\": [\n    {\n      \"label\": \"Published source manifest\",\n      \"url\": \"https://github.com/unpingable/absd/blob/absd-preview-20261010/SOURCE-MANIFEST.toml\"\n    },\n    {\n      \"label\": \"Recorded evidence and scope\",\n      \"url\": \"/evidence/\"\n    }\n  ],\n  \"preview_summary\": \"Preview: built, booted and smoke-tested from a clean clone; the qualification suites have not yet been run on these revisions and are scheduled after 2026-10-17.\",\n  \"preview_details\": \"From a fresh clone in a stock Ubuntu 24.04 container, the release fetched its dependencies, built the kernel, the platform and the operator image offline, booted under QEMU's software emulation and served an SSH session. Neither the kernel suite nor the platform gate has been run on these exact revisions; both are scheduled for after the seven-day observation ends on 2026-10-17. Until then nothing on this site labelled qualified or validated is a statement about the source release.\"\n}\n",
   "files": {
     "404.html": "8a2171da1208154619686bbe1d30ad492bc2c4a85a7db99d4356a73cda670b11",
@@ -11,7 +11,7 @@
     "evidence/index.html": "7527de76feaf79bf34f9beaf3e1a6b0d6af9bf06dedcb1f0dc1e27d52e1bb595",
     "favicon.svg": "9dfe45066f92e151d34b32ef8d5f2b4f0ca887374c400875acf866277e2cb9cc",
     "hardware/index.html": "fc669831c4e149c7775d355478d6df29d282a1454cf98f881b889114c4dcbe09",
-    "index.html": "730a18669b02723d6223039407dc0ae4210e1b4c4dae71edfe50903bec63ae6f",
+    "index.html": "7e9e785775380b110cc4bcce4c14919f44f655596b66b194ed1d0f109f19cd23",
     "man/absd-sh.1/index.html": "33fbc499eba8b1ad6f98adcf132a4dda4ff769ce0bdb2f5d8a43f572f52f96f9",
     "man/afterboot.8/index.html": "2769650e6bd225100cc9501b4d7e0f14ab28f2eadac87fcaa205caef29e79586",
     "man/ata.4/index.html": "1df28897c01efff21f9199f8c826288db63a710cd41a72ca924795397fa0c6e3",
