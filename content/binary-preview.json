@@ -6,11 +6,17 @@
   "release_id": "absd-preview-2",
   "kernel_commit": "919f0676eacbdd06bfa17e1da9d951fb374e3a1b",
   "platform_commit": "0b002f732b1d11ec503868d99896c6bd5db80757",
-  "release_date": "2026-11-06",
-  "state": "draft",
+  "release_date": "2026-11-07",
+  "state": "published",
   "signature": "unsigned",
-  "qualification": "built",
-  "evidence": [],
+  "qualification": "published",
+  "evidence": [
+    {
+      "level": "published",
+      "label": "ABSD Developer Preview 2 release",
+      "url": "https://github.com/unpingable/absd/releases/tag/absd-preview-2"
+    }
+  ],
   "assets": [
     {
       "name": "BUILD-INPUTS.json",
@@ -119,5 +125,12 @@
     "A full-screen editor, pager, scp, package manager, cron or GUI.",
     "KVM, several CPUs and hosts other than Linux x86-64 with QEMU 8.2 TCG are untested for these release media."
   ],
-  "first_party_source": null
+  "first_party_source": {
+    "tag": "absd-preview-2",
+    "commit": "2f3b537c50f39ec5d56d626f913424c8566141d8",
+    "tree": "63154e238ba3a5dcf0f3731fb34be85d2849381f",
+    "source_manifest_sha256": "c4f190de78050df15e27a7cc8d53b64234799a6e1233ce5fa2b80f1d97e05672",
+    "kernel_commit": "919f0676eacbdd06bfa17e1da9d951fb374e3a1b",
+    "platform_commit": "0b002f732b1d11ec503868d99896c6bd5db80757"
+  }
 }
