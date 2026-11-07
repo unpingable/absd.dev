@@ -711,6 +711,29 @@ def binary_page(binary=None):
         f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
         f'<td><code class="digest">{a["sha256"]}</code></td><td>{a["bytes"]}</td></tr>\n'
         for a in record["assets"])
+    if tag == "absd-preview-2":
+        rows += (f'<tr><td><a href="{esc(binary_preview.base(record) + "SHA256SUMS", quote=True)}">'
+                 f'<code>SHA256SUMS</code></a></td><td><code class="digest">{record["sums_sha256"]}</code></td>'
+                 f'<td>{len(files["SHA256SUMS"])}</td></tr>\n')
+    host_guide = """<p>Host tools on Ubuntu 24.04: <code>sudo apt-get install qemu-system-x86 python3 openssh-client curl xz-utils</code>.
+The preview was tested with QEMU 8.2. Newer QEMU versions are untested; the helper does not check the QEMU version,
+so it does not refuse them.</p>"""
+    if tag == "absd-preview-2":
+        host_guide = """<h3 id="host-tools">Host tools</h3>
+<p>Use a Linux x86-64 host with QEMU 8.2, Python 3.11+, OpenSSH, curl, xz and sha256sum.
+QEMU runs the guest; Python runs <code>absd-try.py</code>; OpenSSH supplies <code>ssh-keygen</code> and
+<code>ssh</code>; curl downloads the files, and sha256sum checks them. The helper decompresses the xz disk
+with Python's standard library. Ubuntu 24.04 is an example host; its packages are:
+<code>sudo apt-get install qemu-system-x86 python3 openssh-client curl xz-utils coreutils</code>.</p>
+<p>The sealed guide uses <code>--accel tcg</code>, QEMU's software emulation. KVM is optional and remains a
+separate qualification case; follow the TCG commands here. The preview was tested with QEMU 8.2.
+Newer QEMU versions are untested; the helper does not check the QEMU version, so it does not refuse them.</p>
+<h3 id="headless">Headless boot and SSH</h3>
+<p>The guest runs without a graphical display. Keep <code>absd-try.py boot</code> running in one host terminal.
+After it prints <code>READY</code>, use the guide's SSH command in a second terminal on the same host, with
+your new private key and <code>machine/known_hosts</code>. The helper records the guest console in
+<code>machine/console.log</code>; interact with ABSD over SSH. On a remote host, use two existing SSH sessions
+to that host for these terminals; the guide's <code>127.0.0.1</code> address refers to that host.</p>"""
     evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
                        for e in record["evidence"]) or "<li>None recorded.</li>"
     # Download facts derived from the sealed record and SHA256SUMS bytes, not
@@ -745,9 +768,7 @@ run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .<
 with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
 <p>Both verification commands need all {count} files, including <code>{esc(largest["name"])}</code>
 ({largest["bytes"]:,} bytes), even if you only want to boot the image. The complete download is {total:,} bytes.</p>
-<p>Host tools on Ubuntu 24.04: <code>sudo apt-get install qemu-system-x86 python3 openssh-client curl xz-utils</code>.
-The preview was tested with QEMU 8.2. Newer QEMU versions are untested; the helper does not check the QEMU version,
-so it does not refuse them.</p>
+{host_guide}
 {sealed_standing}{binary_source_note(record)}
 <h2 id="files">Files</h2>
 <p>Every address is the tagged release asset; nothing here follows a moving pointer.</p>
