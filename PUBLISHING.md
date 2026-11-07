@@ -231,7 +231,9 @@ exact manifest role, digest, byte-count and SHA256SUMS checks. Preview 2
 ships curated matching first-party source at its own binary tag. Its
 `first_party_source` association may therefore use `absd-preview-2` too;
 Preview 1 keeps its separate `absd-source-rc1` association. Component commits
-must agree. This local check does not establish remote publication or
+must agree. A published Preview 2 record requires that matching source
+association at its own release tag; a draft can leave it unbound.
+This local check does not establish remote publication or
 byte-identical reproduction.
 
 The preparation branch selects Preview 2 as `draft` with no source

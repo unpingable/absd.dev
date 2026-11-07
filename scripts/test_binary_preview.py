@@ -264,6 +264,15 @@ class PreviewSelection(unittest.TestCase):
             'SHA256SUMS': '503d365bb9886a92b71f6856dc2b99c0d08248b65d2daf50a63e12879f177b2d',
         })
 
+    def test_published_preview2_requires_its_matching_source_tag(self):
+        bp.check_record(self.record, SOURCE_ID)
+        source = self.record['first_party_source']
+        for value in (None, dict(source, tag='absd-source-rc1')):
+            with self.subTest(source=value):
+                self.record['first_party_source'] = value
+                with self.assertRaisesRegex(ValueError, 'published Preview 2 requires matching source'):
+                    bp.check_record(self.record, SOURCE_ID)
+
     def test_names_and_primary_download_are_release_pinned(self):
         import build
         bp.check_record(self.record, SOURCE_ID)

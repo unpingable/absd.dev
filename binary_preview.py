@@ -111,6 +111,9 @@ def check_record(record, source_release_id):
             raise ValueError("binary-only preview: malformed source manifest digest")
         if any(source[name] != record[name] for name in ("kernel_commit", "platform_commit")):
             raise ValueError("binary-only preview: source components disagree with binary record")
+    if (record["tag"] == "absd-preview-2" and record["state"] == "published"
+            and (source is None or source["tag"] != record["tag"])):
+        raise ValueError("binary-only preview: published Preview 2 requires matching source at its release tag")
     level = record["qualification"]
     if level not in release_docs.QUALIFICATIONS:
         raise ValueError("binary-only preview: unknown qualification")
