@@ -716,7 +716,7 @@ def binary_page(binary=None):
     # Download facts derived from the sealed record and SHA256SUMS bytes, not
     # written by hand: the complete set both verification commands need.
     count = len(record["assets"]) + 1
-    total = sum(a["bytes"] for a in record["assets"]) + len(BINARY[1]["SHA256SUMS"])
+    total = sum(a["bytes"] for a in record["assets"]) + len(files["SHA256SUMS"])
     largest = max(record["assets"], key=lambda a: a["bytes"])
     helpers = [a["name"] for a in record["assets"] if a["name"].endswith(".py") and a["name"] != "absd-try.py"]
     helper_list = ", ".join(f"<code>{esc(n)}</code>" for n in helpers)

@@ -320,6 +320,20 @@ class PreviewSelection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "conflict"):
             bp.load_archives(root, SOURCE_ID, selected)
 
+    def test_archived_download_total_uses_its_own_sealed_checksum_file(self):
+        import build
+        selected = bp.load(ROOT, SOURCE_ID)
+        archived = bp.load_archives(ROOT, SOURCE_ID, selected[0])
+        self.assertEqual(len(selected[1]["SHA256SUMS"]), 1054)
+        self.assertEqual(len(archived[0][1]["SHA256SUMS"]), 1107)
+        with patch.object(build, "BINARY", selected), \
+             patch.object(build, "BINARY_ARCHIVES", archived):
+            outputs = build.binary_outputs()
+        page = outputs["releases/absd-preview-rc1/index.html"].decode()
+        total = re.search(r"The complete download is ([0-9,]+) bytes\.", page)
+        self.assertIsNotNone(total)
+        self.assertEqual(total.group(1), "91,756,032")
+
 
 class SourcePathUnchanged(unittest.TestCase):
     def test_source_and_notice_pointers_survive_both_source_states(self):
