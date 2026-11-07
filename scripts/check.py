@@ -301,8 +301,7 @@ def check_withheld():
         preview = record["binary_preview"]
         for url in [a["url"] for a in preview["assets"]] + [preview["sums_url"]]:
             all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
-    if build.BINARY:
-        record = build.BINARY[0]
+    for record, _ in ([build.BINARY] if build.BINARY else []) + build.BINARY_ARCHIVES:
         for url in [a["url"] for a in record["assets"]] + [build.binary_preview.base(record) + "SHA256SUMS"]:
             all_text = all_text.replace(html.escape(url, quote=True), "").replace(url, "")
     for phrase in ("x86-64 PCs supported", "qualified x86-64 hardware", "runs on real hardware",

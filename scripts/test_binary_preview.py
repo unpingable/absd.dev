@@ -30,6 +30,15 @@ SEALED = {"MANIFEST.toml": "71066f42b41886834af4f56b8a98973635a4b2e617d355f4c806
 SOURCE_ID = json.loads((ROOT / "content/release.json").read_text())["release_id"]
 
 
+def preview1_record():
+    path = ROOT / "content/binary-preview/absd-preview-rc1.json"
+    if not path.exists():
+        path = bp.record_path(ROOT)
+    record = json.loads(path.read_text())
+    assert record["tag"] == "absd-preview-rc1"
+    return record
+
+
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -39,7 +48,7 @@ class Inputs:
 
     def __init__(self, directory):
         self.root = pathlib.Path(directory)
-        self.record = json.loads(bp.record_path(ROOT).read_text())
+        self.record = preview1_record()
         self.dir = self.root / "inputs"
         shutil.copytree(bp.input_dir(ROOT, self.record), self.dir)
 
@@ -85,7 +94,8 @@ class BinaryPreview(unittest.TestCase):
         self.assertIn(expect, str(caught.exception))
 
     def test_committed_rc1_inputs_pass_and_are_the_sealed_bytes(self):
-        record, files = bp.load(ROOT, SOURCE_ID)
+        record = preview1_record()
+        files = bp.verify(record, bp.input_dir(ROOT, record), SOURCE_ID)
         self.assertEqual({n: sha(d) for n, d in files.items()}, SEALED)
         self.assertNotEqual(record["tag"], record["release_id"])
         doc = tomllib.loads(files["MANIFEST.toml"].decode())
@@ -215,10 +225,97 @@ class BinaryPreview(unittest.TestCase):
                 self.refuses("notices_correction differs")
 
 
+class PreviewSelection(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="absd-preview-selection-")
+        self.addCleanup(self.tmp.cleanup)
+        self.inputs = Inputs(pathlib.Path(self.tmp.name) / "inputs-copy")
+        self.record = json.loads(json.dumps(self.inputs.record))
+        old_tag = self.record["tag"]
+        self.record["tag"] = "absd-preview-2"
+        self.record["display_name"] = "ABSD Developer Preview 2"
+        self.record.pop("notices_correction", None)
+        for asset in self.record["assets"]:
+            asset["url"] = asset["url"].replace("/" + old_tag + "/", "/absd-preview-2/")
+        self.record["first_party_source"]["tag"] = self.record["tag"]
+
+    def archive(self):
+        root = pathlib.Path(self.tmp.name) / "site-root"
+        directory = root / "content/binary-preview"
+        directory.mkdir(parents=True)
+        old = preview1_record()
+        (directory / (old["tag"] + ".json")).write_text(json.dumps(old))
+        shutil.copytree(self.inputs.dir, directory / old["tag"])
+        return root, old
+
+    def test_common_preview2_source_tag_still_refuses_wrong_components(self):
+        self.record.pop("display_name")
+        bp.check_record(self.record, SOURCE_ID)
+        self.record["first_party_source"]["kernel_commit"] = "0" * 40
+        with self.assertRaisesRegex(ValueError, "source components disagree"):
+            bp.check_record(self.record, SOURCE_ID)
+
+    def test_current_preview2_inputs_pass_with_their_sealed_bytes(self):
+        record, files = bp.load(ROOT, SOURCE_ID)
+        self.assertEqual(record['tag'], 'absd-preview-2')
+        self.assertEqual({name: sha(data) for name, data in files.items()}, {
+            'MANIFEST.toml': '21794d69f5bd0b7060a2ece719fd9ab112c09087b37e3a1d0f4f519045038eeb',
+            'QUICKSTART.md': '45fccebacba15b93bd88838a952e83ee6c93975e5471e4b686dad816af9a63fc',
+            'SHA256SUMS': '503d365bb9886a92b71f6856dc2b99c0d08248b65d2daf50a63e12879f177b2d',
+        })
+
+    def test_names_and_primary_download_are_release_pinned(self):
+        import build
+        bp.check_record(self.record, SOURCE_ID)
+        with patch.object(build, "BINARY", (self.record, {})):
+            notice = build.binary_notice()
+            started = build.binary_get_started()
+        self.assertIn("ABSD Developer Preview 2", notice)
+        self.assertIn('href="/releases/absd-preview-2/"', notice)
+        self.assertNotIn('<code>absd-preview-2</code>', notice)
+        self.assertNotIn('href="/try/"', notice)
+        self.assertIn('href="/releases/absd-preview-2/"', started)
+        self.assertNotIn('<code>absd-preview-2</code>', started)
+        source_note = build.binary_source_note(self.record)
+        self.assertIn('/docs/PREVIEW2-SOURCE.md', source_note)
+        self.assertNotIn('archives still name the earlier public source preview', source_note)
+        self.record["display_name"] = "ABSD Developer Preview 1"
+        with self.assertRaisesRegex(ValueError, "display_name"):
+            bp.check_record(self.record, SOURCE_ID)
+
+    def test_selection_retains_preview1_page_and_exact_sealed_guide(self):
+        import build
+        root, old = self.archive()
+        archived = bp.load_archives(root, SOURCE_ID, self.record)
+        self.assertEqual(len(archived), 1)
+        # Keep this control entirely offline: synthetic Preview2 metadata,
+        # with the immutable Preview1 guide as the archived consumer input.
+        with patch.object(build, "BINARY", (self.record, archived[0][1])), \
+             patch.object(build, "BINARY_ARCHIVES", archived):
+            outputs = build.binary_outputs()
+        self.assertEqual(outputs['releases/absd-preview-rc1/QUICKSTART.md'], self.inputs.read('QUICKSTART.md'))
+        self.assertIn(b'<h1>ABSD Developer Preview 1</h1>', outputs['releases/absd-preview-rc1/index.html'])
+        self.assertIn(b'<h1>ABSD Developer Preview 2</h1>', outputs['try/index.html'])
+        self.assertIn(b'href="/releases/absd-preview-rc1/"', outputs['try/index.html'])
+        self.assertIn(b'href="/releases/absd-preview-2/"', outputs['releases/absd-preview-rc1/index.html'])
+
+    def test_archived_guide_tampering_and_conflicting_selection_refuse(self):
+        root, old = self.archive()
+        guide = bp.input_dir(root, old) / 'QUICKSTART.md'
+        guide.write_bytes(guide.read_bytes() + b'changed\n')
+        with self.assertRaisesRegex(ValueError, "QUICKSTART.md bytes disagree"):
+            bp.load_archives(root, SOURCE_ID, self.record)
+        guide.write_bytes(self.inputs.read('QUICKSTART.md'))
+        selected = json.loads(json.dumps(old))
+        selected['works'].append('Conflicting editorial state')
+        with self.assertRaisesRegex(ValueError, "conflict"):
+            bp.load_archives(root, SOURCE_ID, selected)
+
+
 class SourcePathUnchanged(unittest.TestCase):
     def test_source_and_notice_pointers_survive_both_source_states(self):
         import build
-        record = json.loads(bp.record_path(ROOT).read_text())
+        record = preview1_record()
         source = record["first_party_source"]
         for current in (source, None):
             with self.subTest(source=current):
@@ -239,7 +336,7 @@ class SourcePathUnchanged(unittest.TestCase):
 
     def test_absent_later_source_retains_binary_only_wording(self):
         import build
-        record = json.loads(bp.record_path(ROOT).read_text())
+        record = preview1_record()
         record["first_party_source"] = None
         with patch.object(build, "BINARY", (record, {})):
             self.assertIn("No first-party ABSD source release accompanies", build.binary_source_note(record))
@@ -254,16 +351,20 @@ class SourcePathUnchanged(unittest.TestCase):
         self.assertEqual(record["schema_version"], 1)
 
     def test_source_validator_still_refuses_the_binary_only_manifest(self):
-        record = json.loads(bp.record_path(ROOT).read_text())
-        data = (bp.input_dir(ROOT, record) / "MANIFEST.toml").read_bytes()
-        reference = json.loads((ROOT / "scripts/testdata/schema1-rendering-v1.json").read_text())
-        source = json.loads(reference["release_json"])
-        source.update(schema_version=2, release_id=record["release_id"], release_commit="0" * 40,
-                      kernel_commit=record["kernel_commit"], platform_commit=record["platform_commit"],
-                      binary_preview={"signature": "unsigned"})
-        with self.assertRaises(ValueError) as caught:
-            release_docs.manifest(source, data)
-        self.assertIn("manifest release.tag disagrees with release record", str(caught.exception))
+        current = json.loads(bp.record_path(ROOT).read_text())
+        for record in (preview1_record(), current):
+            with self.subTest(tag=record["tag"]):
+                data = (bp.input_dir(ROOT, record) / "MANIFEST.toml").read_bytes()
+                reference = json.loads((ROOT / "scripts/testdata/schema1-rendering-v1.json").read_text())
+                source = json.loads(reference["release_json"])
+                source.update(schema_version=2, release_id=record["release_id"], release_commit="0" * 40,
+                              kernel_commit=record["kernel_commit"], platform_commit=record["platform_commit"],
+                              binary_preview={"signature": "unsigned"})
+                with self.assertRaises(ValueError) as caught:
+                    release_docs.manifest(source, data)
+                field = "tag" if record["release_id"] != record["tag"] else "source_commit"
+                self.assertIn(f"manifest release.{field} disagrees with release record", str(caught.exception))
+
 
 
 class BuiltSite(unittest.TestCase):
@@ -273,6 +374,7 @@ class BuiltSite(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="absd-binary-site-") as directory:
             copy = pathlib.Path(directory) / "site-source"
             shutil.copytree(ROOT, copy, ignore=shutil.ignore_patterns(".git", "site", "__pycache__"))
+            bp.record_path(copy).write_text(json.dumps(preview1_record()))
             subprocess.run(["python3", "build.py"], cwd=copy, check=True, capture_output=True)
             ok = subprocess.run(["python3", "scripts/check.py"], cwd=copy, capture_output=True, text=True)
             self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
@@ -284,7 +386,7 @@ class BuiltSite(unittest.TestCase):
             sentence = ("RC1's first-party source is not yet published, so independent parties cannot currently "
                         "reproduce its builds from the published materials.")
             self.assertNotIn(sentence, page)
-            source = json.loads(bp.record_path(ROOT).read_text())["first_party_source"]
+            source = preview1_record()["first_party_source"]
             link = "https://github.com/unpingable/absd/tree/" + source["tag"]
             self.assertIn(link, page)
             self.assertIn(link, (copy / "site/status/index.html").read_text())

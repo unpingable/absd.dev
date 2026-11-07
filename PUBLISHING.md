@@ -205,3 +205,41 @@ to the source release's actual clean-environment results instead of
 inferring that included check scripts passed. Bind the final reviewed
 source identity and release text before publishing this metadata; a failed
 or superseded source candidate is not a publication input.
+
+## Developer Preview 1 and Developer Preview 2
+
+The human names are `ABSD Developer Preview 1` and `ABSD Developer Preview 2`.
+Their immutable tags remain `absd-preview-rc1` and `absd-preview-2`. Set the
+optional `display_name` on binary records; known tags must use these exact
+names. Headings and the primary Download / Try action use the human name.
+Technical tags remain in release URLs, manifests and verification material.
+The primary action points to `/releases/<tag>/`, so a saved link retains its
+release identity when the selected preview changes.
+
+Retain earlier binary records at `content/binary-preview/<tag>.json` and
+keep their three sealed inputs in `content/binary-preview/<tag>/` unchanged.
+The loader verifies each retained record with the same manifest, checksum
+and guide checks as the selected record. Retained pages are generated at
+their original pinned URLs. An identical selected/archive duplicate is
+ignored; a conflicting record refuses. Drafts are not historical releases.
+Selecting a new preview must never rerender or overwrite an earlier sealed
+guide, manifest or checksum file.
+
+Preview 2's producer uses `operator.iso`, `enroll.iso` and `disk.img.xz`;
+Preview 1 retains its release-id-prefixed filenames. Both paths retain
+exact manifest role, digest, byte-count and SHA256SUMS checks. Preview 2
+ships curated matching first-party source at its own binary tag. Its
+`first_party_source` association may therefore use `absd-preview-2` too;
+Preview 1 keeps its separate `absd-source-rc1` association. Component commits
+must agree. This local check does not establish remote publication or
+byte-identical reproduction.
+
+The preparation branch selects Preview 2 as `draft` with no source
+association. Publish neither that draft nor a staging source commit. After
+all source/rehearsal/review gates pass, the steward binds the association to
+the final public-history source commit, tree and manifest digest, verifies
+the public tag/release and all asset bytes, records the actual publication
+date/evidence and changes the record to `published`. Rebuild and rerun all
+checks before the existing Pages procedure. Preview 1 and Preview 2 appear
+together publicly only after Preview 2 is published. The earlier source
+preview and milestone records remain separate.

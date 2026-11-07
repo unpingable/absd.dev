@@ -36,6 +36,12 @@ HARDWARE_LIMIT = "Physical hardware qualification is not yet established."
 INPUTS = ("MANIFEST.toml", "SHA256SUMS", "QUICKSTART.md")
 REQUIRED = ("MANIFEST.toml", "QUICKSTART.md", "NOTICES.md", "absd-try.py")
 ROLES = (("operator_iso", "operator.iso"), ("enroll_iso", "enroll.iso"), ("disk", "disk.img.xz"))
+PUBLIC_NAMES = {"absd-preview-rc1": "ABSD Developer Preview 1",
+                "absd-preview-2": "ABSD Developer Preview 2"}
+
+
+def display_name(record):
+    return record.get("display_name", PUBLIC_NAMES.get(record["tag"], "ABSD Developer Preview"))
 
 
 def digest(data):
@@ -62,7 +68,7 @@ def statements(record, field):
 
 
 def check_record(record, source_release_id):
-    if not isinstance(record, dict) or set(record) - {"notices_correction"} != FIELDS or record["schema"] != SCHEMA:
+    if not isinstance(record, dict) or set(record) - {"notices_correction", "display_name"} != FIELDS or record["schema"] != SCHEMA:
         raise ValueError(f"binary-only preview: expected {SCHEMA} and its exact fields")
     if "releases/latest" in json.dumps(record):
         raise ValueError("binary-only preview: releases/latest is never a canonical address")
@@ -72,6 +78,12 @@ def check_record(record, source_release_id):
     for name in ("tag", "release_id"):
         if not isinstance(record[name], str) or not re.fullmatch(r"[a-z0-9.-]{1,64}", record[name]):
             raise ValueError(f"binary-only preview: malformed {name}")
+    if "display_name" in record:
+        name = record["display_name"]
+        if (not isinstance(name, str) or not name.strip() or name != name.strip()
+                or len(name) > 80 or any(ord(c) < 32 for c in name)
+                or (record["tag"] in PUBLIC_NAMES and name != PUBLIC_NAMES[record["tag"]])):
+            raise ValueError("binary-only preview: malformed or contradictory display_name")
     if record["tag"] == source_release_id:
         raise ValueError("binary-only preview: tag must not name the source release")
     for name in ("kernel_commit", "platform_commit"):
@@ -89,7 +101,8 @@ def check_record(record, source_release_id):
         if not isinstance(source, dict) or set(source) != fields:
             raise ValueError("binary-only preview: malformed first_party_source")
         if (not isinstance(source["tag"], str) or not re.fullmatch(r"[a-z0-9.-]{1,64}", source["tag"])
-                or source["tag"] in (record["tag"], source_release_id)):
+                or source["tag"] == source_release_id
+                or (source["tag"] == record["tag"] and record["tag"] != "absd-preview-2")):
             raise ValueError("binary-only preview: source association needs a separate source tag")
         for name in ("commit", "tree", "kernel_commit", "platform_commit"):
             if not isinstance(source[name], str) or not re.fullmatch(r"[0-9a-f]{40}", source[name]):
@@ -185,7 +198,8 @@ def check_manifest(record, data):
     if not isinstance(roles, dict) or any(r not in roles for r, _ in ROLES):
         raise ValueError("binary-only preview: manifest requires operator, enrollment and disk assets")
     for role, suffix in ROLES:
-        if roles[role].get("name") != f"{record['release_id']}-{suffix}":
+        expected_name = suffix if record["tag"] == "absd-preview-2" else f"{record['release_id']}-{suffix}"
+        if roles[role].get("name") != expected_name:
             raise ValueError(f"binary-only preview: unexpected filename for {role}")
     assets = {a["name"]: a for a in record["assets"]}
     seen = set()
@@ -262,3 +276,22 @@ def load(root, source_release_id):
     check_record(record, source_release_id)
     files = verify(record, input_dir(root, record), source_release_id)
     return record, files
+
+
+def load_archives(root, source_release_id, selected):
+    """Retained release records beside their unchanged sealed-input folders."""
+    records = []
+    for path in sorted((pathlib.Path(root) / "content/binary-preview").glob("*.json")):
+        record = json.loads(regular(path.parent, path.name))
+        check_record(record, source_release_id)
+        if path.name != record["tag"] + ".json":
+            raise ValueError("binary-only preview: archive filename disagrees with tag")
+        if record["state"] == "draft":
+            raise ValueError("binary-only preview: archive must be published or withdrawn")
+        files = verify(record, input_dir(root, record), source_release_id)
+        if record["tag"] == selected["tag"]:
+            if record != selected:
+                raise ValueError("binary-only preview: selected and archived record conflict")
+            continue
+        records.append((record, files))
+    return records

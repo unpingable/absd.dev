@@ -220,6 +220,7 @@ RELEASE = load_release(RELEASE_PATH)
 # A binary-only preview (no source release) is a separate record; the source
 # record above and its validation are unchanged by it.
 BINARY = binary_preview.load(ROOT, RELEASE["release_id"])
+BINARY_ARCHIVES = binary_preview.load_archives(ROOT, RELEASE["release_id"], BINARY[0]) if BINARY else []
 if BINARY and RELEASE["binary_preview"]:
     raise ValueError("binary-only preview: the source record already selects a binary preview")
 SOURCE_REPO = RELEASE["repository"]
@@ -351,14 +352,19 @@ def source_values():
 def binary_get_started():
     record = BINARY[0]
     esc = html.escape
+    name = esc(binary_preview.display_name(record))
+    pinned = f'/releases/{record["tag"]}/'
     if record["state"] == "withdrawn":
-        return (f'The binary developer preview <code>{esc(record["tag"])}</code> has been withdrawn. '
-                '<a href="/try/">Read the withdrawal notice</a> before using any retained files.')
-    return (f'Binary developer preview <code>{esc(record["tag"])}</code> (state <strong>{esc(record["state"])}</strong>): '
-            '<a href="/try/">what works, what does not, and how to try it</a> on a Linux x86-64 host with QEMU, '
-            'with no build tools. To build from source instead, follow the source release\'s '
-            f'<a href="{SOURCE_REPO}/blob/{RELEASE["release_id"]}/README.md#build-boot-test">README</a>; '
-            '<a href="/status/#source">status</a> says what each does and does not show.')
+        return (f'{name} has been withdrawn. '
+                f'<a href="{pinned}">Read the withdrawal notice</a> before using any retained files.')
+    source = record["first_party_source"]
+    source_text = ('Matching-source links will be added with publication.' if source is None else
+                   f'The <a href="{esc(record["repository"], quote=True)}/tree/{source["tag"]}">matching first-party source</a> '
+                   'records its reconstruction instructions and limits.')
+    return (f'{name} (state <strong>{esc(record["state"])}</strong>): '
+            f'<a href="{pinned}">Download / Try ABSD</a> on a Linux x86-64 host with QEMU, '
+            f'with no build tools. {source_text} '
+            '<a href="/status/#source">Status</a> keeps the earlier source release separate.')
 
 
 def binary_notice():
@@ -370,14 +376,14 @@ def binary_notice():
     esc = html.escape
     tag = record["tag"]
     if record["state"] == "withdrawn":
-        body = (f'Binary developer preview <code>{esc(tag)}</code> has been withdrawn. '
-                '<a href="/try/">Read the withdrawal notice</a>.')
+        body = (f'{esc(binary_preview.display_name(record))} has been withdrawn. '
+                f'<a href="/releases/{esc(tag)}/">Read the withdrawal notice</a>.')
     else:
         evidence = "".join(f' · <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a>'
                            for e in record["evidence"] if e["level"] == "published")
-        body = (f'Binary developer preview <code>{esc(tag)}</code>, state <strong>{esc(record["state"])}</strong>. '
+        body = (f'{esc(binary_preview.display_name(record))}, state <strong>{esc(record["state"])}</strong>. '
                 f'{ladder(record["qualification"])} For QEMU on a Linux x86-64 host, with no build tools: '
-                f'<a href="/try/">what works, what does not, and how to try it</a> · '
+                f'<a href="/releases/{esc(tag)}/">Download / Try ABSD</a> · '
                 f'<a href="/releases/{esc(tag)}/">release page</a>{evidence}.')
     return (f'<aside class="note" aria-label="Current binary preview">\n<p><strong>Current release:</strong> {body}</p>\n'
             '<p>The source release below is a separate, earlier publication.</p>\n</aside>\n\n')
@@ -391,16 +397,27 @@ def binary_source_note(record):
     if correction is not None:
         release_url = record["repository"] + "/releases/tag/" + record["tag"]
         correction_note = (f'<p>The additive notices correction on the <a href="{esc(release_url, quote=True)}">'
-                           f'RC1 binary release</a>, <code>{esc(correction["name"])}</code>, is {correction["bytes"]:,} bytes, '
+                           f'Developer Preview 1 binary release</a>, <code>{esc(correction["name"])}</code>, is {correction["bytes"]:,} bytes, '
                            f'SHA-256 <code>{correction["sha256"]}</code>. Keep it with the original notices archive. '
                            'The original SHA256SUMS and NOTICES.md are unchanged and do not list this addition.</p>')
     attached = [a["name"] for a in record["assets"]
                 if a["name"].endswith(("-corresponding-source.tar", "-notices.tar.gz"))]
     names = " and ".join(f"<code>{esc(n)}</code>" for n in attached)
+    if source is not None and source["tag"] == record["tag"]:
+        url = record["repository"] + "/tree/" + source["tag"]
+        instructions = record["repository"] + "/blob/" + source["commit"] + "/docs/PREVIEW2-SOURCE.md"
+        return (f'<p>Matching first-party ABSD source for {esc(binary_preview.display_name(record))} is '
+                f'<a href="{esc(url, quote=True)}">published with this release</a>. Read the '
+                f'<a href="{esc(instructions, quote=True)}">reconstruction instructions and limits</a> '
+                'for the exact component revisions and curated edits. The binary manifest has no source_commit; '
+                'this separate source association does not establish byte-for-byte independent reproduction.</p>'
+                f'<p>Source commit <code>{source["commit"]}</code>; source-manifest SHA-256 '
+                f'<code>{source["source_manifest_sha256"]}</code>. Boot-component corresponding source and '
+                'binary licence notices are listed with the files below.</p>')
     if source is not None:
         url = record["repository"] + "/tree/" + source["tag"]
         instructions = record["repository"] + "/blob/" + source["commit"] + "/docs/RC1-SOURCE.md"
-        return (f'<p>First-party ABSD source for <code>{esc(record["tag"])}</code> is published separately at '
+        return (f'<p>First-party ABSD source for {esc(binary_preview.display_name(record))} is published separately at '
                 f'<a href="{esc(url, quote=True)}"><code>{esc(source["tag"])}</code></a>, commit '
                 f'<code>{source["commit"]}</code>. Read the <a href="{esc(instructions, quote=True)}">'
                 'reconstruction instructions and limits</a> for the exact component revisions and curated edits. '
@@ -416,8 +433,7 @@ def binary_source_note(record):
                   '(<a href="/status/#source">source release</a>).</p>' + correction_note)
     return (f'<p>No first-party ABSD source release accompanies <code>{esc(record["tag"])}</code>: its kernel '
             f'<code>{record["kernel_commit"]}</code> and platform <code>{record["platform_commit"]}</code> are not published as source. '
-            "RC1's first-party source is not yet published, so independent parties cannot currently reproduce its builds "
-            'from the published materials. '
+            'Matching source and its reconstruction instructions will be linked with publication. '
             + (f'Its download set does include {names}: the exact GRUB and GNU Unifont corresponding-source '
                'packages for the boot components, and the third-party notices. The release\'s NOTICES.md says how to '
                'extract and check them. ' if attached else '')
@@ -430,9 +446,13 @@ def rc1_source_standing():
         record = BINARY[0]
         source = record["first_party_source"]
         url = record["repository"] + "/tree/" + source["tag"]
-        return (f'RC1\'s <a href="{html.escape(url, quote=True)}">first-party source and reconstruction instructions</a> '
-                'are published separately from its binary release. The source manifest describes the curated edits '
+        return (f'{html.escape(binary_preview.display_name(record))}\'s <a href="{html.escape(url, quote=True)}">first-party source and reconstruction instructions</a> '
+                'are recorded with its binary release. The source manifest describes the curated edits '
                 'and reconstruction limits.')
+    if BINARY:
+        name = html.escape(binary_preview.display_name(BINARY[0]))
+        return (f'Linking {name} to its matching first-party source permits independent checking; '
+                'it has not happened yet for this record.')
     return ("Publishing RC1's exact first-party source is what makes independent checking of RC1 possible; "
             "it has not happened yet.")
 
@@ -456,7 +476,7 @@ def binary_status():
     items = "".join(f"<li>{esc(s)}</li>" for s in record["not_in_preview"])
     works = "".join(f"<li>{esc(s)}</li>" for s in record["works"])
     return (f'<section class="facts" aria-labelledby="binary-preview">\n<h2 id="binary-preview">Binary developer preview</h2>\n<dl>\n'
-            f'<dt>Tag</dt><dd><code>{esc(record["tag"])}</code>; media release id <code>{esc(record["release_id"])}</code></dd>\n'
+            f'<dt>Release</dt><dd>{esc(binary_preview.display_name(record))}</dd>\n'
             f'<dt>Kernel</dt><dd><code>{record["kernel_commit"]}</code></dd>\n'
             f'<dt>Platform</dt><dd><code>{record["platform_commit"]}</code></dd>\n'
             f'<dt>State</dt><dd>{esc(record["state"])}. {ladder(record["qualification"])} '
@@ -664,15 +684,15 @@ It runs under QEMU on the hosts listed below. {ladder(preview["qualification"])}
 """
 
 
-def binary_page():
+def binary_page(binary=None):
     """The release page and /try/ for the selected binary-only preview. Every
     value is the record's, which was verified against the sealed inputs."""
-    record, _ = BINARY
+    record, files = BINARY if binary is None else binary
     esc = html.escape
     tag = record["tag"]
     prefix = f"/releases/{tag}/"
     limits = "".join(f"<li>{esc(t)}</li>" for t in record["limitations"])
-    quoted = tomllib.loads(BINARY[1]["MANIFEST.toml"].decode())["limitations"]
+    quoted = tomllib.loads(files["MANIFEST.toml"].decode())["limitations"]
     sealed = "".join(f"<li>{esc(t)}</li>" for t in quoted)
     later = [t for t in record["limitations"] if t not in quoted]
     added = (f'<p>Added on this site:</p>\n<ul>{"".join(f"<li>{esc(t)}</li>" for t in later)}</ul>' if later else "")
@@ -704,8 +724,13 @@ def binary_page():
                        f'<p>The sealed QUICKSTART.md reports its artifact standing as <q>built</q>: it was written and '
                        f'sealed before the release was published on {esc(record["release_date"])}, and it cannot change. '
                        f'This page reports the later publication; the guide\'s instructions are unchanged.</p>\n')
-    return f"""<h1>Try ABSD {esc(tag)}</h1>
-{state}<p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>{record["kernel_commit"][:12]}</code>,
+    others = [item for item, _ in ([BINARY] if BINARY else []) + BINARY_ARCHIVES
+              if item["tag"] != tag and item["state"] != "draft"]
+    other_links = " · ".join(f'<a href="/releases/{esc(item["tag"])}/">{esc(binary_preview.display_name(item))}</a>'
+                             for item in others)
+    history = f'<p>Other developer previews: {other_links}.</p>\n' if others else ""
+    return f"""<h1>{esc(binary_preview.display_name(record))}</h1>
+{history}{state}<p>A binary developer preview for QEMU on a Linux x86-64 host: kernel <code>{record["kernel_commit"][:12]}</code>,
 platform <code>{record["platform_commit"][:12]}</code>. Unsigned.
 {ladder(record["qualification"])}</p>
 <h2 id="works">What works</h2>
@@ -748,15 +773,19 @@ def binary_outputs():
     if not BINARY:
         return {}
     record, files = BINARY
-    tag = record["tag"]
-    description = ("Withdrawn ABSD developer preview: read the release notice." if record["state"] == "withdrawn"
-                   else f"What works, what does not, and how to try ABSD {tag} under QEMU.")
-    page = binary_page()
-    outputs = {"try/index.html": layout("/try/", "Try ABSD", description, page),
-               f"releases/{tag}/index.html": layout(f"/releases/{tag}/", f"ABSD {tag}", description, page)}
-    outputs = {k: v.encode("utf-8") for k, v in outputs.items()}
-    # The sealed inputs, byte for byte; QUICKSTART.md is never re-rendered.
-    outputs.update({f"releases/{tag}/{name}": data for name, data in files.items()})
+    outputs = {}
+    for binary in [BINARY, *BINARY_ARCHIVES]:
+        item, inputs = binary
+        tag = item["tag"]
+        name = binary_preview.display_name(item)
+        description = ("Withdrawn ABSD developer preview: read the release notice." if item["state"] == "withdrawn"
+                       else f"What works, what does not, and how to try {name} under QEMU.")
+        page = binary_page(binary)
+        outputs[f"releases/{tag}/index.html"] = layout(f"/releases/{tag}/", name, description, page).encode("utf-8")
+        if tag == record["tag"]:
+            outputs["try/index.html"] = layout("/try/", "Try ABSD", description, page).encode("utf-8")
+        # The sealed inputs, byte for byte; QUICKSTART.md is never re-rendered.
+        outputs.update({f"releases/{tag}/{key}": data for key, data in inputs.items()})
     return outputs
 
 
