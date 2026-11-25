@@ -30,6 +30,22 @@
 </ul>
 <p>This makes progress slower to state and easier to check. The <a href="/evidence/">evidence page</a> shows the record kept for each milestone and release.</p>
 
+<h2 id="discovery">Discovery is not justification</h2>
+<p>AI-assisted development makes it practical to explore a wider range of candidate architectures. It does not remove the need to distinguish among them. ABSD treats four questions separately:</p>
+<dl class="terms">
+<dt>Composability</dt>
+<dd>Can the mechanisms be combined, given their interfaces, assumptions and available resources?</dd>
+<dt>Validity</dt>
+<dd>Does the composition satisfy its declared contracts and invariants, including the service it promises to deliver? A result in a model is conditional on that model's assumptions; implementation and hardware claims need their own evidence.</dd>
+<dt>Utility</dt>
+<dd>Does the composition accomplish something worthwhile, compared with existing alternatives? An unusual architecture is not necessarily a better one.</dd>
+<dt>Desirability</dt>
+<dd>Is that benefit worth the costs, complexity, risks, maintenance and obligations it would impose on the system and its operators?</dd>
+</dl>
+<p>These are distinct judgments. A valid composition may have little practical utility, and a useful capability may impose obligations that make its inclusion undesirable. Safety and authority guarantees are constraints, not points to trade for a higher performance score.</p>
+<p>One research direction is to search for materially different compositions of mechanisms under the same declared contract, rather than encode a preferred architecture in the question. AI can propose alternatives; models, adversarial checks and working implementations can challenge them; comparison with simpler alternatives can establish whether they earn their cost. The design may turn out to require a familiar mechanism after all. A negative result is useful. This is a direction for inquiry, not a claim that ABSD has already established a general method of automated architectural discovery.</p>
+<p><strong>Discovering a possibility does not create an obligation to realize it.</strong> The freedom to build something different includes the freedom to decide against building it.</p>
+
 <h2 id="milestones">Selected milestones</h2>
 <table>
 <thead><tr><th scope="col">Date</th><th scope="col">Result</th><th scope="col">Label</th></tr></thead>
