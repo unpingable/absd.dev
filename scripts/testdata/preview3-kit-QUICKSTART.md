@@ -102,8 +102,9 @@ just checked. The guest's SSH port is
 forwarded to port 2222 on this host's loopback address, so run the
 command on the QEMU host. If that host is remote, log in to it first.
 
-The guest greets you with a banner that ends with the line
-`Release: absd-preview-3`, the same release name `verify` printed.
+The guest greets you with a banner. Its last two lines are
+`Release: absd-preview-3`, the same release name `verify` printed, and
+`Authority is not ambient.`
 
 ## Edit a file and reopen it after shutdown
 

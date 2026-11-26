@@ -298,14 +298,24 @@ def check_kit_guide(record, text):
     for name in ("SHA256SUMS", *KIT_OUTER, kit):
         if f"`{name}`" not in text:
             raise ValueError(f"binary-only preview: QUICKSTART.md does not name {name}")
-    steps = ('echo "DIGEST  SHA256SUMS" | sha256sum -c --strict - &&\n',
-             "sha256sum -c --strict SHA256SUMS &&\n",
-             f"tar -xzf {kit} -C ",
-             "python3 absd-try.py verify .\n")
-    places = [text.find(step) for step in steps]
-    if -1 in places or places != sorted(places):
+    # One chained command, as written: the digest of SHA256SUMS, the list,
+    # then the unpacking, the kit's own list and the helper. Each `&&` is
+    # what keeps a later step from running after a failed one.
+    chain = re.search(
+        r'echo "DIGEST  SHA256SUMS" \| sha256sum -c --strict - &&\n'
+        r"sha256sum -c --strict SHA256SUMS &&\n"
+        r"mkdir ([A-Za-z0-9._-]+) &&\n"
+        r"tar -xzf " + re.escape(kit) + r" -C \1 &&\n"
+        r"cd \1 &&\n"
+        r"sha256sum -c --strict SHA256SUMS &&\n"
+        r"python3 absd-try\.py verify \.\n", text)
+    if chain is None:
         raise ValueError("binary-only preview: QUICKSTART.md must check the SHA256SUMS digest and the list, "
                          "then unpack the kit, then run the helper's verify, in that order")
+    # No other command unpacks anything, however it is spelled.
+    for command in re.finditer(r"(?m)(?:^|[\s;&|`(])tar[ \t]", text):
+        if not chain.start() <= command.start() < chain.end():
+            raise ValueError("binary-only preview: QUICKSTART.md runs tar outside its checked command chain")
     for line in (f"sha256sum -c --strict {SOURCE_SUMS}\n", f"absd-try: VERIFIED release={record['release_id']}"):
         if line not in text:
             raise ValueError(f"binary-only preview: QUICKSTART.md lacks {line.strip()!r}")

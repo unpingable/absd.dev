@@ -639,6 +639,21 @@ class KitPreview(unittest.TestCase):
         self.kit.guide = self.kit.members["QUICKSTART.md"] = swapped
         self.kit.seal()
         self.refuses("in that order")
+        # The reviewer's two cases: a chain broken after the list check, so
+        # the unpacking runs whatever the checks said; and an unpacking
+        # spelled another way ahead of the checked chain.
+        broken = KitRelease.GUIDE.replace(b"sha256sum -c --strict SHA256SUMS &&\nmkdir preview3-operator &&\n",
+                                          b"sha256sum -c --strict SHA256SUMS\nmkdir preview3-operator &&\n")
+        self.assertNotEqual(broken, KitRelease.GUIDE)
+        self.kit.guide = self.kit.members["QUICKSTART.md"] = broken
+        self.kit.seal()
+        self.refuses("in that order")
+        early = KitRelease.GUIDE.replace(b'echo "DIGEST  SHA256SUMS"',
+                                         b'tar xzf absd-preview-3-operator.tar.gz\necho "DIGEST  SHA256SUMS"')
+        self.assertNotEqual(early, KitRelease.GUIDE)
+        self.kit.guide = self.kit.members["QUICKSTART.md"] = early
+        self.kit.seal()
+        self.refuses("runs tar outside its checked command chain")
         other = KitRelease.GUIDE + b"\nhttps://github.com/unpingable/absd/releases/download/absd-preview-2/x\n"
         self.kit.guide = self.kit.members["QUICKSTART.md"] = other
         self.kit.seal()
