@@ -245,3 +245,41 @@ date/evidence and changes the record to `published`. Rebuild and rerun all
 checks before the existing Pages procedure. Preview 1 and Preview 2 appear
 together publicly only after Preview 2 is published. The earlier source
 preview and milestone records remain separate.
+
+## Developer Preview 3 (preparation; nothing selected)
+
+The human name is `ABSD Developer Preview 3` and the tag is `absd-preview-3`.
+`binary_preview.py` knows the name. No Preview 3 record is selected and no
+sealed input is committed: the final candidate is a fresh image built from
+the integrated development line, so its `MANIFEST.toml`, `SHA256SUMS` and
+`QUICKSTART.md` do not exist yet. Preview 2 stays the selected record until
+those three files are copied byte for byte into
+`content/binary-preview/absd-preview-3/`.
+
+Preview 3's download differs from Preview 2's in ways the validator does
+not yet accept. Resolve each before selecting a draft; do not edit a sealed
+input to fit the validator.
+
+- The guide starts from four downloaded files, one of which is the kit
+  archive `absd-preview-3-operator.tar.gz`. The manifest, the media and the
+  helper are inside that archive. `check_manifest` requires the manifest to
+  bind every record asset, and `check_guide` requires one `curl` line per
+  asset. Either the release also carries the kit's members as separate
+  assets, or the record gains a kit form whose inputs are the outer
+  `SHA256SUMS`, the manifest extracted from the verified kit and the guide.
+- The guide tells the reader to check `SHA256SUMS` against a digest obtained
+  apart from the download. The release page and this site are that channel.
+  The release page prints `sums_sha256` for `absd-preview-2` only
+  (`build.py`, the two `tag == "absd-preview-2"` branches); Preview 3 needs
+  the same row and its own host-tools text.
+- Same-tag source, the published-state source requirement and the unprefixed
+  media names are each written for `absd-preview-2` alone in
+  `binary_preview.py`. Preview 3 uses the same arrangement.
+- The manifest limitation list must contain the hardware line, and every
+  sealed limitation must stay in the record.
+
+When the sealed inputs exist, follow "Prepare, verify, select" and the
+Preview 2 sequence above: select Preview 3 as `draft` with no source
+association, archive Preview 2 at `content/binary-preview/absd-preview-2.json`
+with its three inputs unchanged, and bind the source association, date and
+evidence only after the tag and release are public.

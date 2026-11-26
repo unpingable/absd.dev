@@ -37,7 +37,8 @@ INPUTS = ("MANIFEST.toml", "SHA256SUMS", "QUICKSTART.md")
 REQUIRED = ("MANIFEST.toml", "QUICKSTART.md", "NOTICES.md", "absd-try.py")
 ROLES = (("operator_iso", "operator.iso"), ("enroll_iso", "enroll.iso"), ("disk", "disk.img.xz"))
 PUBLIC_NAMES = {"absd-preview-rc1": "ABSD Developer Preview 1",
-                "absd-preview-2": "ABSD Developer Preview 2"}
+                "absd-preview-2": "ABSD Developer Preview 2",
+                "absd-preview-3": "ABSD Developer Preview 3"}
 
 
 def display_name(record):
