@@ -251,32 +251,54 @@ preview and milestone records remain separate.
 The human name is `ABSD Developer Preview 3` and the tag is `absd-preview-3`.
 `binary_preview.py` knows the name. No Preview 3 record is selected and no
 sealed input is committed: the final candidate is a fresh image built from
-the integrated development line, so its `MANIFEST.toml`, `SHA256SUMS` and
-`QUICKSTART.md` do not exist yet. Preview 2 stays the selected record until
-those three files are copied byte for byte into
-`content/binary-preview/absd-preview-3/`.
+the integrated development line, so its sealed files do not exist yet.
+Preview 2 stays the selected record until the inputs listed below are
+copied byte for byte into `content/binary-preview/absd-preview-3/`.
 
-Preview 3's download differs from Preview 2's in ways the validator does
-not yet accept. Resolve each before selecting a draft; do not edit a sealed
-input to fit the validator.
+Preview 3's download is a kit: the guide starts from four downloaded files,
+`SHA256SUMS`, `SHA256SUMS.source`, `QUICKSTART.md` and the kit archive
+`absd-preview-3-operator.tar.gz`. The manifest, the media and the helper are
+inside the archive. A record describes such a release with a `kit` object:
 
-- The guide starts from four downloaded files, one of which is the kit
-  archive `absd-preview-3-operator.tar.gz`. The manifest, the media and the
-  helper are inside that archive. `check_manifest` requires the manifest to
-  bind every record asset, and `check_guide` requires one `curl` line per
-  asset. Either the release also carries the kit's members as separate
-  assets, or the record gains a kit form whose inputs are the outer
-  `SHA256SUMS`, the manifest extracted from the verified kit and the guide.
-- The guide tells the reader to check `SHA256SUMS` against a digest obtained
-  apart from the download. The release page and this site are that channel.
-  The release page prints `sums_sha256` for `absd-preview-2` only
-  (`build.py`, the two `tag == "absd-preview-2"` branches); Preview 3 needs
-  the same row and its own host-tools text.
-- Same-tag source, the published-state source requirement and the unprefixed
-  media names are each written for `absd-preview-2` alone in
-  `binary_preview.py`. Preview 3 uses the same arrangement.
-- The manifest limitation list must contain the hardware line, and every
-  sealed limitation must stay in the record.
+```json
+"kit": {"name": "absd-preview-3-operator.tar.gz", "sums_sha256": "<sha256 of the kit's own SHA256SUMS>"}
+```
+
+A kit record's `assets` are every release asset except `SHA256SUMS`: the
+three files the outer `SHA256SUMS` lists and the source and notice files
+`SHA256SUMS.source` lists. It commits five inputs, not three:
+
+- `SHA256SUMS`, `SHA256SUMS.source` and `QUICKSTART.md`, as downloaded;
+- `MANIFEST.toml`, copied out of the verified kit;
+- `KIT.SHA256SUMS`, the kit's own `SHA256SUMS`, copied out under that name.
+
+Add `utils_commit` to the record when the kit's manifest names one; the
+manifest's release table must then match the record key for key.
+
+The checks on a kit record are the flat release's checks moved to where the
+files are. The two outer lists together must equal the record's assets. The
+kit's list must contain the manifest, `NOTICES.md`, `absd-try.py` and the same
+`QUICKSTART.md`, and the manifest must bind every other kit member. The guide
+has no download lines; it must name the four files, check `SHA256SUMS`
+against a separately obtained digest before it unpacks anything, and state
+the `VERIFIED release=` line for this release. Same-tag source and plain
+media names apply to `absd-preview-2` and `absd-preview-3`.
+
+Committed inputs cannot show that the kit archive holds that manifest and
+that list. Before selecting a kit record, download the kit and run:
+
+```sh
+python3 binary_preview.py kit --record RECORD.json \
+    --inputs content/binary-preview/absd-preview-3 --kit absd-preview-3-operator.tar.gz
+```
+
+It must print `KIT ARCHIVE MATCHES RECORD AND INPUTS`. It reads the archive
+and extracts nothing. Do not edit a sealed input to fit the validator.
+
+The release page prints the digest of `SHA256SUMS` for a kit record, in the
+file table and beside the instructions. That page and the release body are
+the channel the guide's first command relies on, so publish both with the
+same value, taken from the record.
 
 When the sealed inputs exist, follow "Prepare, verify, select" and the
 Preview 2 sequence above: select Preview 3 as `draft` with no source

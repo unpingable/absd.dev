@@ -711,7 +711,10 @@ def binary_page(binary=None):
         f'<tr><td><a href="{esc(a["url"], quote=True)}"><code>{esc(a["name"])}</code></a></td>'
         f'<td><code class="digest">{a["sha256"]}</code></td><td>{a["bytes"]}</td></tr>\n'
         for a in record["assets"])
-    if tag == "absd-preview-2":
+    kit = record.get("kit")
+    # The row a reader checks SHA256SUMS against: the digest published apart
+    # from the download. A kit guide's first step depends on it.
+    if tag == "absd-preview-2" or kit:
         rows += (f'<tr><td><a href="{esc(binary_preview.base(record) + "SHA256SUMS", quote=True)}">'
                  f'<code>SHA256SUMS</code></a></td><td><code class="digest">{record["sums_sha256"]}</code></td>'
                  f'<td>{len(files["SHA256SUMS"])}</td></tr>\n')
@@ -734,6 +737,17 @@ After it prints <code>READY</code>, use the guide's SSH command in a second term
 on the same host, with your new private key and <code>machine/known_hosts</code>. The helper records the guest console in
 <code>machine/console.log</code>; interact with ABSD over SSH. On a remote host, use two existing SSH sessions
 to that host for these terminals; the guide's <code>127.0.0.1</code> address refers to that host.</p>"""
+    if kit:
+        host_guide = """<h3 id="host-tools">Host tools</h3>
+<p>Use an Ubuntu 24.04 x86-64 host with QEMU 8.2, Python 3.11 or newer, the OpenSSH client and GNU coreutils:
+<code>sudo apt-get install qemu-system-x86 python3 openssh-client coreutils</code>.
+The guide uses <code>--accel tcg</code>, QEMU's software emulation, which is what the kit was tested with.
+KVM and newer QEMU versions are untested; the helper does not check the QEMU version, so it does not refuse them.</p>
+<h3 id="headless">Headless boot and SSH</h3>
+<p>The guest runs without a graphical display. Keep <code>absd-try.py boot</code> running in one host terminal.
+After it prints <code>READY</code>, check the host-key fingerprint as the guide says and use the printed SSH command
+in a second terminal on the same host. On a remote host, use two SSH sessions to that host for these terminals;
+the guide's <code>127.0.0.1</code> address refers to that host.</p>"""
     evidence = "".join(f'<li>{esc(e["level"])}: <a href="{esc(e["url"], quote=True)}">{esc(e["label"])}</a></li>'
                        for e in record["evidence"]) or "<li>None recorded.</li>"
     # Download facts derived from the sealed record and SHA256SUMS bytes, not
@@ -743,7 +757,34 @@ to that host for these terminals; the guide's <code>127.0.0.1</code> address ref
     largest = max(record["assets"], key=lambda a: a["bytes"])
     helpers = [a["name"] for a in record["assets"] if a["name"].endswith(".py") and a["name"] != "absd-try.py"]
     helper_list = ", ".join(f"<code>{esc(n)}</code>" for n in helpers)
-    sealed_standing = ("" if record["state"] != "published" else
+    how = (f'''In a new empty directory: download the files below and
+<code>SHA256SUMS</code>, keeping <code>absd-try.py</code> and its helper modules ({helper_list}) together in that directory,
+run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
+with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
+<p>Both verification commands need all {count} files, including <code>{esc(largest["name"])}</code>
+({largest["bytes"]:,} bytes), even if you only want to boot the image. The complete download is {total:,} bytes.</p>''')
+    copies = (f'<a href="{prefix}MANIFEST.toml">manifest</a> ·\n'
+              f'<a href="{prefix}SHA256SUMS">checksums</a> (copies on this site)')
+    if kit:
+        first = {kit["name"], *binary_preview.KIT_OUTER}
+        kit_bytes = next(a["bytes"] for a in record["assets"] if a["name"] == kit["name"])
+        later_bytes = sum(a["bytes"] for a in record["assets"] if a["name"] not in first)
+        later_count = len(record["assets"]) - len(first)
+        how = (f'''Download <code>SHA256SUMS</code>, <code>{esc(binary_preview.SOURCE_SUMS)}</code>,
+<code>QUICKSTART.md</code> and <code>{esc(kit["name"])}</code> ({kit_bytes:,} bytes) into one directory.
+The guide's first command checks <code>SHA256SUMS</code> against a digest obtained apart from the download.
+That digest is:</p>
+<p><code class="digest">{record["sums_sha256"]}</code></p>
+<p>The same command then checks the downloaded files against that list, unpacks the kit, checks the kit's own list
+and runs <code>python3 absd-try.py verify .</code>; each step runs only if the one before it succeeded.
+After that you create a machine with your own new key, boot it, and log in over SSH.</p>
+<p>The other {later_count} files are the source and notice archives listed in <code>{esc(binary_preview.SOURCE_SUMS)}</code>
+({later_bytes:,} bytes together). They are not needed to run the preview.</p>''')
+        copies = (f'<a href="{prefix}MANIFEST.toml">the manifest inside the kit</a> ·\n'
+                  f'<a href="{prefix}SHA256SUMS">checksums</a> ·\n'
+                  f'<a href="{prefix}{binary_preview.KIT_SUMS}">the kit\'s own checksums</a> ·\n'
+                  f'<a href="{prefix}{binary_preview.SOURCE_SUMS}">source checksums</a> (copies on this site)')
+    sealed_standing = ("" if record["state"] != "published" or kit else
                        f'<p>The sealed QUICKSTART.md reports its artifact standing as <q>built</q>: it was written and '
                        f'sealed before the release was published on {esc(record["release_date"])}, and it cannot change. '
                        f'This page reports the later publication; the guide\'s instructions are unchanged.</p>\n')
@@ -762,12 +803,7 @@ platform <code>{record["platform_commit"][:12]}</code>. Unsigned.
 <ul>{"".join(f"<li>{esc(s)}</li>" for s in record["not_in_preview"])}</ul>
 <h2 id="how">How to try it</h2>
 <p>Follow <a href="{esc(quick, quote=True)}">QUICKSTART.md</a> from the release (the same bytes, as sealed:
-<a href="{prefix}QUICKSTART.md">copy on this site</a>). In a new empty directory: download the files below and
-<code>SHA256SUMS</code>, keeping <code>absd-try.py</code> and its helper modules ({helper_list}) together in that directory,
-run <code>sha256sum -c SHA256SUMS</code> and <code>python3 absd-try.py verify .</code>, create a machine
-with your own new key, boot it, and log in over SSH. Stop if either verification fails.</p>
-<p>Both verification commands need all {count} files, including <code>{esc(largest["name"])}</code>
-({largest["bytes"]:,} bytes), even if you only want to boot the image. The complete download is {total:,} bytes.</p>
+<a href="{prefix}QUICKSTART.md">copy on this site</a>). {how}
 {host_guide}
 {sealed_standing}{binary_source_note(record)}
 <h2 id="files">Files</h2>
@@ -778,8 +814,7 @@ with your own new key, boot it, and log in over SSH. Stop if either verification
 {rows}</tbody>
 </table>
 <p><a href="{esc(binary_preview.base(record) + "SHA256SUMS", quote=True)}">SHA256SUMS</a>
-(sha256 <code class="digest">{record["sums_sha256"]}</code>) · <a href="{prefix}MANIFEST.toml">manifest</a> ·
-<a href="{prefix}SHA256SUMS">checksums</a> (copies on this site)</p>
+(sha256 <code class="digest">{record["sums_sha256"]}</code>) · {copies}</p>
 <h2 id="limits">Limits</h2>
 <p>{sealed_note}</p>
 <ul>{sealed}</ul>

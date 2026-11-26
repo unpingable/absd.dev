@@ -7,12 +7,14 @@ validator keep their earlier behaviour. These are metadata checks: boot, SSH
 and persistence are the separate reader rehearsal's.
 """
 import hashlib
+import io
 import json
 import pathlib
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import tomllib
 import unittest
@@ -442,6 +444,230 @@ class BuiltSite(unittest.TestCase):
             failed = subprocess.run(["python3", "build.py"], cwd=copy, capture_output=True, text=True)
             self.assertNotEqual(failed.returncode, 0)
             self.assertIn("QUICKSTART.md bytes disagree", failed.stderr)
+
+
+class KitRelease:
+    """A kit-form release sealed the way the producer seals one: every kit
+    file but the manifest is bound by the manifest, the kit's SHA256SUMS
+    lists them all, and two outer lists cover the release assets."""
+    TAG = "absd-preview-3"
+    KIT = "absd-preview-3-operator.tar.gz"
+    GUIDE = (ROOT / "scripts/testdata/preview3-kit-QUICKSTART.md").read_bytes()
+
+    def __init__(self, directory):
+        self.root = pathlib.Path(directory)
+        self.dir = self.root / "inputs"
+        self.dir.mkdir()
+        self.members = {"operator.iso": b"operator", "enroll.iso": b"enroll", "disk.img.xz": b"disk",
+                        "absd-try.py": b"helper", "absd_fs.py": b"module", "NOTICES.md": b"notices\n",
+                        "QUICKSTART.md": self.GUIDE}
+        self.attachments = {"absd-preview-3-source.tar.gz": b"source", "rust-src-1.95.0.tar.xz": b"rust"}
+        self.guide = self.GUIDE
+        self.limitations = [bp.HARDWARE_LIMIT, "No rehearsal of these exact media is recorded in this manifest."]
+        self.release = {"id": self.TAG, "tag": self.TAG, "kernel_commit": "1" * 40, "platform_commit": "2" * 40,
+                        "utils_commit": "3" * 40}
+        self.record = None
+        self.seal()
+
+    def manifest(self):
+        lines = ['schema = "absd-preview-manifest/1"', 'signature = "unsigned"', 'qualification = "built"',
+                 "limitations = " + json.dumps(self.limitations), "[release]"]
+        lines += [f"{key} = {json.dumps(value)}" for key, value in self.release.items()]
+        lines += ["[qemu]", f'cpu_tcg = "{release_docs.CPU}"', "memory_mib = 256", "smp = 1", 'nic = "e1000"',
+                  'disk = "ide"', 'firmware = "SeaBIOS"']
+        roles = {"operator.iso": "operator_iso", "enroll.iso": "enroll_iso", "disk.img.xz": "disk"}
+        for index, (name, data) in enumerate(sorted(self.members.items())):
+            lines += [f"[assets.{roles.get(name, f'extra_{index}')}]", f'name = "{name}"',
+                      f'sha256 = "{sha(data)}"', f"bytes = {len(data)}"]
+            if name == "disk.img.xz":
+                lines += [f'raw_sha256 = "{"4" * 64}"', "raw_bytes = 134217728"]
+        return ("\n".join(lines) + "\n").encode()
+
+    def seal(self, manifest=None):
+        manifest = self.manifest() if manifest is None else manifest
+        inner = {**self.members, "MANIFEST.toml": manifest}
+        inner_sums = "".join(f"{sha(data)}  {name}\n" for name, data in sorted(inner.items())).encode()
+        kit = self.root / self.KIT
+        with tarfile.open(kit, "w:gz") as bundle:
+            for name, data in sorted({**inner, "SHA256SUMS": inner_sums}.items()):
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                bundle.addfile(info, io.BytesIO(data))
+        source_sums = "".join(f"{sha(data)}  {name}\n" for name, data in sorted(self.attachments.items())).encode()
+        outer = {self.KIT: kit.read_bytes(), "QUICKSTART.md": self.guide, "SHA256SUMS.source": source_sums}
+        outer_sums = "".join(f"{sha(data)}  {name}\n" for name, data in sorted(outer.items())).encode()
+        for name, data in (("MANIFEST.toml", manifest), ("QUICKSTART.md", self.guide), ("SHA256SUMS", outer_sums),
+                           ("SHA256SUMS.source", source_sums), ("KIT.SHA256SUMS", inner_sums)):
+            (self.dir / name).write_bytes(data)
+        base = f"{bp.ASSET_BASE}{self.TAG}/"
+        self.record = {
+            "schema": bp.SCHEMA, "repository": bp.REPOSITORY, "tag": self.TAG, "release_id": self.TAG,
+            "kernel_commit": "1" * 40, "platform_commit": "2" * 40, "utils_commit": "3" * 40,
+            "release_date": "2026-11-27", "state": "draft", "signature": "unsigned", "qualification": "built",
+            "evidence": [], "sums_sha256": sha(outer_sums), "limitations": list(self.limitations),
+            "works": ["Boots."], "not_in_preview": ["Hardware."], "first_party_source": None,
+            "kit": {"name": self.KIT, "sums_sha256": sha(inner_sums)},
+            "assets": [{"name": name, "url": base + name, "sha256": sha(data), "bytes": len(data)}
+                       for name, data in sorted({**outer, **self.attachments}.items())],
+        }
+        return kit
+
+    def verify(self):
+        return bp.verify(self.record, self.dir, SOURCE_ID)
+
+
+class KitPreview(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="absd-kit-")
+        self.addCleanup(self.tmp.cleanup)
+        self.kit = KitRelease(self.tmp.name)
+
+    def refuses(self, expect):
+        with self.assertRaises(ValueError) as caught:
+            self.kit.verify()
+        self.assertIn(expect, str(caught.exception))
+
+    def test_sealed_kit_release_passes_with_the_accepted_guide(self):
+        files = self.kit.verify()
+        self.assertEqual(sorted(files), sorted(bp.KIT_INPUTS))
+        self.assertEqual(files["QUICKSTART.md"], KitRelease.GUIDE)
+        self.assertEqual(bp.check_kit_archive(self.kit.record, self.kit.dir, self.kit.root / KitRelease.KIT),
+                         sorted([*self.kit.members, "MANIFEST.toml", "SHA256SUMS"]))
+
+    def test_flat_record_checks_are_unchanged_by_the_kit_form(self):
+        record = preview1_record()
+        self.assertNotIn("kit", record)
+        bp.verify(record, bp.input_dir(ROOT, record), SOURCE_ID)
+
+    def test_kit_record_needs_all_five_inputs_and_no_others(self):
+        (self.kit.dir / "KIT.SHA256SUMS").rename(self.kit.root / "moved")
+        self.refuses("exactly")
+        (self.kit.root / "moved").rename(self.kit.dir / "KIT.SHA256SUMS")
+        (self.kit.dir / "extra").write_text("x")
+        self.refuses("exactly")
+
+    def test_malformed_kit_field_refuses(self):
+        for kit in (None, {}, {"name": KitRelease.KIT}, {"name": "QUICKSTART.md", "sums_sha256": "0" * 64},
+                    {"name": ["x"], "sums_sha256": "0" * 64}, {"name": "absent.tar.gz", "sums_sha256": "0" * 64},
+                    {"name": KitRelease.KIT, "sums_sha256": "short"}):
+            with self.subTest(kit=kit):
+                self.kit.record["kit"] = kit
+                self.refuses("kit must name")
+
+    def test_outer_list_must_be_exactly_kit_guide_and_source_list(self):
+        sums = (self.kit.dir / "SHA256SUMS").read_bytes() + f"{sha(b'source')}  absd-preview-3-source.tar.gz\n".encode()
+        (self.kit.dir / "SHA256SUMS").write_bytes(sums)
+        self.kit.record["sums_sha256"] = sha(sums)
+        self.refuses("must list exactly the kit")
+
+    def test_asset_missing_from_both_lists_refuses(self):
+        base = f"{bp.ASSET_BASE}{KitRelease.TAG}/"
+        self.kit.record["assets"].append({"name": "unlisted.tar", "url": base + "unlisted.tar",
+                                          "sha256": "5" * 64, "bytes": 1})
+        self.refuses("record assets disagree")
+
+    def test_tampered_guide_source_list_or_kit_list_refuses(self):
+        for name, expect in (("QUICKSTART.md", "QUICKSTART.md bytes disagree"),
+                             ("SHA256SUMS.source", "record assets disagree"),
+                             ("KIT.SHA256SUMS", "kit's SHA256SUMS bytes disagree"),
+                             ("MANIFEST.toml", "MANIFEST.toml bytes disagree with the kit")):
+            with self.subTest(name=name):
+                path = self.kit.dir / name
+                original = path.read_bytes()
+                path.write_bytes(original + (b"\n" if name in ("QUICKSTART.md", "MANIFEST.toml")
+                                             else f"{'6' * 64}  another\n".encode()))
+                self.refuses(expect)
+                path.write_bytes(original)
+
+    def test_manifest_must_bind_every_kit_member_with_its_digest(self):
+        self.kit.members["absd_image.py"] = b"unbound"
+        manifest = self.kit.manifest()
+        del self.kit.members["absd_image.py"]
+        unbound = self.kit.manifest()
+        self.kit.members["absd_image.py"] = b"unbound"
+        self.kit.seal(unbound)
+        self.refuses("manifest must bind every kit member except itself")
+        self.kit.seal(manifest.replace(sha(b"operator").encode(), b"7" * 64))
+        self.refuses("manifest asset operator_iso disagrees with the kit's SHA256SUMS")
+
+    def test_kit_must_carry_manifest_notices_helper_and_the_same_guide(self):
+        del self.kit.members["NOTICES.md"]
+        self.kit.seal()
+        self.refuses("missing kit member NOTICES.md")
+        self.kit.members["NOTICES.md"] = b"notices\n"
+        self.kit.members["QUICKSTART.md"] = b"another guide\n"
+        self.kit.seal()
+        self.refuses("the kit's guide differs")
+
+    def test_manifest_release_binds_utils_only_with_the_record(self):
+        del self.kit.record["utils_commit"]
+        self.refuses("manifest release table has unexpected keys")
+        self.kit.record["utils_commit"] = "8" * 40
+        self.refuses("manifest release.utils_commit disagrees")
+
+    def test_media_keep_plain_names_and_source_may_share_the_tag(self):
+        doc = tomllib.loads((self.kit.dir / "MANIFEST.toml").read_text())
+        self.assertEqual(doc["assets"]["operator_iso"]["name"], "operator.iso")
+        source = {"tag": KitRelease.TAG, "commit": "a" * 40, "tree": "b" * 40, "source_manifest_sha256": "c" * 64,
+                  "kernel_commit": "1" * 40, "platform_commit": "2" * 40}
+        self.kit.record["first_party_source"] = source
+        self.kit.verify()
+        self.kit.record.update(state="published", qualification="published", first_party_source=None,
+                               evidence=[{"level": "published", "label": "Release", "url": "https://example.invalid/r"}])
+        self.refuses("requires matching source at its release tag")
+
+    def test_guide_must_gate_unpacking_on_the_digest_and_name_the_release(self):
+        cases = (
+            (b'echo "DIGEST  SHA256SUMS" | sha256sum -c --strict - &&\n', b"", "in that order"),
+            (b"tar -xzf absd-preview-3-operator.tar.gz -C preview3-operator &&\n", b"", "in that order"),
+            (b"VERIFIED release=absd-preview-3", b"VERIFIED", "VERIFIED release=absd-preview-3"),
+            (b"sha256sum -c --strict SHA256SUMS.source\n", b"", "SHA256SUMS.source"),
+            (b"`SHA256SUMS.source`", b"the source list", "does not name SHA256SUMS.source"),
+        )
+        for old, new, expect in cases:
+            with self.subTest(old=old):
+                self.assertIn(old, KitRelease.GUIDE)
+                self.kit.guide = self.kit.members["QUICKSTART.md"] = KitRelease.GUIDE.replace(old, new)
+                self.kit.seal()
+                self.refuses(expect)
+        swapped = KitRelease.GUIDE.replace(
+            b'echo "DIGEST  SHA256SUMS" | sha256sum -c --strict - &&\nsha256sum -c --strict SHA256SUMS &&\n'
+            b"mkdir preview3-operator &&\ntar -xzf absd-preview-3-operator.tar.gz -C preview3-operator &&\n",
+            b"mkdir preview3-operator &&\ntar -xzf absd-preview-3-operator.tar.gz -C preview3-operator &&\n"
+            b'echo "DIGEST  SHA256SUMS" | sha256sum -c --strict - &&\nsha256sum -c --strict SHA256SUMS &&\n')
+        self.assertNotEqual(swapped, KitRelease.GUIDE)
+        self.kit.guide = self.kit.members["QUICKSTART.md"] = swapped
+        self.kit.seal()
+        self.refuses("in that order")
+        other = KitRelease.GUIDE + b"\nhttps://github.com/unpingable/absd/releases/download/absd-preview-2/x\n"
+        self.kit.guide = self.kit.members["QUICKSTART.md"] = other
+        self.kit.seal()
+        self.refuses("names another release tag")
+
+    def test_kit_archive_check_refuses_other_bytes_and_other_inputs(self):
+        archive = self.kit.root / KitRelease.KIT
+        record, inputs = json.loads(json.dumps(self.kit.record)), self.kit.root / "kept"
+        shutil.copytree(self.kit.dir, inputs)
+        self.kit.members["absd-try.py"] = b"another helper"
+        self.kit.seal()  # a different kit at the same path
+        with self.assertRaisesRegex(ValueError, "kit archive"):
+            bp.check_kit_archive(record, inputs, archive)
+        # The right archive, but a manifest committed from somewhere else.
+        with self.assertRaisesRegex(ValueError, "not the files inside the kit archive"):
+            (self.kit.dir / "MANIFEST.toml").write_bytes(b"other\n")
+            bp.check_kit_archive(self.kit.record, self.kit.dir, archive)
+
+    def test_kit_page_prints_the_digest_and_serves_the_five_inputs(self):
+        import build
+        binary = (self.kit.record, self.kit.verify())
+        page = build.binary_page(binary)
+        self.assertIn(f'<p><code class="digest">{self.kit.record["sums_sha256"]}</code></p>', page)
+        self.assertIn("<code>SHA256SUMS</code></a></td>", page)
+        self.assertIn('href="/releases/absd-preview-3/KIT.SHA256SUMS"', page)
+        self.assertIn("<code>absd-preview-3-operator.tar.gz</code>", page)
+        self.assertNotIn("curl", page)
+        self.assertNotIn("its helper modules", page)
+        self.assertIn("The other 2 files are the source and notice archives", page)
 
 
 if __name__ == "__main__":
