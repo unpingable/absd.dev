@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Render the 1200x630 social preview card (src/static/og-card.png).
 
-The terminal lines are verbatim from the RC1 outsider-agent trial (2026-10-18),
-an SSH session against the published absd-preview-rc1 build. Rerun after
+The terminal lines are verbatim from one SSH session of the Developer Preview 3
+release rehearsal (2026-11-28, terminal T4): a script typing the guide's
+commands against the published absd-preview-3 files under QEMU TCG. The
+session's last prompt is cut at the cursor. Rerun after
 changing the copy: python3 -I scripts/make-og-card.py
 """
 import pathlib
@@ -21,17 +23,19 @@ TEAL = (86, 150, 152)
 DIM = (150, 140, 128)
 
 TRANSCRIPT = [
-    ("$ ", "ssh -p 2222 -i ./absd-key operator@127.0.0.1"),
-    ("absd$ ", "uname -a"),
-    ("", "ABSD absd-rc1-c12c-20261018t161241z.fvcgzh x86_64 x86_64-unknown-absd pid=5"),
-    ("absd$ ", "ps"),
-    ("", "session 1 (this session), no terminal, connected 0 s"),
-    ("", "  PID PROGRAM"),
-    ("", "    4 /bin/absd-sh"),
-    ("absd$ ", "uptime"),
-    ("", "up 0 days 00:02:46, 166454 ticks since boot, boot 1ca5e0fb7a4ac056d204feee5e49209b"),
-    ("absd$ ", "cat /home/operator/release-check.txt"),
-    ("", "release-check"),
+    ("", "    _    ____ ____  ____"),
+    ("", "   / \\  | __ ) ___||  _ \\"),
+    ("", "  / _ \\ |  _ \\___ \\| | | |"),
+    ("", " / ___ \\| |_) |__) | |_| |"),
+    ("", "/_/   \\_\\____/____/|____/"),
+    ("", "Release: absd-preview-3"),
+    ("", "Authority is not ambient."),
+    ("", ""),
+    ("absd$ ", "ls /bin/https-fetch"),
+    ("", "/bin/https-fetch"),
+    ("absd$ ", "net https-fetch https://example.invalid/x x"),
+    ("", "https-fetch: /etc/https-fetch.conf: ABSD path not found"),
+    ("", "absd-sh: https-fetch: exit status 1"),
     ("absd$ ", ""),
 ]
 
@@ -58,7 +62,7 @@ def main():
     sub = font("DejaVuSans.ttf", 25)
     d.text((60, 206), "An experimental capability-based", font=sub, fill=CORAL)
     d.text((60, 240), "operating system", font=sub, fill=CORAL)
-    d.text((60, 284), "absd.dev  ·  Developer Preview RC1", font=font("DejaVuSansMono.ttf", 18), fill=TEAL)
+    d.text((60, 284), "absd.dev  ·  Developer Preview 3", font=font("DejaVuSansMono.ttf", 18), fill=TEAL)
 
     # Terminal panel, bottom.
     px0, py0, px1, py1 = 56, 330, W - 56, H - 36
@@ -66,8 +70,8 @@ def main():
     d.rectangle([px0, py0, px1, py0 + 26], fill=(44, 37, 54))
     d.text((px0 + 14, py0 + 5), "operator@absd  —  ssh", font=font("DejaVuSansMono.ttf", 14), fill=DIM)
 
-    mono = font("DejaVuSansMono.ttf", 16)
-    y = py0 + 38
+    mono = font("DejaVuSansMono.ttf", 14)
+    y = py0 + 34
     for prompt, text in TRANSCRIPT:
         x = px0 + 16
         if prompt:
@@ -78,8 +82,8 @@ def main():
             d.text((x, y), text, font=mono, fill=DIM)
         if prompt == "absd$ " and not text:
             cx = x + d.textlength(text, font=mono)
-            d.rectangle([cx, y + 2, cx + 9, y + 18], fill=CORAL)
-        y += 19
+            d.rectangle([cx, y + 2, cx + 8, y + 16], fill=CORAL)
+        y += 16
 
     im.save(OUT, optimize=True)
     print(OUT, im.size, OUT.stat().st_size)
