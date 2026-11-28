@@ -3,6 +3,15 @@
 Source of the static site at https://absd.dev/, the public description of
 ABSD, an experimental operating system.
 
+ABSD's published Developer Preview 3 is a deliberately narrow,
+single-operator QEMU environment; that is not the project's intended
+ceiling. The long-term ambition is a genuinely usable general-purpose
+operating system with native authority and failure semantics, not a
+promise of production readiness, physical hardware support, or general
+Linux/BSD binary compatibility today. Development-only physical boots
+and experiments are not hardware qualification. The site's About,
+Hardware, Status and release pages distinguish these claims.
+
 This repository holds the site only: its pages, the manual sources they
 render, and the build and check scripts. It does not contain the operating
 system. ABSD's source is published separately, as source releases, at
