@@ -49,6 +49,50 @@ commit used to render it, and explain every changed file. Do not update
 reference hashes to conceal an unexplained failure. Run the full checks
 after the reviewed refresh. Publication still follows the procedure above.
 
+## Claims vocabulary
+
+Design informs documentation; evidence determines what documentation may
+claim. Every public statement about ABSD is one of three kinds and uses that
+kind's words. This section is the canonical wording for the site, the source
+README and the kernel and platform documentation; other guidance points here.
+
+- **Release support:** `supported`, `release-qualified`. Only for a named
+  published release in a named environment, within the scope and evidence of
+  that release's own record. `release-qualified` additionally requires that
+  record's qualification runs. A developer preview whose record says
+  `preview` or `published` is supported on its documented path and is not
+  release-qualified.
+- **Development evidence:** `observed`, `demonstrated in development`. Name
+  the build, the test and the host, what happened, what was not tried, and
+  whether the record is public. Give an exact count only when a public
+  record carries it; otherwise state the shape of the result. A development
+  result never implies that a release ships or supports it.
+- **Research and ambition:** `aims to`, `intended`. Never phrased as a
+  capability. Where a reader could take the aim for the current release, add
+  one present-tense limit. One sentence of each is enough.
+
+These kinds sit above the site's labels and do not merge them. The labels
+keep the definitions on the Status page (`/status/#labels`):
+`RELEASE-QUALIFIED` is release support for one exact kernel and platform
+pair. `MILESTONE-QUALIFIED` is the recorded milestone run; it is not a
+release claim and is never restated as `supported` or `release-qualified`.
+`VALIDATED` and `EXPERIMENTAL-INTEGRATION` are development evidence.
+`PLANNED` is direction. `UNSUPPORTED` means not provided. Historical
+records keep the label and wording they were recorded with.
+
+Hardware statements also name one evidence tier from the Hardware page
+(emulator-qualified, exact-hardware-qualified,
+machine-configuration-qualified, hardware-family-supported). A physical
+boot or device test of a development build is development evidence under
+"Physical observations" and holds no tier.
+
+Architecture: native ABSD mechanisms, with their authority and failure
+semantics, are the specification. Unix-style behaviour is a personality
+implemented in userspace above the native interface, not the substrate;
+ABSD is not built on Unix or Linux. Linux or other foreign binary
+compatibility is direction: a separate personality that would not become
+the native specification, claimed by no release.
+
 ## Binary preview (absd-coord #31, #32)
 
 `content/release.json` remains the single current editorial record. Schema 1
