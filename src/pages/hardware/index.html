@@ -3,7 +3,7 @@
 <h1>Hardware</h1>
 
 <p><strong>Physical hardware qualification: not yet established.</strong> <span class="label l-planned">PLANNED</span></p>
-<p>No physical machine, device, or hardware family is supported by the published previews. Their supported execution environments are QEMU configurations. Separately, development builds have booted on actual x86-64 machines and exercised selected devices; these are <a href="#observations">experimental observations</a>, not qualification, an installed-host claim or support for physical hardware. This page distinguishes those records from the emulated configurations that were qualified.</p>
+<p>No physical machine, device, or hardware family is supported. ABSD is qualified only under QEMU; development builds have been observed booting on two physical machines, recorded <a href="#observations">below</a> as observations, not support. This page defines how hardware support will be stated, and lists exactly which emulated configurations are qualified.</p>
 
 <h2 id="tiers">Evidence tiers</h2>
 <p>Each hardware statement names one tier. A higher tier is never inferred from a lower one.</p>
@@ -62,7 +62,7 @@
 </table>
 
 <h2 id="observations">Physical observations</h2>
-<p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Development observations are recorded so that physical execution is not mistaken for a supported physical platform. None of the following qualifies a machine at any support tier; public release capabilities and development results must not be conflated.</p>
+<p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> Recorded so that they are not mistaken for support. None of this is a hardware qualification at any tier.</p>
 <table>
 <thead><tr><th scope="col">Field</th><th scope="col">Content</th></tr></thead>
 <tbody>
@@ -76,8 +76,19 @@
 <tr><td>Date</td><td>2026-10-05 (UTC), one evening</td></tr>
 </tbody>
 </table>
-
-<p><span class="label l-exp">EXPERIMENTAL-INTEGRATION</span> A later development-only observation on 2026-11-07 involved a BOSGAME E5 (Igner) booting ABSD and exchanging <strong>42 reflected raw Ethernet frames</strong> with a Linux peer through one physical RTL8125 interface under a dedicated AMD-Vi DMA domain. This was a bounded physical boot and raw-frame test, recorded in development-lane evidence; it was <strong>not</strong> a public Preview 3 hardware run, nor proof of ARP/IP, TCP/SSH, persistent installed operation, a second NIC, cold-link reliability or full device qualification. The underlying detailed lane receipts are not included in the published source export.</p>
+<table>
+<thead><tr><th scope="col">Field</th><th scope="col">Content</th></tr></thead>
+<tbody>
+<tr><td>Machine</td><td>One mini PC (AMD Ryzen 3 5300U)</td></tr>
+<tr><td>Devices</td><td>One of its two Realtek RTL8125 Ethernet controllers</td></tr>
+<tr><td>Firmware</td><td>Booted from a USB stick through GRUB</td></tr>
+<tr><td>ABSD build</td><td>A read-only probe image from a development branch, not a release; block writes disabled</td></tr>
+<tr><td>Workload</td><td>The controller was placed in its own AMD-Vi DMA domain before use. A raw Ethernet probe then sent frames of many sizes, up to full size, to a Linux peer, which sent each back; both ends reported every frame returned exact and in order.</td></tr>
+<tr><td>Not tried</td><td>ARP, IP, TCP, SSH, storage, persistence, the second controller. DMA containment is not claimed: the device's state before the kernel starts is not controlled.</td></tr>
+<tr><td>Evidence</td><td>Photographs of the screen, read by hand, and the peer's result line, kept with the development records. Not published, so no counts are stated here.</td></tr>
+<tr><td>Date</td><td>2026-11-07 (UTC)</td></tr>
+</tbody>
+</table>
 
 <h2 id="entries">What each hardware entry will record</h2>
 <p><span class="label l-planned">PLANNED</span> When a physical machine is qualified, its entry here will carry at least:</p>
