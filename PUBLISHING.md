@@ -59,9 +59,13 @@ README and the kernel and platform documentation; other guidance points here.
 - **Release support:** `supported`, `release-qualified`. Only for a named
   published release in a named environment, within the scope and evidence of
   that release's own record. `release-qualified` additionally requires that
-  record's qualification runs. A developer preview whose record says
-  `preview` or `published` is supported on its documented path and is not
-  release-qualified.
+  record's qualification runs. A developer preview may be called supported
+  only for its documented path, within the limits its record lists, and is
+  not release-qualified. Publication alone grants neither word. The source
+  record's `qualification` (`preview`, `qualified`) and the binary preview
+  ladder's stages (`built` through `outsider-passed`, one of them named
+  `qualified`) are separate enums, and neither is the `RELEASE-QUALIFIED`
+  label: only a record's evidence entries say what was established.
 - **Development evidence:** `observed`, `demonstrated in development`. Name
   the build, the test and the host, what happened, what was not tried, and
   whether the record is public. Give an exact count only when a public
