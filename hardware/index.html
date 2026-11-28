@@ -31,7 +31,7 @@
 <h1>Hardware</h1>
 
 <p><strong>Physical hardware qualification: not yet established.</strong> <span class="label l-planned">PLANNED</span></p>
-<p>No physical machine, device, or hardware family is supported. ABSD is qualified only under QEMU; first read-only boots on one physical machine have been observed and are recorded <a href="#observations">below</a> as observations, not support. This page defines how hardware support will be stated, and lists exactly which emulated configurations are qualified.</p>
+<p>No physical machine, device, or hardware family is supported. ABSD is qualified only under QEMU; development builds have been observed booting on two physical machines, recorded <a href="#observations">below</a> as observations, not support. This page defines how hardware support will be stated, and lists exactly which emulated configurations are qualified.</p>
 
 <h2 id="tiers">Evidence tiers</h2>
 <p>Each hardware statement names one tier. A higher tier is never inferred from a lower one.</p>
@@ -102,6 +102,19 @@
 <tr><td>Not tried</td><td>Other CPUs, networking, SSH, the file server, any disk write, reset and reboot paths</td></tr>
 <tr><td>Evidence</td><td>Photographs of the final screen, read by hand; no automatic log collection</td></tr>
 <tr><td>Date</td><td>2026-10-05 (UTC), one evening</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th scope="col">Field</th><th scope="col">Content</th></tr></thead>
+<tbody>
+<tr><td>Machine</td><td>One mini PC (AMD Ryzen 3 5300U)</td></tr>
+<tr><td>Devices</td><td>One of its two Realtek RTL8125 Ethernet controllers</td></tr>
+<tr><td>Firmware</td><td>Booted from a USB stick through GRUB</td></tr>
+<tr><td>ABSD build</td><td>A read-only probe image from a development branch, not a release; block writes disabled</td></tr>
+<tr><td>Workload</td><td>The controller was placed in its own AMD-Vi DMA domain before use. A Linux peer then sent raw Ethernet frames of many sizes, up to full size, singly and in a burst; ABSD's probe sent each back. The peer checked every returned frame byte for byte and in order; ABSD's count of frames returned matched the peer's, with no receive or transmit errors.</td></tr>
+<tr><td>Not tried in this run</td><td>ARP, IP, TCP, SSH, storage, persistence, the second controller. DMA containment is not claimed: the device's state before the kernel starts is not controlled.</td></tr>
+<tr><td>Evidence</td><td>Photographs of the screen, read by hand, and the peer's result line, kept with the development records. Not published, so no counts are stated here.</td></tr>
+<tr><td>Date</td><td>2026-11-07 (UTC)</td></tr>
 </tbody>
 </table>
 

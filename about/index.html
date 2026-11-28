@@ -30,13 +30,17 @@
 <main id="main" role="main">
 <h1>About</h1>
 
-<p>ABSD is an experimental operating system by James Beck. Its kernel and platform are written in Rust, with third-party programs and libraries under their own licences. It runs as a single-operator system under QEMU, administered over SSH. It is not production-ready, and no physical hardware is supported.</p>
+<p>ABSD is an experimental operating system by James Beck. Its kernel and platform are written in Rust, with third-party programs and libraries under their own licences. Its published developer previews run as a single-operator system under QEMU, administered over SSH. They are not production-ready, and no physical hardware is supported; boots of development builds on physical machines are recorded as <a href="/hardware/#observations">observations</a>.</p>
 <p>ABSD Developer Preview 3 (state <strong>published</strong>): <a href="/releases/absd-preview-3/">Download / Try ABSD</a> on a Linux x86-64 host with QEMU, with no build tools. The <a href="https://github.com/unpingable/absd/tree/absd-preview-3">matching first-party source</a> records its reconstruction instructions and limits. <a href="/status/#source">Status</a> keeps the earlier source release separate.</p>
 <p>The source is public at <a href="https://github.com/unpingable/absd">github.com/unpingable/absd</a>. Published releases are assembled from the repositories where development happens. A release describes its own capabilities and evidence; work on the development line does not change what that release supports. <a href="/status/">Status</a> and <a href="/evidence/">evidence</a> keep those distinctions.</p>
 
 <h2 id="why">Why it exists</h2>
 <p>ABSD studies how a small system behaves when authority, failure and durability are explicit and testable. It runs an SSH server, a file server, a shell and real programs so those rules can be checked against working software.</p>
 <p>The ideas build on capability systems such as KeyKOS, EROS, seL4 and Zircon, and on crash-consistency research. The <a href="/research/program/">research program</a> describes the questions, method and prior work.</p>
+
+<h2 id="direction">Where it is going</h2>
+<p>ABSD aims to become a general-purpose operating system that can be used for ordinary computing, with authority, failure and durability explicit underneath. That is a direction, not a capability: the published developer previews run only as a single-operator system under QEMU, and no desktop, physical hardware or foreign-binary support is claimed.</p>
+<p>Native ABSD semantics are the specification. Unix-style behaviour is a personality implemented in userspace above the native interface, not the substrate. Linux binary compatibility, if built, is intended as a separate personality and is in no release. <a href="/design/#personality">Design: personality layers</a>.</p>
 
 <h2 id="for">What it is for</h2>
 <ul>
@@ -45,7 +49,7 @@
 <li>A testbed for real programs whose storage and failure behaviour can be compared with their Linux builds.</li>
 </ul>
 
-<h2 id="not-for">What it is not for</h2>
+<h2 id="not-for">What the published previews are not for</h2>
 <ul>
 <li>Running on physical hardware: physical hardware qualification is not yet established.</li>
 <li>Production use, multi-user systems, or anything that must stay up.</li>
