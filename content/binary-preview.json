@@ -8,10 +8,16 @@
   "platform_commit": "be522e9f98002e572be909916d631605489676a9",
   "utils_commit": "ed288eefc9d7322f4ff7c1aaf19b5a779a9e9542",
   "release_date": "2026-11-28",
-  "state": "draft",
+  "state": "published",
   "signature": "unsigned",
-  "qualification": "built",
-  "evidence": [],
+  "qualification": "published",
+  "evidence": [
+    {
+      "level": "published",
+      "label": "ABSD Developer Preview 3 release",
+      "url": "https://github.com/unpingable/absd/releases/tag/absd-preview-3"
+    }
+  ],
   "assets": [
     {
       "name": "QUICKSTART.md",
@@ -121,5 +127,12 @@
     "getopts, local and command builtins in absd-sh, and path, option and variable completion; Tab completes command names only.",
     "KVM, more than one CPU, and recovery after a crash."
   ],
-  "first_party_source": null
+  "first_party_source": {
+    "tag": "absd-preview-3",
+    "commit": "b58d22614bba7ba79beee5b6c426311cc38c6fac",
+    "tree": "7a7b38d05d01f1bf6abf7663934b1ed0d2cd49d6",
+    "source_manifest_sha256": "394e281baafc02a1cf9567d4516210df5a5a96b776f6d7b50e8f7f1243d5520f",
+    "kernel_commit": "0046112efdd8d38f17d119a19dbefcd83058ff81",
+    "platform_commit": "be522e9f98002e572be909916d631605489676a9"
+  }
 }
