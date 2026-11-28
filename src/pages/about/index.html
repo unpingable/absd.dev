@@ -2,13 +2,17 @@
 <!-- description: ABSD is an experimental operating system by James Beck, written in Rust, largely by AI coding agents under his direction. Why it exists, what it is and is not for, where the source is, its licence, and how contributions are handled. -->
 <h1>About</h1>
 
-<p>ABSD is an experimental operating system by James Beck. Its kernel and platform are written in Rust, with third-party programs and libraries under their own licences. It runs as a single-operator system under QEMU, administered over SSH. It is not production-ready, and no physical hardware is supported.</p>
+<p>ABSD is an experimental operating system by James Beck. Its kernel and platform are written in Rust, with third-party programs and libraries under their own licences. Developer Preview 3 runs as a single-operator system under QEMU, administered over SSH; it is not production-ready. Development builds have booted on physical machines, but no physical machine is yet qualified or supported. <a href="/hardware/#observations">Physical observations and their limits</a>.</p>
 <p>{{SOURCE_GET_STARTED}}</p>
 <p>The source is public at <a href="{{SOURCE_REPO}}">github.com/unpingable/absd</a>. Published releases are assembled from the repositories where development happens. A release describes its own capabilities and evidence; work on the development line does not change what that release supports. <a href="/status/">Status</a> and <a href="/evidence/">evidence</a> keep those distinctions.</p>
 
 <h2 id="why">Why it exists</h2>
 <p>ABSD studies how a small system behaves when authority, failure and durability are explicit and testable. It runs an SSH server, a file server, a shell and real programs so those rules can be checked against working software.</p>
 <p>The ideas build on capability systems such as KeyKOS, EROS, seL4 and Zircon, and on crash-consistency research. The <a href="/research/program/">research program</a> describes the questions, method and prior work.</p>
+
+<h2 id="direction">Where it is going</h2>
+<p>The long-term ambition is a genuinely usable, general-purpose operating system that its owner would choose for ordinary computing, not only a specialist research VM. That means useful applications, development tools, comprehensible administration and recoverable everyday work. It does not mean ABSD is ready to replace a BSD or Linux installation today, or that any particular desktop, hardware support or foreign binary compatibility is promised.</p>
+<p>The research asks whether explicit, bounded authority and honest failure and durability semantics can support that experience without making people learn the security machinery just to use their computer. Native ABSD semantics remain the foundation; useful Unix conventions, portable source and optional compatibility layers can be evaluated without making Linux or BSD the native specification. <a href="/research/program/">Research questions and evidence</a>.</p>
 
 <h2 id="for">What it is for</h2>
 <ul>
@@ -17,12 +21,12 @@
 <li>A testbed for real programs whose storage and failure behaviour can be compared with their Linux builds.</li>
 </ul>
 
-<h2 id="not-for">What it is not for</h2>
+<h2 id="not-for">What the current preview is not for</h2>
 <ul>
 <li>Running on physical hardware: physical hardware qualification is not yet established.</li>
 <li>Production use, multi-user systems, or anything that must stay up.</li>
 <li>Running existing Unix or Linux software without porting; see <a href="/compatibility/">compatibility</a>.</li>
-<li>Replacing a BSD or Linux system.</li>
+<li>Replacing an existing BSD or Linux installation today. The general-purpose goal is long-term, not a present support claim.</li>
 </ul>
 
 <h2 id="how">How it is developed</h2>
