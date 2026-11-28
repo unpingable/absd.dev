@@ -246,14 +246,13 @@ checks before the existing Pages procedure. Preview 1 and Preview 2 appear
 together publicly only after Preview 2 is published. The earlier source
 preview and milestone records remain separate.
 
-## Developer Preview 3 (preparation; nothing selected)
+## Developer Preview 3
 
 The human name is `ABSD Developer Preview 3` and the tag is `absd-preview-3`.
-`binary_preview.py` knows the name. No Preview 3 record is selected and no
-sealed input is committed: the final candidate is a fresh image built from
-the integrated development line, so its sealed files do not exist yet.
-Preview 2 stays the selected record until the inputs listed below are
-copied byte for byte into `content/binary-preview/absd-preview-3/`.
+`binary_preview.py` knows the name. Preview 3 is the selected record. Its
+sealed inputs, listed below, are in `content/binary-preview/absd-preview-3/`,
+copied byte for byte from the release set. Preview 2 is retained at
+`content/binary-preview/absd-preview-2.json` with its three inputs unchanged.
 
 Preview 3's download is a kit: the guide starts from four downloaded files,
 `SHA256SUMS`, `SHA256SUMS.source`, `QUICKSTART.md` and the kit archive
@@ -300,8 +299,8 @@ file table and beside the instructions. That page and the release body are
 the channel the guide's first command relies on, so publish both with the
 same value, taken from the record.
 
-When the sealed inputs exist, follow "Prepare, verify, select" and the
-Preview 2 sequence above: select Preview 3 as `draft` with no source
-association, archive Preview 2 at `content/binary-preview/absd-preview-2.json`
-with its three inputs unchanged, and bind the source association, date and
-evidence only after the tag and release are public.
+The sequence is Preview 2's: Preview 3 is selected as `draft` with no source
+association, and the source association, date and evidence are bound only
+after the tag and release are public. Its source tree has no
+`docs/PREVIEW2-SOURCE.md`; the release page links that tree's `README.md`
+for the build instructions and limits.

@@ -405,7 +405,10 @@ def binary_source_note(record):
     names = " and ".join(f"<code>{esc(n)}</code>" for n in attached)
     if source is not None and source["tag"] == record["tag"]:
         url = record["repository"] + "/tree/" + source["tag"]
-        instructions = record["repository"] + "/blob/" + source["commit"] + "/docs/PREVIEW2-SOURCE.md"
+        # Preview 2's tree has docs/PREVIEW2-SOURCE.md; later trees keep the
+        # build instructions and limits in their top-level README.md.
+        document = "docs/PREVIEW2-SOURCE.md" if record["tag"] == "absd-preview-2" else "README.md"
+        instructions = record["repository"] + "/blob/" + source["commit"] + "/" + document
         return (f'<p>Matching first-party ABSD source for {esc(binary_preview.display_name(record))} is '
                 f'<a href="{esc(url, quote=True)}">published with this release</a>. Read the '
                 f'<a href="{esc(instructions, quote=True)}">reconstruction instructions and limits</a> '
@@ -461,6 +464,13 @@ def rc1_check_standing():
     if BINARY and BINARY[0]["first_party_source"] is not None:
         source = BINARY[0]["first_party_source"]
         url = BINARY[0]["repository"] + "/releases/tag/" + source["tag"]
+        if BINARY[0].get("kit"):
+            # A kit release's notes say what was and was not run; they do not
+            # report a clean-environment reconstruction.
+            return ('the public tree includes the kernel suite and core-profile check scripts. '
+                    f'The <a href="{html.escape(url, quote=True)}">source release record</a> states what was '
+                    'run on the release and what was not, including that no reconstruction from the '
+                    'published source alone was run')
         return ('the public tree includes the kernel suite and core-profile check scripts. '
                 f'The <a href="{html.escape(url, quote=True)}">source release record</a> states which checks ran '
                 'in a clean environment and records the reconstruction differences')
@@ -742,7 +752,8 @@ to that host for these terminals; the guide's <code>127.0.0.1</code> address ref
 <p>Use an Ubuntu 24.04 x86-64 host with QEMU 8.2, Python 3.11 or newer, the OpenSSH client and GNU coreutils:
 <code>sudo apt-get install qemu-system-x86 python3 openssh-client coreutils</code>.
 The guide uses <code>--accel tcg</code>, QEMU's software emulation, which is what the kit was tested with.
-KVM and newer QEMU versions are untested; the helper does not check the QEMU version, so it does not refuse them.</p>
+KVM is outside this preview. Newer QEMU versions are untested; the helper does not check the QEMU version,
+so it does not refuse them.</p>
 <h3 id="headless">Headless boot and SSH</h3>
 <p>The guest runs without a graphical display. Keep <code>absd-try.py boot</code> running in one host terminal.
 After it prints <code>READY</code>, check the host-key fingerprint as the guide says and use the printed SSH command

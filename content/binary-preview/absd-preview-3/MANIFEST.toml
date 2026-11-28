@@ -1,0 +1,79 @@
+schema = "absd-preview-manifest/1"
+signature = "unsigned"
+qualification = "built"
+limitations = ["Physical hardware qualification is not yet established.", "No rehearsal of these exact media is recorded in this manifest. Use by a reader without help is unverified.", "QEMU operator/core. Native C compiler and host SDK are outside this kit.", "This product includes software developed at Cygnus Support, Inc.", "This product includes software developed by the University of California, Berkeley and its contributors", "This product includes software developed by the University of California, Berkeley.", "Naming an organisation acknowledges its work; it does not imply that it endorses ABSD."]
+[release]
+id = "absd-preview-3"
+tag = "absd-preview-3"
+kernel_commit = "0046112efdd8d38f17d119a19dbefcd83058ff81"
+platform_commit = "be522e9f98002e572be909916d631605489676a9"
+utils_commit = "ed288eefc9d7322f4ff7c1aaf19b5a779a9e9542"
+[qemu]
+cpu_tcg = "max,vendor=GenuineIntel,+rdrand"
+memory_mib = 256
+smp = 1
+nic = "e1000"
+disk = "ide"
+firmware = "SeaBIOS"
+[assets.stock_install_plan]
+name = "INSTALL-PLAN.json"
+sha256 = "a24921a6c0f78bbd3d2d54cf52ac5f5a930f7f5453c90ecb0e6087083dbb9c3d"
+bytes = 30101
+[assets.extra_1]
+name = "NOTICES.md"
+sha256 = "99ede7c7b8538c51eaec6fee2bb3a3b38d18c9bfe5095e45b79cc0f40f49646a"
+bytes = 1225
+[assets.extra_2]
+name = "QUICKSTART.md"
+sha256 = "80934fa1c7928cfe01460b238e4c272a32ce68d6d5a9cb93413a33ea88528a3b"
+bytes = 8293
+[assets.stock_plan]
+name = "STOCK-PLAN.json"
+sha256 = "73779c9e41f56d8cba3dc338b632e0af8673cc33b7ab414f183f332ea129b0aa"
+bytes = 23561
+[assets.extra_4]
+name = "absd-try.py"
+sha256 = "db8c0862cd1862d954fcacda8776812012f086ff7c6a410e5785cb177b491772"
+bytes = 43476
+[assets.extra_5]
+name = "absd_fs.py"
+sha256 = "809bc314cdd797ecfc70001d4867b58397f74b4c615bb723bccb83dcd23629b0"
+bytes = 13142
+[assets.extra_6]
+name = "absd_image.py"
+sha256 = "00ea38d2cff23241619b43d3a77441d82272900168f61d828c94f6a3220b470b"
+bytes = 15878
+[assets.extra_7]
+name = "config_generation.py"
+sha256 = "a62522ebd273bb4c2e81c2b24d8c4c45c4ae07fb4b70daba4e6c4a12d61e94fb"
+bytes = 6972
+[assets.disk]
+name = "disk.img.xz"
+raw_sha256 = "a035ef9144292409479dd3a79a895cc627952af52c2aabef2e5f128c837156a5"
+raw_bytes = 134217728
+sha256 = "793ef286ff54c28ea163c78a2d171ccd7959bb7f903dd486e63ed6b32e7e4ea5"
+bytes = 3838284
+[assets.enroll_iso]
+name = "enroll.iso"
+sha256 = "1554de01fd1351025473f57d71c12f80b92e7489a33b41e57940b5cfc38bd449"
+bytes = 19662848
+[assets.operator_iso]
+name = "operator.iso"
+sha256 = "23e7f7193224a3e11b303c823f7d6feee39258b7ea9cf13b0e9425476fca0cc2"
+bytes = 21641216
+[assets.extra_11]
+name = "operator_boot_binding.py"
+sha256 = "fda778e183dd4fe6b1a03fc22a8a647156f983f4ab8e9220c4554fdbf62f850f"
+bytes = 15324
+[assets.extra_12]
+name = "release_record.py"
+sha256 = "115227e60032f4a52af020df4a15b6714075c5cb926f3b069d2ae7cf96b35696"
+bytes = 6778
+[assets.extra_13]
+name = "served_ram.py"
+sha256 = "232c63d71884be4216860614108c4527b30a1f48debb6a6226abd94b49cf7bba"
+bytes = 3656
+[assets.extra_14]
+name = "storage_fence_state.py"
+sha256 = "2afe5085acc24dcd381686f0eb3050891ff3c46d421e30bc4c038f161e4c5b5c"
+bytes = 4745

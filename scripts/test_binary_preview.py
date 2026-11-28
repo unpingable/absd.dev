@@ -257,9 +257,23 @@ class PreviewSelection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source components disagree"):
             bp.check_record(self.record, SOURCE_ID)
 
-    def test_current_preview2_inputs_pass_with_their_sealed_bytes(self):
+    def test_current_preview3_inputs_pass_with_their_sealed_bytes(self):
         record, files = bp.load(ROOT, SOURCE_ID)
-        self.assertEqual(record['tag'], 'absd-preview-2')
+        self.assertEqual(record['tag'], 'absd-preview-3')
+        self.assertEqual(record['sums_sha256'], sha(files['SHA256SUMS']))
+        self.assertEqual({name: sha(data) for name, data in files.items()}, {
+            'KIT.SHA256SUMS': 'c211eab7ee3a1f096e84cbb6dd26acd9c15d422b2016d8abff9ccecf33f3421e',
+            'MANIFEST.toml': 'e4df2fbdf7345af61970686d62fb5c018f06a65598d34580d366524ab89e2b07',
+            'QUICKSTART.md': '80934fa1c7928cfe01460b238e4c272a32ce68d6d5a9cb93413a33ea88528a3b',
+            'SHA256SUMS': '016e3fdf2b9345df1e04bc2ee4e4bf18afe5cd81330cd074eb55cd43620e9831',
+            'SHA256SUMS.source': '1d8238f25171ef399cbcb45fe6a4dc18a58f7628ad4509e535acc2c61c46475a',
+        })
+
+    def test_retained_preview2_inputs_pass_with_their_sealed_bytes(self):
+        selected = bp.load(ROOT, SOURCE_ID)
+        record, files = next(item for item in bp.load_archives(ROOT, SOURCE_ID, selected[0])
+                             if item[0]['tag'] == 'absd-preview-2')
+        self.assertEqual(record['state'], 'published')
         self.assertEqual({name: sha(data) for name, data in files.items()}, {
             'MANIFEST.toml': '21794d69f5bd0b7060a2ece719fd9ab112c09087b37e3a1d0f4f519045038eeb',
             'QUICKSTART.md': '45fccebacba15b93bd88838a952e83ee6c93975e5471e4b686dad816af9a63fc',
@@ -294,6 +308,15 @@ class PreviewSelection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "display_name"):
             bp.check_record(self.record, SOURCE_ID)
 
+    def test_same_tag_source_note_links_each_tree_s_own_instructions(self):
+        import build
+        note = build.binary_source_note(self.record)
+        self.assertIn(self.record["first_party_source"]["commit"] + '/docs/PREVIEW2-SOURCE.md', note)
+        self.record["tag"] = self.record["first_party_source"]["tag"] = "absd-preview-3"
+        note = build.binary_source_note(self.record)
+        self.assertIn(self.record["first_party_source"]["commit"] + '/README.md', note)
+        self.assertNotIn('PREVIEW2-SOURCE.md', note)
+
     def test_selection_retains_preview1_page_and_exact_sealed_guide(self):
         import build
         root, old = self.archive()
@@ -326,8 +349,8 @@ class PreviewSelection(unittest.TestCase):
         import build
         selected = bp.load(ROOT, SOURCE_ID)
         archived = bp.load_archives(ROOT, SOURCE_ID, selected[0])
-        self.assertEqual(len(selected[1]["SHA256SUMS"]), 1054)
-        self.assertEqual(len(archived[0][1]["SHA256SUMS"]), 1107)
+        sizes = {record["tag"]: len(files["SHA256SUMS"]) for record, files in [selected] + archived}
+        self.assertEqual(sizes, {"absd-preview-3": 261, "absd-preview-2": 1054, "absd-preview-rc1": 1107})
         with patch.object(build, "BINARY", selected), \
              patch.object(build, "BINARY_ARCHIVES", archived):
             outputs = build.binary_outputs()
@@ -683,6 +706,13 @@ class KitPreview(unittest.TestCase):
         self.assertNotIn("curl", page)
         self.assertNotIn("its helper modules", page)
         self.assertIn("The other 2 files are the source and notice archives", page)
+        self.assertIn("KVM is outside this preview.", page)
+        self.assertNotIn("KVM and newer QEMU versions are untested", page)
+        bound = dict(self.kit.record, first_party_source={"tag": KitRelease.TAG})
+        with patch.object(build, "BINARY", (bound, {})):
+            standing = build.rc1_check_standing()
+        self.assertIn("no reconstruction from the published source alone was run", standing)
+        self.assertNotIn("in a clean environment", standing)
 
 
 if __name__ == "__main__":
